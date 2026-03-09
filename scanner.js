@@ -1,6 +1,7 @@
 class Scanner extends Tank {
   //программе допустимо иметь свои переменные для запоминания чего-бы то ни было
   gunDegree = 0;
+  enemyIsSeen = false;
 
   constructor() {
     this.setColor(); //hex
@@ -14,8 +15,10 @@ class Scanner extends Tank {
   }
 
   onLaserScan(info) {
+    //метод вызывается после вызова метода this.impulseScan();
     //Метод наследуется от класса родителя Tank
     if (info.target === "tank" && info.hostile) {
+      this.enemyIsSeen = true; //поставить статус вижу врага
       //в случае если обнаружен танк и он не в моей команде
       //если мой лазер увидел вражеский танк
       this.fire(); //немедленно стреляет ПТУРом
@@ -23,10 +26,25 @@ class Scanner extends Tank {
 
     if (info.target === "non-tank") {
       if (info.distance < 5) this.stop(); //впереди стена - немедленно тормозим
+
+      //если недавно был обнаружен противник а теперь его не видно
+      if (this.enemyIsSeen) {
+        this.enemyIsSeen = false; //статус "Вижу противника" переходит в статус поиска
+        this.enableConstntLaser(); //включает режим постоянного облучения
+        //проверить постоянным облучением сперва слева - потом справа (конус длиной 30 градусов)
+        this.runTasks(
+          this.setGunDegree(this.gunDegree - 10),
+          this.setGunDegree(this.gunDegree + 20),
+          this.disableConstantLaser(),
+        );
+        //метод runTasks способен последовательно выполнять задачи -> повернуть башню на указанный градус,
+        //когда действие завершится начнется выполнение следующей задачи из списка и так до кона списка
+      }
     }
   }
 
   onLaserDetection(info) {
+    //метод вызывается если танк облучают лазером
     this.fireSmoke();
     this.setGunDegree(info.degree); //угол с которого меня облучают
     this.fire(); // выстрел ПТУРом
