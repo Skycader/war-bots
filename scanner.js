@@ -23,7 +23,7 @@ class Scanner extends Tank {
   onLaserScan(info) {
     //метод вызывается после вызова метода this.impulseScan();
     //Метод наследуется от класса родителя Tank
-    if (info.target === "tank" && info.hostile) {
+    if (info.target === "tank" && info.isHostile) {
       this.enemyIsSeen = true; //поставить статус вижу врага
       this.log("Вижу противника"); //log - выводит в журнал от имени бота сообщение
       //в случае если обнаружен танк и он не в моей команде
@@ -33,7 +33,7 @@ class Scanner extends Tank {
 
     if (info.target === "non-tank") {
       if (info.distance < 5) {
-        this.stop(); //впереди стена - немедленно тормозим
+        this.stop(); //впереди стена - применяем торможение до нуля
         //метод this.getDirection() возвращает текущее направление корпуса танка
         this.setDirection(this.getDirection() + 90); //поворачиваем корпусом на 90 градусов вправо
       }
@@ -45,8 +45,8 @@ class Scanner extends Tank {
         this.enableConstntLaser(); //включает режим постоянного облучения
         //проверить постоянным облучением сперва слева - потом справа (конус длиной 30 градусов)
         this.runTasks(
-          this.setGunDegree(this.gunDegree() - 10),
-          this.setGunDegree(this.gunDegree() + 20),
+          this.setGunDegree(this.gunDegree() - 30),
+          this.setGunDegree(this.gunDegree() + 60),
           this.disableConstantLaser(),
         );
         //чтобы программисту не пришлось писать императивный код, постоянно проверяющий вращается ли башня сейчас и теперь
