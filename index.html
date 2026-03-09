@@ -34,7 +34,7 @@
         align-items: center;
         justify-content: center;
         height: 100vh;
-        gap: 20px;
+        gap: 18px;
         background: radial-gradient(ellipse at center, #0a1f0a 0%, #000 100%);
       }
       #menu h1 {
@@ -62,23 +62,23 @@
         font-size: 1em;
         color: var(--amber);
         letter-spacing: 4px;
-        margin-bottom: 10px;
+        margin-bottom: 4px;
       }
       .settings-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px 30px;
+        gap: 9px 28px;
         background: rgba(0, 255, 136, 0.03);
         border: 1px solid var(--border);
-        padding: 20px 30px;
-        max-width: 640px;
+        padding: 18px 28px;
+        max-width: 660px;
         width: 100%;
       }
       .setting-row {
         display: flex;
         align-items: center;
         gap: 10px;
-        font-size: 0.85em;
+        font-size: 0.83em;
       }
       .setting-row label {
         color: #88bbaa;
@@ -203,20 +203,51 @@
         pointer-events: none;
         white-space: nowrap;
       }
+      #timeBar {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid #1a3a1a;
+        padding: 4px 12px;
+        z-index: 100;
+      }
+      #timeBar button {
+        background: #0a1a0a;
+        border: 1px solid #1a4a1a;
+        color: var(--green);
+        font-family: "Share Tech Mono", monospace;
+        font-size: 0.85em;
+        padding: 2px 8px;
+        cursor: pointer;
+      }
+      #timeBar button:hover {
+        background: #1a3a1a;
+      }
+      #timeScale {
+        font-size: 0.85em;
+        color: var(--amber);
+        min-width: 50px;
+        text-align: center;
+      }
       #hud {
-        width: 220px;
+        width: 222px;
         background: var(--panel);
         border-left: 1px solid var(--border);
         padding: 8px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 5px;
         overflow: hidden;
         font-size: 0.8em;
       }
       .hud-section {
         border: 1px solid var(--border);
-        padding: 8px;
+        padding: 7px;
         flex-shrink: 0;
       }
       .hud-section.scrollable {
@@ -230,19 +261,19 @@
         font-size: 0.7em;
         color: var(--amber);
         letter-spacing: 2px;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
         border-bottom: 1px solid var(--border);
-        padding-bottom: 4px;
+        padding-bottom: 3px;
       }
       .bar-wrap {
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 2px;
         margin-bottom: 4px;
       }
       .bar-label {
         color: #88aa88;
-        font-size: 0.85em;
+        font-size: 0.83em;
         display: flex;
         justify-content: space-between;
       }
@@ -254,6 +285,9 @@
       .bar-fill {
         height: 100%;
         transition: width 0.1s;
+      }
+      .bar-fill.health {
+        background: #ff4444;
       }
       .bar-fill.energy {
         background: var(--amber);
@@ -307,11 +341,6 @@
       .log-entry.warn {
         color: var(--amber);
       }
-      #controls {
-        font-size: 0.75em;
-        color: #446644;
-        line-height: 1.7;
-      }
       #deathScreen {
         display: none;
         position: absolute;
@@ -349,6 +378,11 @@
         background: var(--green);
         color: #000;
       }
+      #controls {
+        font-size: 0.72em;
+        color: #446644;
+        line-height: 1.65;
+      }
     </style>
   </head>
   <body>
@@ -379,9 +413,9 @@
         <div class="setting-row">
           <label>Размер карты:</label>
           <select id="cfgMapSize">
-            <option value="30">30x30</option>
-            <option value="40" selected>40x40</option>
-            <option value="50">50x50</option>
+            <option value="30">30×30</option>
+            <option value="40" selected>40×40</option>
+            <option value="50">50×50</option>
           </select>
         </div>
         <div class="setting-row">
@@ -393,7 +427,7 @@
           </select>
         </div>
         <div class="setting-row">
-          <label>Перезарядка ПТУР:</label>
+          <label>Кд ПТУР:</label>
           <select id="cfgPturCD">
             <option value="5">5 сек</option>
             <option value="10" selected>10 сек</option>
@@ -403,7 +437,7 @@
         <div class="setting-row">
           <label>Скорость ПТУР:</label>
           <select id="cfgPturSpeed">
-            <option value="3">3 м/с (медленно)</option>
+            <option value="3">3 м/с</option>
             <option value="6">6 м/с</option>
             <option value="10" selected>10 м/с</option>
             <option value="15">15 м/с</option>
@@ -411,7 +445,15 @@
           </select>
         </div>
         <div class="setting-row">
-          <label>Перезарядка дыма:</label>
+          <label>Урон ПТУР:</label>
+          <select id="cfgPturDmg">
+            <option value="25">25 HP</option>
+            <option value="50">50 HP</option>
+            <option value="100" selected>100 HP</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Кд дыма:</label>
           <select id="cfgSmokeCD">
             <option value="5">5 сек</option>
             <option value="10" selected>10 сек</option>
@@ -429,11 +471,12 @@
           </select>
         </div>
         <div class="setting-row">
-          <label>Урон ПТУР:</label>
-          <select id="cfgPturDmg">
-            <option value="25">25%</option>
-            <option value="50">50%</option>
-            <option value="100" selected>100%</option>
+          <label>Урон лазера (HP/с):</label>
+          <select id="cfgLaserDmg">
+            <option value="0">0 (нет)</option>
+            <option value="5" selected>5</option>
+            <option value="15">15</option>
+            <option value="30">30</option>
           </select>
         </div>
       </div>
@@ -444,6 +487,12 @@
       <div id="canvasWrap">
         <canvas id="gameCanvas"></canvas>
         <div id="killNotify">ВЫ УНИЧТОЖИЛИ: <span id="killName"></span></div>
+        <div id="timeBar">
+          <button id="btnSlower">◀◀</button>
+          <span id="timeScale">×1.0</span>
+          <button id="btnFaster">▶▶</button>
+          <button id="btnPause" style="margin-left: 4px">⏸</button>
+        </div>
         <div id="deathScreen">
           <h2 id="deathTitle">УНИЧТОЖЕН</h2>
           <p id="deathMsg"></p>
@@ -492,8 +541,16 @@
           </div>
         </div>
 
-        <div class="hud-section">
-          <div class="hud-title">&#9658; СТАТУС ТАНКА</div>
+        <div class="hud-section" id="playerHud">
+          <div class="hud-title">&#9658; СТАТУС</div>
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>HP</span><span id="hudHP">100</span>
+            </div>
+            <div class="bar">
+              <div class="bar-fill health" id="barHP" style="width: 100%"></div>
+            </div>
+          </div>
           <div class="bar-wrap">
             <div class="bar-label">
               <span>ЭНЕРГИЯ</span><span id="hudEnergy">100%</span>
@@ -527,39 +584,27 @@
             </div>
           </div>
           <div class="status-item">
-            Скорость: <span id="hudSpeed">0</span> м/с
+            Скорость: <span id="hudSpeed">0</span>
             <span id="hudGear" class="gear-display" style="display: none"
               >P0</span
             >
           </div>
           <div class="status-item">Угол: <span id="hudAngle">0</span>°</div>
+          <div class="status-item">Лазер: <span id="hudLaser">ОТКЛ</span></div>
+          <div class="status-item">
+            Цель: <span id="hudTarget">—</span> <span id="hudDist"></span>
+          </div>
           <div id="spolAlert" class="alert" style="display: none">
             &#9888; ОБЛУЧЕНИЕ!
           </div>
         </div>
 
         <div class="hud-section">
-          <div class="hud-title">&#9658; ЛАЗЕР</div>
-          <div class="status-item">Режим: <span id="hudLaser">ОТКЛ</span></div>
-          <div class="status-item">
-            Дистанция: <span id="hudDist">&#8212;</span> м
-          </div>
-          <div class="status-item">
-            Цель: <span id="hudTarget">&#8212;</span>
-          </div>
-        </div>
-
-        <div class="hud-section">
           <div class="hud-title">&#9658; УПРАВЛЕНИЕ</div>
           <div id="controls">
-            W(нажим)&#8594;+1 передача<br />
-            S(нажим)&#8594;-1 / назад<br />
-            A/D &#8212; поворот<br />
-            Q/E &#8212; башня<br />
-            R &#8212; стоп<br />
-            ЛКМ &#8212; лазер<br />
-            ПКМ &#8212; ПТУР<br />
-            F &#8212; дым (задерж. 2с)
+            W↑ / S↓ — передачи<br />A/D — поворот<br />Q/E — башня<br />R —
+            стоп<br />ЛКМ — лазер&nbsp;&nbsp;ПКМ — ПТУР<br />F — дым (2с
+            задерж.)
           </div>
         </div>
 
@@ -576,14 +621,16 @@
     </div>
 
     <script>
+      "use strict";
       // ═══════════════════ КОНСТАНТЫ ═══════════════════
       const CELL = 16;
       const MAX_SPEED = 5;
-      const LASER_DRAIN_CONT = 0.1;
-      const LASER_DRAIN_PULSE = 0.1;
-      const ENERGY_REGEN = 1;
+      const LASER_DRAIN_CONT = 10; // энергия/сек при непрерывном лазере
+      const LASER_DRAIN_PULSE = 0.1; // энергия за импульс
+      const ENERGY_REGEN = 1.5; // энергия/сек регенерация
+      const ENERGY_SPEED_COST = 3; // энергия/сек за каждую единицу скорости
       const TANK_TURN_SPEED = 2.0;
-      const TURRET_TURN_SPEED = 3.0;
+      const TURRET_TURN_SPEED = 3.0; // для игрока
       const BOT_TURRET_SPEED = 1.8;
       const ACCEL = 3;
       const FRICTION = 2;
@@ -592,6 +639,18 @@
       const TANK_RADIUS = 0.32;
       const SOUND_RANGE = 30;
       const PROX_FUSE_RANGE = 0.7;
+
+      // Цвета для ботов (случайно назначаются при спавне)
+      const BOT_COLORS = [
+        "#ff2244",
+        "#ff8800",
+        "#ffcc00",
+        "#00aaff",
+        "#bb44ff",
+        "#00ffcc",
+        "#ff44aa",
+        "#44ffaa",
+      ];
 
       let cfg = {};
 
@@ -610,8 +669,11 @@
       function rndInt(a, b) {
         return Math.floor(rnd(a, b + 1));
       }
+      function pickRandom(arr) {
+        return arr[rndInt(0, arr.length - 1)];
+      }
 
-      // ═══════════════════ СМОК ═══════════════════
+      // ═══════════════════ ОБЪЕКТЫ МИРА ═══════════════════
       class SmokeCloud {
         constructor(x, y) {
           this.x = x;
@@ -631,7 +693,6 @@
         }
       }
 
-      // ═══════════════════ ЛАЗЕРНАЯ МЕТКА ═══════════════════
       class LaserDot {
         constructor(x, y, isEnemy, inSmoke) {
           this.x = x;
@@ -649,7 +710,6 @@
         }
       }
 
-      // ═══════════════════ ВЗРЫВ ═══════════════════
       class Explosion {
         constructor(x, y) {
           this.x = x;
@@ -687,7 +747,6 @@
         }
       }
 
-      // ═══════════════════ ПТУР ═══════════════════
       class PTUR {
         constructor(owner, x, y, angle) {
           this.owner = owner;
@@ -704,9 +763,9 @@
 
         static blastDamage(d) {
           const max = cfg.pturDmg || 100;
-          if (d <= 0.1) return max;
-          if (d <= 0.5) return max * 0.5;
-          if (d <= 1.0) return max * 0.1;
+          if (d <= 0.45) return max; // прямое попадание / радиовзрыватель
+          if (d <= 0.9) return max * 0.5; // близкий взрыв
+          if (d <= 1.5) return max * 0.15; // осколки
           return 0;
         }
 
@@ -718,7 +777,7 @@
             if (tank === this.owner || !tank.alive) continue;
             const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
             const dmg = PTUR.blastDamage(d);
-            if (dmg > 0) tank.takeDamage(dmg, game, this.owner);
+            if (dmg > 0) tank.takeHPDamage(dmg, game, this.owner);
           }
           this.alive = false;
         }
@@ -734,7 +793,6 @@
             this.trail.push({ x: this.x, y: this.y });
             if (this.trail.length > 20) this.trail.shift();
 
-            // Ракета видит лазерный луч?
             if (this.owner.laserContinuous || this.owner.renderLaserLife > 0)
               this.canGuide = !game.segmentHitsWall(
                 this.x,
@@ -744,7 +802,6 @@
               );
             else this.canGuide = false;
 
-            // Стена
             const cx = Math.floor(this.x),
               cy = Math.floor(this.y);
             if (
@@ -758,7 +815,6 @@
               return;
             }
 
-            // Радиовзрыватель
             let minD = 9999;
             for (const tank of game.tanks) {
               if (tank === this.owner || !tank.alive) continue;
@@ -782,7 +838,6 @@
             }
             this.prevDist = minD < PROX_FUSE_RANGE ? minD : null;
           }
-          this.trail.forEach((t) => (t.age = (t.age || 0) + dt));
         }
 
         guide(angle) {
@@ -800,7 +855,8 @@
           this.turretAngle = angle;
           this.turretTargetAngle = angle;
           this.speed = 0;
-          this.energy = 100;
+          this.energy = 100; // регенерируется — тратится на движение и лазер
+          this.hp = 100; // здоровье — не регенерируется, снимается ПТУРом/стеной/лазером
           this.alive = true;
           this.color = color;
           this.label = label;
@@ -818,35 +874,48 @@
           this.irradiatedBy = null;
           this.activePTUR = null;
           this.dots = [];
-          // Внутренние API-события (заполняются движком)
+          // внутренние поля движка
           this._api_sounds = [];
           this._api_laser = null;
           this._api_irradiatedAngle = null;
           this._api_damaged = false;
+          this._desiredSpeed = undefined;
+          this._desiredAngle = undefined;
+          this._continuousLaserCmd = undefined;
+          this._taskQueue = [];
+          this._mainTimer = 0;
+          this._engineSoundTimer = 0;
+          this._game = null;
+          this._sayBubbles = [];
         }
 
         isPlayer() {
           return false;
         }
 
-        // ─── Bot API — сенсоры и действия ───────────────────────────────
+        // ══════════════════════════════════════════════════
+        // BOT API — всё что нужно боту. Нет аргументов game.
+        // ══════════════════════════════════════════════════
+
         // Движение
         setSpeed(v) {
-          this._desiredSpeed = Math.max(-2, Math.min(5, v));
+          this._desiredSpeed = Math.max(-2, Math.min(5, +v || 0));
         }
         stop() {
           this._desiredSpeed = 0;
         }
         setDirection(deg) {
-          this._desiredAngle = (deg * Math.PI) / 180;
+          this._desiredAngle = ((+deg || 0) * Math.PI) / 180;
         }
+
         // Башня
         setGunDegree(deg) {
-          this.turretTargetAngle = (deg * Math.PI) / 180;
+          this.turretTargetAngle = ((+deg || 0) * Math.PI) / 180;
         }
         setGunDirection(deg) {
-          this.turretTargetAngle = (deg * Math.PI) / 180;
+          this.turretTargetAngle = ((+deg || 0) * Math.PI) / 180;
         }
+
         // Телеметрия
         gunDegree() {
           return (this.turretAngle * 180) / Math.PI;
@@ -863,10 +932,17 @@
         getCurrentInfo() {
           return {
             energy: this.energy,
+            health: this.hp,
+            hp: this.hp,
             speed: Math.abs(this.speed),
             angle: this.getDirection(),
             gunAngle: this.getGunDegree(),
-            health: this.energy,
+            beingLasered: this.irradiated,
+            pturReady: this.pturCD <= 0,
+            pturCooldown: Math.max(0, this.pturCD),
+            smokeReady: this.smokeCD <= 0 && this.smokeCount > 0,
+            smokeCooldown: Math.max(0, this.smokeCD),
+            smokeCount: this.smokeCount,
           };
         }
         getLaserData() {
@@ -886,14 +962,15 @@
         wasDamaged() {
           return this._api_damaged;
         }
+
         // Оружие
-        // Всё API работает через this._game — бот не получает game напрямую
         fire() {
           return this.shootPTUR(this._game);
         }
         fireSmoke() {
           return this.throwSmoke(this._game);
         }
+
         // Лазер
         impulseScan() {
           const game = this._game;
@@ -922,31 +999,74 @@
         disableConstantLaser() {
           this._continuousLaserCmd = false;
         }
-        // Журнал — бот просто вызывает this.log("текст")
+
+        // Журнал
         log(msg) {
           if (this._game) this._game.log(`[${this.label}] ${msg}`, "");
         }
         logMsg(msg) {
           this.log(msg);
         }
-        // runTasks — последовательно выполняет задачи
-        // Понимает что setGunDegree занимает время — ждёт пока башня довернётся
-        runTasks(...tasks) {
-          if (!this._taskQueue) this._taskQueue = [];
-          for (const t of tasks)
-            if (typeof t === "function")
-              this._taskQueue.push({ fn: t, started: false, targetGun: null });
+
+        // Речевое облачко над танком
+        say(text) {
+          this._sayBubbles.push({
+            text: String(text),
+            life: 3.0,
+            maxLife: 3.0,
+          });
+          if (this._sayBubbles.length > 3) this._sayBubbles.shift();
         }
-        // Callbacks — переопределяются ботами (без аргумента game)
+
+        // Навести башню на угол и выстрелить как только наведётся
+        setGunDegreeAndFire(deg) {
+          this._gunAndFireTarget = (deg * Math.PI) / 180;
+          this._gunAndFirePending = true;
+        }
+
+        // runTasks: принимает функции () => void и специальный объект await(ms)
+        // Задачи с setGunDegree внутри — ждут завершения поворота башни
+        // Объект {_awaitMs: N} — ждёт N миллисекунд игрового времени
+        runTasks(...tasks) {
+          // Очищаем и ставим задачи заново (не накапливаем при многократном вызове)
+          this._taskQueue = [];
+          for (const t of tasks) {
+            if (typeof t === "function")
+              this._taskQueue.push({
+                type: "fn",
+                fn: t,
+                started: false,
+                targetGun: null,
+                waitTimer: null,
+              });
+            else if (t && typeof t === "object" && "_awaitMs" in t)
+              this._taskQueue.push({
+                type: "await",
+                ms: t._awaitMs,
+                timer: t._awaitMs / 1000,
+              });
+          }
+        }
+
+        // await(ms) — используется внутри runTasks: this.runTasks( ()=>..., this.await(200), ()=>... )
+        await(ms) {
+          return { _awaitMs: ms };
+        }
+
+        // Callbacks — переопределяются ботами
         onLaserScan(info) {}
         onLaserDetection(info) {}
         onSound(info) {}
         onDamage() {}
         main() {}
 
-        // ─── Физика ───────────────────────────────────────────────────
+        // ══════════════════════════════════════════════════
+        // ДВИЖОК — внутренняя физика
+        // ══════════════════════════════════════════════════
         updatePhysicsAndLaser(dt, game) {
           if (!this.alive) return;
+
+          // Регенерация энергии
           this.energy = Math.min(100, this.energy + ENERGY_REGEN * dt);
           if (this.pturCD > 0) this.pturCD -= dt;
           if (this.smokeCD > 0) this.smokeCD -= dt;
@@ -954,6 +1074,11 @@
             d.update(dt);
             return d.alive();
           });
+          if (this._sayBubbles)
+            this._sayBubbles = this._sayBubbles.filter((b) => {
+              b.life -= dt;
+              return b.life > 0;
+            });
 
           // Задержанный дым
           if (this.smokePending) {
@@ -973,7 +1098,8 @@
                 Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
             else this.speed = this._desiredSpeed;
           }
-          // Желаемый угол корпуса (API)
+
+          // Желаемый угол корпуса (API) — не зависает: просто следует с ограниченной скоростью
           if (this._desiredAngle !== undefined) {
             const diff = normAngle(this._desiredAngle - this.angle);
             const step = TANK_TURN_SPEED * dt;
@@ -996,13 +1122,14 @@
               else if (canY) this.y = ny;
               else {
                 if (cfg.wallDmg && Math.abs(spd) >= 3)
-                  this.takeDamage((Math.abs(spd) - 2) * 15 * dt, game, null);
+                  this.takeHPDamage((Math.abs(spd) - 2) * 15 * dt, game, null);
                 this.speed = 0;
               }
             }
+            // Стоимость движения по энергии
             this.energy = Math.max(
               0,
-              this.energy - Math.abs(this.speed) * 4 * dt,
+              this.energy - Math.abs(this.speed) * ENERGY_SPEED_COST * dt,
             );
           }
           if (this.speed > 0)
@@ -1012,8 +1139,7 @@
           if (this.energy <= 0 && Math.abs(this.speed) > 0.01)
             this.speed *= Math.pow(0.25, dt);
 
-          // Звук двигателя (каждые 0.3 сек при скорости > 0.5)
-          if (!this._engineSoundTimer) this._engineSoundTimer = 0;
+          // Звук двигателя
           this._engineSoundTimer -= dt;
           if (this._engineSoundTimer <= 0 && Math.abs(this.speed) > 0.5) {
             this._engineSoundTimer = 0.3;
@@ -1031,8 +1157,19 @@
                 this.turretAngle + Math.sign(diff) * step,
               );
           }
+          // setGunDegreeAndFire: навести и выстрелить
+          if (this._gunAndFirePending) {
+            this.turretTargetAngle = this._gunAndFireTarget;
+            const diff = Math.abs(
+              normAngle(this.turretAngle - this._gunAndFireTarget),
+            );
+            if (diff < 0.05) {
+              this._gunAndFirePending = false;
+              this.shootPTUR(game);
+            }
+          }
 
-          // Непрерывный лазер (команда API или прямой флаг)
+          // Непрерывный лазер
           if (this._continuousLaserCmd !== undefined)
             this.laserContinuous = !!this._continuousLaserCmd;
           if (this.laserContinuous) {
@@ -1040,10 +1177,34 @@
             if (this.energy <= 0) this.laserContinuous = false;
             this.laserResult = game.castLaser(this, this.turretAngle);
             this.renderLaser = this.laserResult;
+            // Запоминаем конец луча для рендера (даже если нет попадания — рисуем до стены/края)
+            if (this.laserResult) {
+              this.renderLaserEndX = this.laserResult.hitX;
+              this.renderLaserEndY = this.laserResult.hitY;
+            } else {
+              this.renderLaserEndX = this.x + Math.cos(this.turretAngle) * 50;
+              this.renderLaserEndY = this.y + Math.sin(this.turretAngle) * 50;
+            }
             this.renderLaserLife = 0.08;
             this.renderLaserAngle = this.turretAngle;
+            // onLaserScan при непрерывном лазере — не чаще раза в 0.2с
+            if (!this._contScanTimer) this._contScanTimer = 0;
+            this._contScanTimer -= dt;
+            if (this._contScanTimer <= 0 && this.laserResult) {
+              this._contScanTimer = 0.2;
+              this._api_laser = this.laserResult
+                ? {
+                    target: this.laserResult.isEnemy ? "tank" : "non-tank",
+                    distance: this.laserResult.dist,
+                    isHostile: this.laserResult.isEnemy,
+                    inSmoke: this.laserResult.inSmoke,
+                  }
+                : null;
+              if (this._api_laser) this.onLaserScan(this._api_laser);
+            }
           } else {
             this.laserResult = null;
+            this._contScanTimer = 0;
             if (this.renderLaserLife > 0) {
               this.renderLaserLife -= dt;
               if (this.renderLaserLife <= 0) this.renderLaser = null;
@@ -1053,8 +1214,9 @@
 
         updateAI(dt, game) {
           if (!this.alive) return;
-          this._game = game; // движок сохраняет ссылку — бот API использует её прозрачно
-          // Заполняем API-события из данных движка
+          this._game = game;
+
+          // Звуки вокруг
           this._api_sounds = game.sounds
             .map((s) => {
               const d = dist({ x: this.x, y: this.y }, s);
@@ -1076,7 +1238,7 @@
             );
           else this._api_irradiatedAngle = null;
 
-          // Вызов колбэков (без game — бот использует this._game через API)
+          // Колбэки
           if (this.irradiated && this.irradiatedBy)
             this.onLaserDetection([
               { degree: (this._api_irradiatedAngle * 180) / Math.PI },
@@ -1087,37 +1249,10 @@
             this._api_damaged = false;
           }
 
-          // Обработка очереди задач runTasks
-          if (this._taskQueue && this._taskQueue.length > 0) {
-            const entry = this._taskQueue[0];
-            if (!entry.started) {
-              // Запомнить targetGun ДО выполнения, если задача зовёт setGunDegree
-              const gunBefore = this.turretTargetAngle;
-              entry.fn();
-              entry.started = true;
-              // Если башня получила новый целевой угол — ждём завершения поворота
-              if (this.turretTargetAngle !== gunBefore)
-                entry.targetGun = this.turretTargetAngle;
-              else entry.targetGun = null;
-            }
-            // Задача с поворотом башни: ждём пока физика довернёт башню
-            if (entry.targetGun !== null) {
-              const diff = Math.abs(
-                normAngle(this.turretAngle - entry.targetGun),
-              );
-              if (diff < 0.05) {
-                entry.targetGun = null;
-                this._taskQueue.shift();
-              }
-              // else — продолжаем ждать
-            } else {
-              // Мгновенная задача — сразу на следующую
-              this._taskQueue.shift();
-            }
-          }
+          // Очередь задач runTasks
+          this._processTaskQueue(dt);
 
-          // Вызываем main() каждые ~100мс (Robocode-стиль) — без аргументов
-          if (!this._mainTimer) this._mainTimer = 0;
+          // main() каждые 100мс
           this._mainTimer -= dt;
           if (this._mainTimer <= 0) {
             this._mainTimer = 0.1;
@@ -1125,6 +1260,41 @@
           }
 
           this.aiUpdate(dt, game);
+        }
+
+        _processTaskQueue(dt) {
+          if (!this._taskQueue || this._taskQueue.length === 0) return;
+          const entry = this._taskQueue[0];
+
+          if (entry.type === "await") {
+            entry.timer -= dt;
+            if (entry.timer <= 0) this._taskQueue.shift();
+            return;
+          }
+
+          // type === 'fn'
+          if (!entry.started) {
+            const gunBefore = this.turretTargetAngle;
+            const dirBefore = this._desiredAngle;
+            entry.fn();
+            entry.started = true;
+            // Если изменился целевой угол башни — ждём
+            entry.targetGun =
+              this.turretTargetAngle !== gunBefore
+                ? this.turretTargetAngle
+                : null;
+            entry.targetDir =
+              this._desiredAngle !== dirBefore ? this._desiredAngle : null;
+          }
+
+          const gunDone =
+            entry.targetGun === null ||
+            Math.abs(normAngle(this.turretAngle - entry.targetGun)) < 0.05;
+          const dirDone =
+            entry.targetDir === null ||
+            Math.abs(normAngle(this.angle - entry.targetDir)) < 0.05;
+
+          if (gunDone && dirDone) this._taskQueue.shift();
         }
 
         update(dt, game) {
@@ -1139,11 +1309,23 @@
           this.renderLaser = res;
           this.renderLaserAngle = this.turretAngle;
           this.renderLaserLife = 1.0;
+          if (res) {
+            this.renderLaserEndX = res.hitX;
+            this.renderLaserEndY = res.hitY;
+          } else {
+            this.renderLaserEndX = this.x + Math.cos(this.turretAngle) * 50;
+            this.renderLaserEndY = this.y + Math.sin(this.turretAngle) * 50;
+          }
+
           return res;
         }
 
         shootPTUR(game) {
-          if (this.pturCD > 0 || (this.activePTUR && this.activePTUR.alive))
+          if (
+            !game ||
+            this.pturCD > 0 ||
+            (this.activePTUR && this.activePTUR.alive)
+          )
             return false;
           this.pturCD = cfg.pturCD;
           const ptur = new PTUR(this, this.x, this.y, this.turretAngle);
@@ -1155,7 +1337,12 @@
         }
 
         throwSmoke(game) {
-          if (this.smokeCD > 0 || this.smokeCount <= 0 || this.smokePending)
+          if (
+            !game ||
+            this.smokeCD > 0 ||
+            this.smokeCount <= 0 ||
+            this.smokePending
+          )
             return false;
           this.smokeCD = cfg.smokeCD;
           this.smokeCount--;
@@ -1164,10 +1351,16 @@
           return true;
         }
 
-        takeDamage(amount, game, killer) {
-          this.energy = Math.max(0, this.energy - amount);
+        // Урон здоровью (от ПТУРов, стен, лазера)
+        takeHPDamage(amount, game, killer) {
+          this.hp = Math.max(0, this.hp - amount);
           this._api_damaged = true;
-          if (this.energy <= 0) this.destroy(game, killer);
+          if (this.hp <= 0) this.destroy(game, killer);
+        }
+
+        // Урон энергии (от непрерывного лазера — не убивает)
+        takeEnergyDamage(amount) {
+          this.energy = Math.max(0, this.energy - amount);
         }
 
         destroy(game, killer) {
@@ -1183,24 +1376,28 @@
         aiUpdate(dt, game) {}
       }
 
-      // ═══════════════════ БОТЫ (чистое Bot API — нет доступа к движку) ═══════════════════
-      // Движок передаёт id/x/y/angle в super() автоматически через spawnTanks.
-      // Бот видит только свои методы API. game нигде не фигурирует.
+      // ═══════════════════ БОТЫ ═══════════════════
+      // Движок назначает id/x/y/angle/color автоматически при спавне.
+      // Бот может задать только имя — через static botName или getName().
 
-      // Dummy — стоит, ничего не делает
       class Dummy extends Tank {
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#888888", "DUMMY-" + id);
+        constructor() {
+          super(...arguments);
+        }
+        static get botName() {
+          return "Dummy";
         }
       }
 
-      // Crazy — хаотично ездит, меняет направление каждые 0.5-2.5 сек
       class Crazy extends Tank {
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#ff8800", "CRAZY-" + id);
+        constructor() {
+          super(...arguments);
           this._thinkTimer = 0;
           this._turnCmd = 0;
           this._spdCmd = 3;
+        }
+        static get botName() {
+          return "Crazy";
         }
         main() {
           this._thinkTimer -= 0.1;
@@ -1210,20 +1407,21 @@
               Math.random() < 0.33 ? -1 : Math.random() < 0.5 ? 0 : 1;
             this._spdCmd = rnd(1, 5);
           }
-          const info = this.getCurrentInfo();
-          if (info.energy > 10) {
+          if (this.getCurrentInfo().energy > 10) {
             this.setDirection(this.getDirection() + this._turnCmd * 12);
             this.setSpeed(this._spdCmd);
           }
         }
       }
 
-      // Attacker — сканирует импульсами, при захвате — непрерывный лазер + ПТУР
       class Attacker extends Tank {
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#ff2244", "ATTKR-" + id);
+        constructor() {
+          super(...arguments);
           this._scanMode = true;
           this._lockTimer = 0;
+        }
+        static get botName() {
+          return "Attacker";
         }
         main() {
           if (this._scanMode) {
@@ -1233,11 +1431,11 @@
             this._lockTimer -= 0.1;
             const data = this.getLaserData();
             if (data && data.isHostile && !data.inSmoke) {
-              // this.enableContinuousLaser();
+              this.enableContinuousLaser();
               this.fire();
               this._lockTimer = 0.5;
             } else if (this._lockTimer <= 0) {
-              // this.disableContinuousLaser();
+              this.disableContinuousLaser();
               this._scanMode = true;
             }
           }
@@ -1251,12 +1449,14 @@
         }
       }
 
-      // Shy — стоит на месте, реагирует на облучение: наводит башню в ответ и стреляет
       class Shy extends Tank {
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#00aaff", "SHY-" + id);
+        constructor() {
+          super(...arguments);
           this._reactTimer = 0;
           this._reactDeg = null;
+        }
+        static get botName() {
+          return "Shy";
         }
         onLaserDetection(info) {
           this._reactDeg = info[0].degree;
@@ -1285,81 +1485,52 @@
         }
       }
 
-      // Coward — при облучении бросает дым и убегает в случайном направлении
       class Coward extends Tank {
-        enemyIsSeen = false;
-        mode = "scan";
-        timer = 20;
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#00aacc", "COWARD-" + id);
+        constructor() {
+          super(...arguments);
+          this._fleeing = false;
+          this._fleeTimer = 0;
         }
-
-        main() {
-          if (this.mode === "scan") {
-          }
-
-          if (this.mode === "flee" && this.timer > 0) {
-            this.setSpeed(5);
-            // this.setDirection(this.getCurrentInfo() + 5);
-            this.timer -= 1;
-          }
-
-          if (this.timer <= 0) {
-            this.mode = "scan";
-            this.stop();
-            this.timer = 20;
-          }
+        static get botName() {
+          return "Coward";
         }
-
-        onLaserScan(info) {}
-
         onLaserDetection(info) {
-          console.log("COWARD: LASER!");
           this.fireSmoke();
-          if (this.mode !== "flee") {
-            this.mode = "flee";
+          if (!this._fleeing) {
+            this.setDirection(this.getRandomDegree());
+            this._fleeing = true;
+            this._fleeTimer = rnd(2.5, 4.5);
+            this.log("ПАНИКА!");
+          } else {
+            this._fleeTimer = Math.max(this._fleeTimer, 1.5);
           }
-
-          // this.runTasks(
-          //   // () => this.fireSmoke(),
-          //   () => this.setGunDegree(info[0].degree),
-          //   () => this.fire(),
-          //   () => console.log("Вижу облучение лазером!", info),
-          //   // () => this.setDirection(this.getRandomDegree()),
-          //   // () => this.setSpeed(5),
-          //   () => this.setDirection(this.getRandomDegree()),
-          //   () => this.setSpeed(5),
-          //   () => {
-          //     this.isAttacked = false;
-          //   },
-          // );
         }
-
-        onSound(info) {
-          // this.setDirection(info[0].angle);
-          // this.setGunDirection(info[0].angle);
-          // if (info[0].soundType === "engine") {
-          //   this.fire();
-          // } else {
-          //   this.impulseScan();
-          //   if (this.laserData() && this.laserData().target === "tank") {
-          //     this.fire();
-          //   }
-          // }
+        main() {
+          if (this._fleeing) {
+            this._fleeTimer -= 0.1;
+            if (this._fleeTimer > 0) {
+              if (this.getCurrentInfo().energy > 10) this.setSpeed(5);
+            } else {
+              this._fleeing = false;
+              this.setSpeed(0);
+            }
+          }
         }
       }
 
-      // Curious — стоит на месте, едет к источнику звука
       class Curious extends Tank {
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#ffcc00", "CURIO-" + id);
+        constructor() {
+          super(...arguments);
           this._soundDeg = null;
           this._investTimer = 0;
+        }
+        static get botName() {
+          return "Curious";
         }
         onSound(info) {
           this._soundDeg = info[0].angle;
           this._investTimer = 5.0;
-          this.log("Слышу звук!");
+          this.log("Слышу!");
         }
         main() {
           if (this._investTimer > 0 && this._soundDeg !== null) {
@@ -1373,41 +1544,56 @@
         }
       }
 
-      // Scanner — бот-сканер, свободно путешествует, ищет врагов
-      // Написан в точности по образцу из документации — без технических параметров
+      // Scanner — пользовательский класс
       class Scanner extends Tank {
         enemyIsSeen = false;
+        heading = 0;
+        distance = 0;
         mode = "scan";
         timer = 20;
-        constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#00ffcc", "SCAN-" + id);
+        constructor() {
+          super(...arguments);
+        }
+        static get botName() {
+          return "Scanner";
         }
 
         main() {
           if (this.mode === "scan") {
             this.setGunDegree(this.gunDegree() + 5);
             this.impulseScan();
+            if (Math.random() > 0.95 && this.mode === "scan") {
+              this.say("Двигаюсь к следующей точке");
+              this.mode = "move";
+              this.timer = 50;
+            }
+          }
 
-            if (Math.random() > 0.1) {
-              this.setSpeed(5);
+          if (this.mode === "move") {
+            this.timer -= 1;
+            this.setGunDirection(this.heading);
+            if (this.timer % 15 === 0) {
+              this.impulseScan();
+            }
+            if (this.distance > 2) {
+              this.say("Путь свободен!");
+              this.setDirection(this.heading + Math.random());
+              this.setSpeed(3);
             } else {
               this.stop();
-            }
-            if (Math.random() > 0.09) {
-              this.setDirection(this.getRandomDegree());
+              this.say("Впереди препятсивие, меняю курс!");
+              this.heading += 10;
             }
           }
 
           if (this.mode === "flee" && this.timer > 0) {
             this.setSpeed(5);
-            // this.setDirection(this.getCurrentInfo() + 5);
             this.timer -= 1;
           }
 
           if (this.mode === "search") {
             this.timer -= 1;
             this.impulseScan();
-
             if (!this.enemyIsSeen) {
               if (this.timer > 10) {
                 this.setGunDirection(this.gunDegree() - 1);
@@ -1419,6 +1605,8 @@
           }
 
           if (this.timer <= 0) {
+            this.disableConstantLaser();
+            this.say("Перехожу в режим сканирования");
             this.mode = "scan";
             this.stop();
             this.timer = 20;
@@ -1426,53 +1614,32 @@
         }
 
         onLaserScan(info) {
+          this.distance = info.distance;
+          console.log(this.distance);
           if (info.target === "tank" && info.isHostile) {
+            this.say("Обнаружен противник");
+            this.enableContinuousLaser();
             this.enemyIsSeen = true;
             this.mode = "search";
-            this.timer = 20;
+            this.timer = 40;
             this.fire();
           }
-
           if (info.target === "non-tank") {
-            if (info.distance < 5) {
-              // this.setDirection(this.getDirection() + 20);
-              // this.setDirection(this.getDirection() + 90);
+            if (this.enemyIsSeen) {
+              this.say("Противник потерян");
             }
+            this.enemyIsSeen = false;
           }
         }
 
         onLaserDetection(info) {
+          this.say("Обнаружено облучение лазером!");
+          this.setGunDegreeAndFire(info[0].degree);
           this.fireSmoke();
           if (this.mode !== "flee") {
             this.mode = "flee";
+            this.enableConstntLaser();
           }
-
-          // this.runTasks(
-          //   // () => this.fireSmoke(),
-          //   () => this.setGunDegree(info[0].degree),
-          //   () => this.fire(),
-          //   () => console.log("Вижу облучение лазером!", info),
-          //   // () => this.setDirection(this.getRandomDegree()),
-          //   // () => this.setSpeed(5),
-          //   () => this.setDirection(this.getRandomDegree()),
-          //   () => this.setSpeed(5),
-          //   () => {
-          //     this.isAttacked = false;
-          //   },
-          // );
-        }
-
-        onSound(info) {
-          // this.setDirection(info[0].angle);
-          // this.setGunDirection(info[0].angle);
-          // if (info[0].soundType === "engine") {
-          //   this.fire();
-          // } else {
-          //   this.impulseScan();
-          //   if (this.laserData() && this.laserData().target === "tank") {
-          //     this.fire();
-          //   }
-          // }
         }
       }
 
@@ -1484,7 +1651,7 @@
           this.mouseX = 0;
           this.mouseY = 0;
           this.mouseDown = false;
-          this.gear = 0; // 0=стоп, 1-5 вперёд, -1 назад
+          this.gear = 0;
         }
         isPlayer() {
           return true;
@@ -1492,15 +1659,12 @@
 
         updatePhysicsAndLaser(dt, game) {
           super.updatePhysicsAndLaser(dt, game);
-          // Управление по передачам
           const k = this.keys;
           if (k["KeyA"] || k["ArrowLeft"]) this.angle -= TANK_TURN_SPEED * dt;
           if (k["KeyD"] || k["ArrowRight"]) this.angle += TANK_TURN_SPEED * dt;
           if (k["KeyQ"]) this.turretTargetAngle -= TURRET_TURN_SPEED * dt;
           if (k["KeyE"]) this.turretTargetAngle += TURRET_TURN_SPEED * dt;
-          if (k["KeyR"]) {
-            this.gear = 0;
-          }
+          if (k["KeyR"]) this.gear = 0;
           if (k["KeyF"]) {
             this.throwSmoke(game);
             k["KeyF"] = false;
@@ -1520,13 +1684,22 @@
                 Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
           }
 
-          // Лазер в первом проходе — боты узнают об облучении до своего AI
+          // Лазер игрока в первом проходе
           this.laserContinuous = this.mouseDown && this.energy > 0;
           if (this.laserContinuous) {
+            this.energy = Math.max(0, this.energy - LASER_DRAIN_CONT * dt);
             const res = game.castLaser(this, this.turretAngle);
             this.laserResult = res;
             this.renderLaser = res;
             this.renderLaserLife = 0.08;
+            if (res) {
+              this.renderLaserEndX = res.hitX;
+              this.renderLaserEndY = res.hitY;
+            } else {
+              this.renderLaserEndX = this.x + Math.cos(this.turretAngle) * 50;
+              this.renderLaserEndY = this.y + Math.sin(this.turretAngle) * 50;
+            }
+
             if (res)
               this.dots.push(
                 new LaserDot(res.hitX, res.hitY, res.isEnemy, res.inSmoke),
@@ -1539,7 +1712,8 @@
 
         destroy(game, killer) {
           if (cfg.immortal) {
-            this.energy = Math.max(5, this.energy);
+            this.hp = Math.max(5, this.hp);
+            this.energy = Math.max(10, this.energy);
             game.log("Бессмертие!", "warn");
             return;
           }
@@ -1599,11 +1773,43 @@
         }
 
         spawnTanks(config) {
-          const botClasses = [Scanner, Scanner, Scanner, Scanner, Scanner];
+          const botClasses = [
+            Dummy,
+            Attacker,
+            Crazy,
+            Attacker,
+            Shy,
+            Coward,
+            Curious,
+            Scanner,
+            Crazy,
+          ];
           let id = 0;
+          const usedColors = new Set();
           for (const BC of botClasses) {
             const pos = this.freeCell();
-            this.tanks.push(new BC(id++, pos.x, pos.y, rnd(0, Math.PI * 2)));
+            // Выбираем случайный цвет (уникальный если возможно)
+            let color = BOT_COLORS[id % BOT_COLORS.length];
+            for (let c of BOT_COLORS) {
+              if (!usedColors.has(c)) {
+                color = c;
+                break;
+              }
+            }
+            usedColors.add(color);
+            // Имя бота = botName + '-' + id
+            const name = (BC.botName || BC.name) + "-" + id;
+            // Вызываем конструктор БЕЗ аргументов с точки зрения класса бота
+            // Движок передаёт технические параметры через аргументы конструктора Tank
+            const bot = new BC(
+              id++,
+              pos.x,
+              pos.y,
+              rnd(0, Math.PI * 2),
+              color,
+              name,
+            );
+            this.tanks.push(bot);
           }
           if (config.hasPlayer) {
             const pos = this.freeCell();
@@ -1703,6 +1909,7 @@
             for (const tank of this.tanks) {
               if (tank === fromTank || !tank.alive) continue;
               if (dist({ x: rx, y: ry }, { x: tank.x, y: tank.y }) < 0.4) {
+                // Облучение только если нет стены между лучом и танком (уже в луче)
                 tank.irradiated = true;
                 tank.irradiatedBy = fromTank;
                 return {
@@ -1734,12 +1941,14 @@
             e.update(dt);
             return e.alive();
           });
+          // Сброс irradiated перед проходом
           for (const t of this.tanks) {
             t.irradiated = false;
             t.irradiatedBy = null;
-            t.renderLaser = null;
           }
+          // Проход 1: физика + лазеры (irradiated устанавливается)
           for (const t of this.tanks) t.updatePhysicsAndLaser(dt, this);
+          // Проход 2: AI (видит irradiated, вызывает колбэки)
           for (const t of this.tanks) t.updateAI(dt, this);
         }
 
@@ -1764,18 +1973,25 @@
               const ds = document.getElementById("deathScreen");
               if (!ds) return;
               const title = document.getElementById("deathTitle");
+              const hasPlayer = !!this.player;
               if (this.winner && this.winner.isPlayer()) {
                 title.textContent = "ПОБЕДА!";
                 title.style.color = "#00ff88";
                 document.getElementById("deathMsg").textContent =
                   "Все враги уничтожены.";
               } else if (this.winner) {
-                title.textContent = "ПОРАЖЕНИЕ";
-                title.style.color = "#ff2244";
+                if (!hasPlayer) {
+                  title.textContent = "ПОБЕДИТЕЛЬ";
+                  title.style.color = "#ffaa00";
+                } else {
+                  title.textContent = "ПОРАЖЕНИЕ";
+                  title.style.color = "#ff2244";
+                }
                 document.getElementById("deathMsg").textContent =
                   "Победитель: " + this.winner.label;
               } else {
                 title.textContent = "НИЧЬЯ";
+                title.style.color = "#888";
                 document.getElementById("deathMsg").textContent = "";
               }
               ds.style.display = "flex";
@@ -1831,7 +2047,7 @@
                 }
           }
 
-          // Лазерные метки (подсветка стен)
+          // Лазерные метки
           if (g.player)
             for (const dot of g.player.dots) {
               const alpha = Math.min(1, dot.life / dot.maxLife);
@@ -1869,27 +2085,6 @@
               ctx.beginPath();
               ctx.arc(sx, sy, sr, 0, Math.PI * 2);
               ctx.fill();
-              ctx.save();
-              ctx.globalAlpha = lf * 0.6;
-              ctx.strokeStyle = "rgba(160,168,175,0.9)";
-              ctx.lineWidth = 1.5;
-              ctx.setLineDash([4, 3]);
-              ctx.beginPath();
-              ctx.arc(sx, sy, sr * 0.92, 0, Math.PI * 2);
-              ctx.stroke();
-              ctx.setLineDash([]);
-              ctx.restore();
-              if (lf > 0.3) {
-                ctx.save();
-                ctx.globalAlpha = lf * 0.7;
-                ctx.fillStyle = "#aabbcc";
-                ctx.font = `bold ${Math.round(sr * 0.35)}px Share Tech Mono`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText("ДЫМ", sx, sy);
-                ctx.textAlign = "left";
-                ctx.restore();
-              }
             } else {
               const alpha = lf * 0.45,
                 gr = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
@@ -1905,7 +2100,7 @@
           // Взрывы
           for (const exp of g.explosions) {
             const t = exp.life / exp.maxLife,
-              ballR = (1 - t) * CELL * 1.4 + CELL * 0.3;
+              ballR = (1 - t) * C * 1.4 + C * 0.3;
             const gr = ctx.createRadialGradient(
               exp.x,
               exp.y,
@@ -1958,19 +2153,6 @@
               ctx.lineTo(2, 1.5);
               ctx.closePath();
               ctx.fill();
-              ctx.fillStyle = "#889aaa";
-              ctx.beginPath();
-              ctx.moveTo(-5, 0);
-              ctx.lineTo(-3, -3);
-              ctx.lineTo(-2, -1);
-              ctx.closePath();
-              ctx.fill();
-              ctx.beginPath();
-              ctx.moveTo(-5, 0);
-              ctx.lineTo(-3, 3);
-              ctx.lineTo(-2, 1);
-              ctx.closePath();
-              ctx.fill();
               const fl = 3 + Math.random() * 3,
                 fg = ctx.createLinearGradient(-5, 0, -5 - fl, 0);
               fg.addColorStop(0, "rgba(255,200,50,0.9)");
@@ -1990,12 +2172,24 @@
             const showBot = cfg.visMode === "all" && !tank.isPlayer(),
               showPlayer = tank.isPlayer() && tank.laserContinuous;
             if (!showBot && !showPlayer) continue;
-            const res = tank.renderLaser;
-            if (!res) continue;
             const isCont = tank.laserContinuous,
               life = isCont ? 1 : tank.renderLaserLife || 0,
               alpha = isCont ? 0.55 : life * 0.7;
             if (alpha < 0.01) continue;
+            // Конец луча: из сохранённых координат или из renderLaser
+            const res = tank.renderLaser;
+            const ex =
+              tank.renderLaserEndX !== undefined
+                ? tank.renderLaserEndX
+                : res
+                  ? res.hitX
+                  : tank.x + Math.cos(tank.turretAngle) * 50;
+            const ey =
+              tank.renderLaserEndY !== undefined
+                ? tank.renderLaserEndY
+                : res
+                  ? res.hitY
+                  : tank.y + Math.sin(tank.turretAngle) * 50;
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = tank.isPlayer() ? "#00ff88" : tank.color;
@@ -2004,7 +2198,7 @@
             ctx.lineCap = "round";
             ctx.beginPath();
             ctx.moveTo(tank.x * C, tank.y * C);
-            ctx.lineTo(res.hitX * C, res.hitY * C);
+            ctx.lineTo(ex * C, ey * C);
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.restore();
@@ -2055,71 +2249,166 @@
               ctx.fillStyle = tank.isPlayer() ? "#00ff88" : "#ffaa00";
               ctx.font = "7px Share Tech Mono";
               ctx.fillText(tank.label, px - 15, py - sz * 0.55);
+              // HP бар (красный) над танком
               const bw = sz * 1.2;
               ctx.fillStyle = "#0a1a0a";
               ctx.fillRect(px - bw / 2, py + sz * 0.5, bw, 3);
-              ctx.fillStyle = tank.energy > 30 ? "#ffaa00" : "#ff2244";
+              ctx.fillStyle =
+                tank.hp > 50 ? "#cc2222" : tank.hp > 20 ? "#ff6622" : "#ff0000";
+              ctx.fillRect(px - bw / 2, py + sz * 0.5, (bw * tank.hp) / 100, 3);
+              // Energy бар (жёлтый) под HP
+              ctx.fillStyle = "#0a1a0a";
+              ctx.fillRect(px - bw / 2, py + sz * 0.5 + 4, bw, 2);
+              ctx.fillStyle = "#ffaa00";
               ctx.fillRect(
                 px - bw / 2,
-                py + sz * 0.5,
+                py + sz * 0.5 + 4,
                 (bw * tank.energy) / 100,
-                3,
+                2,
               );
+            }
+            // Речевые облачки say()
+            if (tank._sayBubbles && tank._sayBubbles.length > 0) {
+              const bubble = tank._sayBubbles[tank._sayBubbles.length - 1];
+              const alpha = Math.min(1, bubble.life / 0.4); // fade out last 0.4s
+              const text = bubble.text;
+              ctx.save();
+              ctx.font = "bold 8px Share Tech Mono";
+              const tw = ctx.measureText(text).width;
+              const bpad = 4,
+                bw2 = tw + bpad * 2,
+                bh = 13;
+              const bx = px - bw2 / 2,
+                by = py - sz * 0.55 - bh - 6;
+              ctx.globalAlpha = alpha;
+              // Фон облачка
+              ctx.fillStyle = "rgba(240,240,220,0.95)";
+              ctx.beginPath();
+              ctx.roundRect
+                ? ctx.roundRect(bx, by, bw2, bh, 3)
+                : ctx.rect(bx, by, bw2, bh);
+              ctx.fill();
+              // Хвостик
+              ctx.beginPath();
+              ctx.moveTo(px - 4, by + bh);
+              ctx.lineTo(px + 4, by + bh);
+              ctx.lineTo(px, by + bh + 5);
+              ctx.closePath();
+              ctx.fill();
+              // Обводка
+              ctx.strokeStyle = "rgba(80,80,60,0.6)";
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+              // Текст
+              ctx.fillStyle = "#1a1a00";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(text, px, by + bh / 2);
+              ctx.textAlign = "left";
+              ctx.textBaseline = "alphabetic";
+              ctx.restore();
             }
           }
         }
       }
 
-      // ═══════════════════ УВЕДОМЛЕНИЕ ОБ УБИЙСТВЕ ═══════════════════
-      let killNotifyTimer = 0;
-      function showKillNotify(name) {
-        document.getElementById("killName").textContent = name;
-        document.getElementById("killNotify").style.display = "block";
-        killNotifyTimer = 3.0;
-      }
-      function tickKillNotify(dt) {
-        if (killNotifyTimer > 0) {
-          killNotifyTimer -= dt;
-          if (killNotifyTimer <= 0)
-            document.getElementById("killNotify").style.display = "none";
-        }
-      }
-
-      // ═══════════════════ ГЛАВНЫЙ ЦИКЛ ═══════════════════
-      let gameInstance = null,
-        renderer = null,
-        lastTime = 0,
-        animId = null;
-      function gameLoop(ts) {
-        const dt = Math.min((ts - lastTime) / 1000, 0.05);
-        lastTime = ts;
-        gameInstance.update(dt);
-        renderer.draw();
-        updateHUD();
-        tickKillNotify(dt);
-        animId = requestAnimationFrame(gameLoop);
-      }
-
       // ═══════════════════ HUD ═══════════════════
       function updateHUD() {
-        const g = gameInstance,
-          p = g.player;
+        const g = gameInstance;
+
+        // Список участников — всегда (даже без игрока)
+        const el = document.getElementById("enemyList");
+        el.innerHTML = "";
+        const sorted = [...g.tanks].sort((a, b) =>
+          a.alive === b.alive ? 0 : a.alive ? -1 : 1,
+        );
+        for (const t of sorted) {
+          const wrap = document.createElement("div");
+          wrap.style.cssText = `margin-bottom:5px;padding:4px;border:1px solid ${t.alive ? "#1a3a1a" : "#1a1a1a"};opacity:${t.alive ? "1" : "0.4"}`;
+          const nr = document.createElement("div");
+          nr.style.cssText =
+            "display:flex;align-items:center;gap:5px;margin-bottom:2px";
+          const dot = document.createElement("span");
+          dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${t.alive ? t.color : "#333"}`;
+          nr.appendChild(dot);
+          const name = document.createElement("span");
+          name.style.cssText = `font-size:0.8em;color:${t.isPlayer() ? "#00ff88" : t.alive ? t.color : "#444"};flex:1;overflow:hidden;white-space:nowrap`;
+          name.textContent = t.label;
+          nr.appendChild(name);
+          const st = document.createElement("span");
+          st.style.cssText = `font-size:0.7em;color:${t.alive ? "#446644" : "#662222"}`;
+          st.innerHTML = t.alive ? "&#9679;" : "&#10005;";
+          nr.appendChild(st);
+          wrap.appendChild(nr);
+          if (t.alive) {
+            // HP бар
+            const hpRow = document.createElement("div");
+            hpRow.style.cssText =
+              "display:flex;align-items:center;gap:3px;margin-top:1px";
+            const hpLbl = document.createElement("span");
+            hpLbl.style.cssText =
+              "font-size:0.65em;color:#884444;min-width:20px";
+            hpLbl.textContent = "HP";
+            const hpBar = document.createElement("div");
+            hpBar.style.cssText =
+              "flex:1;height:4px;background:#0d1a0d;border:1px solid #1a1a1a";
+            const hpFill = document.createElement("div");
+            hpFill.style.cssText = `height:100%;width:${t.hp}%;background:${t.hp > 50 ? "#cc2222" : t.hp > 20 ? "#ff6622" : "#ff0000"};transition:width 0.15s`;
+            hpBar.appendChild(hpFill);
+            hpRow.appendChild(hpLbl);
+            hpRow.appendChild(hpBar);
+            wrap.appendChild(hpRow);
+            // Energy бар
+            const enRow = document.createElement("div");
+            enRow.style.cssText =
+              "display:flex;align-items:center;gap:3px;margin-top:1px";
+            const enLbl = document.createElement("span");
+            enLbl.style.cssText =
+              "font-size:0.65em;color:#886600;min-width:20px";
+            enLbl.textContent = "Е";
+            const enBar = document.createElement("div");
+            enBar.style.cssText =
+              "flex:1;height:3px;background:#0d1a0d;border:1px solid #1a1a1a";
+            const enFill = document.createElement("div");
+            enFill.style.cssText = `height:100%;width:${t.energy}%;background:#ffaa00;transition:width 0.15s`;
+            enBar.appendChild(enFill);
+            enRow.appendChild(enLbl);
+            enRow.appendChild(enBar);
+            wrap.appendChild(enRow);
+          }
+          el.appendChild(wrap);
+        }
+
+        // Статус игрока
+        const p = g.player;
+        document.getElementById("playerHud").style.display = p
+          ? "block"
+          : "none";
         if (!p) return;
+
+        document.getElementById("hudHP").textContent = Math.round(p.hp);
+        document.getElementById("barHP").style.width = p.hp + "%";
+        document.getElementById("barHP").style.background =
+          p.hp > 50 ? "#cc2222" : p.hp > 20 ? "#ff6622" : "#ff0000";
+
         document.getElementById("hudEnergy").textContent =
           Math.round(p.energy) + "%";
         document.getElementById("barEnergy").style.width = p.energy + "%";
         document.getElementById("barEnergy").style.background =
-          p.energy > 30 ? "#ffaa00" : "#ff2244";
+          p.energy > 30 ? "#ffaa00" : "#ff6600";
+
         const pp = p.pturCD > 0 ? (1 - p.pturCD / cfg.pturCD) * 100 : 100;
         document.getElementById("hudPtur").textContent =
           p.pturCD > 0 ? p.pturCD.toFixed(1) + "с" : "ГОТОВ";
         document.getElementById("barPtur").style.width = pp + "%";
+
         const sp2 = p.smokeCD > 0 ? (1 - p.smokeCD / cfg.smokeCD) * 100 : 100;
         document.getElementById("hudSmoke").textContent =
           p.smokeCD > 0
             ? p.smokeCD.toFixed(1) + "с"
-            : "ГОТОВ (" + p.smokeCount + ")";
+            : "ГОТОВ(" + p.smokeCount + ")";
         document.getElementById("barSmoke").style.width = sp2 + "%";
+
         document.getElementById("hudSpeed").textContent = Math.abs(
           p.speed,
         ).toFixed(1);
@@ -2129,75 +2418,32 @@
         const gearEl = document.getElementById("hudGear");
         if (p.gear !== 0) {
           gearEl.style.display = "inline-block";
-          gearEl.textContent =
+          gearEl.innerHTML =
             (p.gear > 0 ? "&#9658;" : "&#9668;") + Math.abs(p.gear);
         } else gearEl.style.display = "none";
+
         drawSPO(p);
         document.getElementById("hudLaser").textContent = p.laserContinuous
           ? "НЕПРЕРЫВНЫЙ"
-          : p.laserResult
+          : p.renderLaserLife > 0
             ? "ИМПУЛЬС"
             : "ОТКЛ";
         if (p.laserResult) {
           document.getElementById("hudDist").textContent =
-            p.laserResult.dist.toFixed(1);
+            p.laserResult.dist.toFixed(1) + "м";
           document.getElementById("hudTarget").textContent = p.laserResult
             .inSmoke
             ? "ДЫМ"
             : p.laserResult.isEnemy
-              ? "&#9888; ТАНК"
+              ? "⚠ ТАНК"
               : "стена";
         } else {
-          document.getElementById("hudDist").textContent = "&#8212;";
-          document.getElementById("hudTarget").textContent = "&#8212;";
+          document.getElementById("hudDist").textContent = "";
+          document.getElementById("hudTarget").textContent = "—";
         }
         document.getElementById("spolAlert").style.display = p.irradiated
           ? "block"
           : "none";
-
-        const el = document.getElementById("enemyList");
-        el.innerHTML = "";
-        const sorted = [...g.tanks].sort((a, b) =>
-          a.alive === b.alive ? 0 : a.alive ? -1 : 1,
-        );
-        for (const t of sorted) {
-          const wrap = document.createElement("div");
-          wrap.style.cssText = `margin-bottom:5px;padding:4px;border:1px solid ${t.alive ? "#1a3a1a" : "#1a1a1a"};opacity:${t.alive ? "1" : "0.45"}`;
-          const nr = document.createElement("div");
-          nr.style.cssText =
-            "display:flex;align-items:center;gap:5px;margin-bottom:2px";
-          const dot = document.createElement("span");
-          dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${t.alive ? t.color : "#333"};${t.alive && t.irradiated ? "box-shadow:0 0 4px #ffff00" : ""}`;
-          nr.appendChild(dot);
-          const name = document.createElement("span");
-          name.style.cssText = `font-size:0.8em;color:${t.isPlayer() ? "#00ff88" : t.alive ? t.color : "#444"};flex:1;overflow:hidden;white-space:nowrap`;
-          name.textContent = t.label;
-          nr.appendChild(name);
-          const st = document.createElement("span");
-          st.style.cssText = `font-size:0.7em;color:${t.alive ? "#446644" : "#662222"}`;
-          st.textContent = t.alive ? "&#9679;" : "&#10005; УНИЧТ";
-          nr.appendChild(st);
-          wrap.appendChild(nr);
-          if (t.alive) {
-            const bb = document.createElement("div");
-            bb.style.cssText =
-              "height:3px;background:#0d1a0d;border:1px solid #0d2a0d;margin-top:1px";
-            const bf = document.createElement("div");
-            bf.style.cssText = `height:100%;width:${t.energy}%;background:${t.energy > 50 ? "#ffaa00" : t.energy > 20 ? "#ff7700" : "#ff2244"};transition:width 0.2s`;
-            bb.appendChild(bf);
-            wrap.appendChild(bb);
-            if (t.laserContinuous || t.irradiated) {
-              const s2 = document.createElement("div");
-              s2.style.cssText =
-                "font-size:0.68em;color:#884400;margin-top:1px";
-              s2.textContent = t.irradiated
-                ? "&#9888; облучают"
-                : "&#8857; лазер";
-              wrap.appendChild(s2);
-            }
-          }
-          el.appendChild(wrap);
-        }
       }
 
       // ═══════════════════ АУДИО ═══════════════════
@@ -2343,18 +2589,12 @@
           ctx.beginPath();
           ctx.arc(cx + dx, cy + dy, 8, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = "rgba(255,100,50,0.5)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(cx + dx, cy + dy);
-          ctx.stroke();
           ctx.strokeStyle = "rgba(255,50,50,0.4)";
           ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.arc(cx, cy, R * 0.8, rel - 0.25, rel + 0.25);
           ctx.stroke();
-          if (sp) sp.textContent = "&#9888; ОБЛУЧЕНИЕ";
+          if (sp) sp.textContent = "⚠ ОБЛУЧЕНИЕ";
           if (sd) sd.textContent = Math.round((angle * 180) / Math.PI) + "°";
           if (!spoLastIrradiated) startSpoBeep();
           spoLastIrradiated = true;
@@ -2366,18 +2606,139 @@
         }
       }
 
-      // ═══════════════════ ЗАПУСК ═══════════════════
-      document.getElementById("startBtn").onclick = startGame;
+      // ═══════════════════ УВЕДОМЛЕНИЕ ОБ УБИЙСТВЕ ═══════════════════
+      let killNotifyTimer = 0;
+      function showKillNotify(name) {
+        document.getElementById("killName").textContent = name;
+        document.getElementById("killNotify").style.display = "block";
+        killNotifyTimer = 3.0;
+      }
+      function tickKillNotify(dt) {
+        if (killNotifyTimer > 0) {
+          killNotifyTimer -= dt;
+          if (killNotifyTimer <= 0)
+            document.getElementById("killNotify").style.display = "none";
+        }
+      }
+
+      // ═══════════════════ СКОРОСТЬ ВРЕМЕНИ ═══════════════════
+      let timeScale = 1.0;
+      let paused = false;
+      function setTimeScale(v) {
+        timeScale = Math.max(0.1, Math.min(10, Math.round(v * 10) / 10));
+        document.getElementById("timeScale").textContent =
+          "×" + timeScale.toFixed(1);
+      }
+      document.getElementById("btnSlower").onclick = () =>
+        setTimeScale(timeScale - 0.1);
+      document.getElementById("btnFaster").onclick = () =>
+        setTimeScale(timeScale + 0.1);
+      document.getElementById("btnPause").onclick = () => {
+        paused = !paused;
+        document.getElementById("btnPause").textContent = paused ? "▶" : "⏸";
+      };
+
+      // ═══════════════════ ГЛАВНЫЙ ЦИКЛ ═══════════════════
+      let gameInstance = null,
+        renderer = null,
+        lastTime = 0,
+        animId = null;
+      function gameLoop(ts) {
+        let dt = Math.min((ts - lastTime) / 1000, 0.05);
+        lastTime = ts;
+        if (!paused) gameInstance.update(dt * timeScale);
+        renderer.draw();
+        updateHUD();
+        tickKillNotify(dt);
+        animId = requestAnimationFrame(gameLoop);
+      }
+
+      // ═══════════════════ СОХРАНЕНИЕ НАСТРОЕК ═══════════════════
+      const SAVE_KEY = "ltw_cfg_v2";
+      function saveSettings() {
+        const ids = [
+          "cfgPlayer",
+          "cfgImmortal",
+          "cfgWallDmg",
+          "cfgMapSize",
+          "cfgObstacles",
+          "cfgPturCD",
+          "cfgPturSpeed",
+          "cfgPturDmg",
+          "cfgSmokeCD",
+          "cfgWallDotLife",
+          "cfgLaserDmg",
+        ];
+        const data = {};
+        for (const id of ids) {
+          const el = document.getElementById(id);
+          if (!el) continue;
+          data[id] = el.type === "checkbox" ? el.checked : el.value;
+        }
+        const activeVis = document.querySelector(".vis-btn.active");
+        if (activeVis) data["visMode"] = activeVis.dataset.mode;
+        try {
+          localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        } catch (e) {}
+      }
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(SAVE_KEY);
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          for (const [id, val] of Object.entries(data)) {
+            if (id === "visMode") {
+              document.querySelectorAll(".vis-btn").forEach((b) => {
+                b.classList.toggle("active", b.dataset.mode === val);
+              });
+              continue;
+            }
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (el.type === "checkbox") el.checked = !!val;
+            else el.value = val;
+          }
+        } catch (e) {}
+      }
+      loadSettings();
+
+      // Автосохранение при любом изменении настроек
+      (function () {
+        const ids = [
+          "cfgPlayer",
+          "cfgImmortal",
+          "cfgWallDmg",
+          "cfgMapSize",
+          "cfgObstacles",
+          "cfgPturCD",
+          "cfgPturSpeed",
+          "cfgPturDmg",
+          "cfgSmokeCD",
+          "cfgWallDotLife",
+          "cfgLaserDmg",
+        ];
+        for (const id of ids) {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener("change", saveSettings);
+        }
+      })();
+
+      // ═══════════════════ МЕНЮ vis-btn ═══════════════════
       document.querySelectorAll(".vis-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           document
             .querySelectorAll(".vis-btn")
             .forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
+          saveSettings();
         });
       });
 
+      // ═══════════════════ ЗАПУСК ═══════════════════
+      document.getElementById("startBtn").onclick = startGame;
+
       function startGame() {
+        saveSettings();
         const visMode =
           document.querySelector(".vis-btn.active")?.dataset.mode ||
           "reflections";
@@ -2393,17 +2754,23 @@
           ),
           pturCD: parseInt(document.getElementById("cfgPturCD").value),
           pturSpeed: parseInt(document.getElementById("cfgPturSpeed").value),
+          pturDmg: parseFloat(document.getElementById("cfgPturDmg").value),
           smokeCD: parseInt(document.getElementById("cfgSmokeCD").value),
           wallDotLife: parseFloat(
             document.getElementById("cfgWallDotLife").value,
           ),
-          pturDmg: parseFloat(document.getElementById("cfgPturDmg").value),
+          laserDmg: parseFloat(document.getElementById("cfgLaserDmg").value),
         };
+
         document.getElementById("menu").style.display = "none";
         document.getElementById("gameContainer").style.display = "flex";
         document.getElementById("deathScreen").style.display = "none";
         document.getElementById("killNotify").style.display = "none";
+        setTimeScale(1.0);
+        paused = false;
+        document.getElementById("btnPause").textContent = "⏸";
         ensureAudio();
+
         document
           .querySelectorAll(".vis-btn-hud")
           .forEach((b) =>
@@ -2426,67 +2793,105 @@
         const wrap = document.getElementById("canvasWrap");
         const scale = Math.min(
           wrap.clientWidth / canvas.width,
-          wrap.clientHeight / canvas.height,
+          (wrap.clientHeight - 40) / canvas.height,
           1.5,
         );
         canvas.style.width = canvas.width * scale + "px";
         canvas.style.height = canvas.height * scale + "px";
 
+        // Убираем старые слушатели через AbortController
+        if (window._gameAC) window._gameAC.abort();
+        window._gameAC = new AbortController();
+        const sig = { signal: window._gameAC.signal };
+
         if (gameInstance.player) {
           const p = gameInstance.player;
-          window.addEventListener("keydown", (e) => {
-            if ((e.code === "KeyW" || e.code === "ArrowUp") && !p.keys[e.code])
-              p.gear = Math.min(5, p.gear + 1);
-            if (
-              (e.code === "KeyS" || e.code === "ArrowDown") &&
-              !p.keys[e.code]
-            ) {
-              if (p.gear > 0) p.gear = Math.max(0, p.gear - 1);
-              else p.gear = -1;
-            }
-            if (e.code === "KeyR") p.gear = 0;
-            p.keys[e.code] = true;
-            if (e.code === "KeyF") e.preventDefault();
-          });
-          window.addEventListener("keyup", (e) => {
-            p.keys[e.code] = false;
-          });
-          canvas.addEventListener("mousemove", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            p.mouseX =
-              ((e.clientX - rect.left) * (canvas.width / rect.width)) / CELL;
-            p.mouseY =
-              ((e.clientY - rect.top) * (canvas.height / rect.height)) / CELL;
-            p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
-          });
-          let mdt = 0;
-          canvas.addEventListener("mousedown", (e) => {
-            if (e.button === 0) {
-              p.mouseDown = true;
-              mdt = performance.now();
-            }
-            if (e.button === 2) {
-              if (p.shootPTUR(gameInstance))
-                gameInstance.log("ПТУР запущен!", "warn");
-            }
-            e.preventDefault();
-          });
-          canvas.addEventListener("mouseup", (e) => {
-            if (e.button === 0) {
-              p.mouseDown = false;
-              if (performance.now() - mdt < 180) {
-                const res = p.shootLaserPulse(gameInstance);
-                if (res)
-                  p.dots.push(
-                    new LaserDot(res.hitX, res.hitY, res.isEnemy, res.inSmoke),
-                  );
+          window.addEventListener(
+            "keydown",
+            (e) => {
+              if (
+                (e.code === "KeyW" || e.code === "ArrowUp") &&
+                !p.keys[e.code]
+              )
+                p.gear = Math.min(5, p.gear + 1);
+              if (
+                (e.code === "KeyS" || e.code === "ArrowDown") &&
+                !p.keys[e.code]
+              ) {
+                if (p.gear > 0) p.gear = Math.max(0, p.gear - 1);
+                else p.gear = -1;
               }
-              p.laserContinuous = false;
-              p.laserResult = null;
-            }
-          });
-          canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+              if (e.code === "KeyR") p.gear = 0;
+              p.keys[e.code] = true;
+              if (e.code === "KeyF") e.preventDefault();
+            },
+            sig,
+          );
+          window.addEventListener(
+            "keyup",
+            (e) => {
+              p.keys[e.code] = false;
+            },
+            sig,
+          );
+          canvas.addEventListener(
+            "mousemove",
+            (e) => {
+              const rect = canvas.getBoundingClientRect();
+              p.mouseX =
+                ((e.clientX - rect.left) * (canvas.width / rect.width)) / CELL;
+              p.mouseY =
+                ((e.clientY - rect.top) * (canvas.height / rect.height)) / CELL;
+              p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
+            },
+            sig,
+          );
+          let mdt = 0;
+          canvas.addEventListener(
+            "mousedown",
+            (e) => {
+              if (e.button === 0) {
+                p.mouseDown = true;
+                mdt = performance.now();
+              }
+              if (e.button === 2) {
+                if (p.shootPTUR(gameInstance))
+                  gameInstance.log("ПТУР!", "warn");
+              }
+              e.preventDefault();
+            },
+            sig,
+          );
+          canvas.addEventListener(
+            "mouseup",
+            (e) => {
+              if (e.button === 0) {
+                p.mouseDown = false;
+                if (performance.now() - mdt < 180) {
+                  const res = p.shootLaserPulse(gameInstance);
+                  if (res)
+                    p.dots.push(
+                      new LaserDot(
+                        res.hitX,
+                        res.hitY,
+                        res.isEnemy,
+                        res.inSmoke,
+                      ),
+                    );
+                }
+                p.laserContinuous = false;
+                p.laserResult = null;
+              }
+            },
+            sig,
+          );
+          canvas.addEventListener(
+            "contextmenu",
+            (e) => e.preventDefault(),
+            sig,
+          );
         }
+
         if (animId) cancelAnimationFrame(animId);
         lastTime = performance.now();
         animId = requestAnimationFrame(gameLoop);
@@ -2494,6 +2899,10 @@
 
       function backToMenu() {
         if (animId) cancelAnimationFrame(animId);
+        if (window._gameAC) {
+          window._gameAC.abort();
+          window._gameAC = null;
+        }
         stopSpoBeep();
         spoLastIrradiated = false;
         document.getElementById("gameContainer").style.display = "none";
