@@ -637,7 +637,7 @@
       const SMOKE_DURATION = 8;
       const SMOKE_DEPLOY_DELAY = 2.0;
       const TANK_RADIUS = 0.32;
-      const SOUND_RANGE = 30;
+      const SOUND_RANGE = 10;
       const PROX_FUSE_RANGE = 0.7;
 
       // Цвета для ботов (случайно назначаются при спавне)
@@ -1546,6 +1546,8 @@
 
       // Scanner — пользовательский класс
       class Scanner extends Tank {
+        soundSource = 0;
+        soundDist = 0;
         enemyIsSeen = false;
         heading = 0;
         distance = 0;
@@ -1576,7 +1578,7 @@
             if (this.distance > 5) {
               this.say("Путь свободен!");
               this.setDirection(this.heading);
-              this.setSpeed(5);
+              this.setSpeed(3);
             } else {
               this.stop();
               this.say("Впереди препятствие, меняю курс!");
@@ -1590,14 +1592,19 @@
           }
 
           if (this.mode === "search") {
+            if (!this.getCurrentInfo().pturReady) {
+              this.mode = "flee";
+            }
             this.timer -= 1;
             this.impulseScan();
+            this.setDirection(this.soundSource);
+            if (this.soundDist > 3) this.setSpeed(2);
             if (!this.enemyIsSeen) {
               if (this.timer > 10) {
-                this.setGunDirection(this.gunDegree() - 1);
+                this.setGunDirection(this.soundSource - 1);
               }
               if (this.timer < 10) {
-                this.setGunDirection(this.gunDegree() + 1);
+                this.setGunDirection(this.soundSource + 1);
               }
             }
           }
@@ -1633,9 +1640,20 @@
           this.say("Обнаружено облучение лазером!");
           this.setGunDegreeAndFire(info[0].degree);
           this.fireSmoke();
+          this.disableConstantLaser();
           if (this.mode !== "flee") {
             this.mode = "flee";
             this.enableConstntLaser();
+          }
+        }
+
+        onSound(info) {
+          if (info[0].dist > 0) {
+            this.soundSource = info[0].angle;
+            this.soundDist = info[0].soundDist;
+            this.say("Слышу противника");
+            this.mode = "search";
+            this.timer = 20;
           }
         }
       }
@@ -1773,6 +1791,11 @@
           const botClasses = [
             Dummy,
             Attacker,
+            Crazy,
+            Crazy,
+            Crazy,
+            Crazy,
+            Crazy,
             Crazy,
             Shy,
             Coward,
