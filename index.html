@@ -626,9 +626,9 @@
       const CELL = 16;
       const MAX_SPEED = 5;
       const LASER_DRAIN_CONT = 10; // энергия/сек при непрерывном лазере
-      const LASER_DRAIN_PULSE = 0.1; // энергия за импульс
-      const ENERGY_REGEN = 1.5; // энергия/сек регенерация
-      const ENERGY_SPEED_COST = 3; // энергия/сек за каждую единицу скорости
+      const LASER_DRAIN_PULSE = 0; // импульс-скан бесплатный (сенсор)
+      const ENERGY_REGEN = 8.0; // энергия/сек регенерация
+      const ENERGY_SPEED_COST = 1; // энергия/сек за каждую единицу скорости
       const TANK_TURN_SPEED = 2.0;
       const TURRET_TURN_SPEED = 3.0; // для игрока
       const BOT_TURRET_SPEED = 1.8;
@@ -1565,23 +1565,20 @@
             if (Math.random() > 0.95 && this.mode === "scan") {
               this.say("Двигаюсь к следующей точке");
               this.mode = "move";
-              this.timer = 50;
+              this.timer = 200;
             }
           }
 
           if (this.mode === "move") {
             this.timer -= 1;
             this.setGunDirection(this.heading);
-            if (this.timer % 15 === 0) {
-              this.impulseScan();
-            }
-            if (this.distance > 2) {
+            if (this.distance > 5) {
               this.say("Путь свободен!");
-              this.setDirection(this.heading + Math.random());
-              this.setSpeed(3);
+              this.setDirection(this.heading);
+              this.setSpeed(5);
             } else {
               this.stop();
-              this.say("Впереди препятсивие, меняю курс!");
+              this.say("Впереди препятствие, меняю курс!");
               this.heading += 10;
             }
           }
@@ -1615,7 +1612,6 @@
 
         onLaserScan(info) {
           this.distance = info.distance;
-          console.log(this.distance);
           if (info.target === "tank" && info.isHostile) {
             this.say("Обнаружен противник");
             this.enableContinuousLaser();
@@ -1774,15 +1770,14 @@
 
         spawnTanks(config) {
           const botClasses = [
-            Dummy,
-            Attacker,
-            Crazy,
-            Attacker,
-            Shy,
-            Coward,
-            Curious,
+            //Dummy,
+            //Attacker,
+            //Crazy,
+            //Attacker,
+            //Shy,
+            //Coward,
+            //Curious,
             Scanner,
-            Crazy,
           ];
           let id = 0;
           const usedColors = new Set();
@@ -2169,37 +2164,43 @@
           // Лазерные лучи
           for (const tank of g.tanks) {
             if (!tank.alive) continue;
-            const showBot = cfg.visMode === "all" && !tank.isPlayer(),
-              showPlayer = tank.isPlayer() && tank.laserContinuous;
-            if (!showBot && !showPlayer) continue;
-            const isCont = tank.laserContinuous,
-              life = isCont ? 1 : tank.renderLaserLife || 0,
-              alpha = isCont ? 0.55 : life * 0.7;
+            const isCont = tank.laserContinuous;
+            const hasTrace = isCont || tank.renderLaserLife > 0;
+            const visible = tank.isPlayer()
+              ? hasTrace
+              : cfg.visMode === "all" && hasTrace;
+            if (!visible) continue;
+            const life = isCont ? 1 : tank.renderLaserLife || 0;
+            const alpha = isCont ? 0.75 : life * 0.8;
             if (alpha < 0.01) continue;
-            // Конец луча: из сохранённых координат или из renderLaser
-            const res = tank.renderLaser;
+            // Конец луча — из сохранённых координат (обновляются каждый тик пока активен)
             const ex =
               tank.renderLaserEndX !== undefined
                 ? tank.renderLaserEndX
-                : res
-                  ? res.hitX
-                  : tank.x + Math.cos(tank.turretAngle) * 50;
+                : tank.x + Math.cos(tank.turretAngle) * 50;
             const ey =
               tank.renderLaserEndY !== undefined
                 ? tank.renderLaserEndY
-                : res
-                  ? res.hitY
-                  : tank.y + Math.sin(tank.turretAngle) * 50;
+                : tank.y + Math.sin(tank.turretAngle) * 50;
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = tank.isPlayer() ? "#00ff88" : tank.color;
-            ctx.lineWidth = isCont ? 1.5 : 1;
-            ctx.setLineDash(isCont ? [4, 4] : [1, 5]);
+            ctx.lineWidth = isCont ? 2 : 1;
+            ctx.setLineDash(isCont ? [5, 3] : [1, 6]);
             ctx.lineCap = "round";
             ctx.beginPath();
             ctx.moveTo(tank.x * C, tank.y * C);
             ctx.lineTo(ex * C, ey * C);
             ctx.stroke();
+            // Точка попадания
+            if (isCont && tank.laserResult) {
+              ctx.setLineDash([]);
+              ctx.fillStyle = tank.isPlayer() ? "#00ff88" : tank.color;
+              ctx.globalAlpha = 0.9;
+              ctx.beginPath();
+              ctx.arc(ex * C, ey * C, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
             ctx.setLineDash([]);
             ctx.restore();
           }
