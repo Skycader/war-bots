@@ -60,12 +60,14 @@ class Scanner extends Tank {
 
   onLaserDetection(info) {
     //метод вызывается если танк облучают лазером
-    this.fireSmoke();
-    this.setGunDegree(info.degree); //угол с которого меня облучают
-    this.fire(); // выстрел ПТУРом
-    this.setDirection(this.getRandomDegree()); //устанавливает случайно направление движения
-    //this.getRandomDegree() //метод наследуется от класса родителя и возвращает случайный угол (от 0 до 359.99)
-    this.setSpeed(5); //Устанавливает максимальную скорость движения
+    this.runTasks(
+      this.fireSmoke(),
+      this.setGunDegree(info.degree), //угол с которого меня облучают
+      this.fire(), // выстрел ПТУРом
+      this.setDirection(this.getRandomDegree()), //устанавливает случайно направление движения
+      //this.getRandomDegree() //метод наследуется от класса родителя и возвращает случайный угол (от 0 до 359.99)
+      this.setSpeed(5), //Устанавливает максимальную скорость движения
+    );
   }
 
   onSound(info) {
