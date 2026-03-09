@@ -5,13 +5,11 @@
     <title>LASER TANK WARFARE</title>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap");
-
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-
       :root {
         --green: #00ff88;
         --red: #ff2244;
@@ -21,7 +19,6 @@
         --panel: #0d150d;
         --border: #1a2e1a;
       }
-
       body {
         background: var(--bg);
         color: var(--green);
@@ -31,7 +28,6 @@
         display: flex;
         flex-direction: column;
       }
-
       #menu {
         display: flex;
         flex-direction: column;
@@ -41,25 +37,19 @@
         gap: 20px;
         background: radial-gradient(ellipse at center, #0a1f0a 0%, #000 100%);
       }
-
       #menu h1 {
         font-family: "Orbitron", sans-serif;
         font-size: 3em;
         font-weight: 900;
         color: var(--green);
-        text-shadow:
-          0 0 30px var(--green),
-          0 0 60px rgba(0, 255, 136, 0.3);
+        text-shadow: 0 0 30px var(--green);
         letter-spacing: 8px;
         animation: pulse 2s infinite;
       }
-
       @keyframes pulse {
         0%,
         100% {
-          text-shadow:
-            0 0 30px var(--green),
-            0 0 60px rgba(0, 255, 136, 0.3);
+          text-shadow: 0 0 30px var(--green);
         }
         50% {
           text-shadow:
@@ -67,7 +57,6 @@
             0 0 100px rgba(0, 255, 136, 0.5);
         }
       }
-
       #menu h2 {
         font-family: "Orbitron", sans-serif;
         font-size: 1em;
@@ -75,7 +64,6 @@
         letter-spacing: 4px;
         margin-bottom: 10px;
       }
-
       .settings-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -83,22 +71,19 @@
         background: rgba(0, 255, 136, 0.03);
         border: 1px solid var(--border);
         padding: 20px 30px;
-        max-width: 600px;
+        max-width: 640px;
         width: 100%;
       }
-
       .setting-row {
         display: flex;
         align-items: center;
         gap: 10px;
         font-size: 0.85em;
       }
-
       .setting-row label {
         color: #88bbaa;
         white-space: nowrap;
       }
-
       .setting-row select,
       .setting-row input[type="checkbox"] {
         background: #0a1a0a;
@@ -109,13 +94,11 @@
         font-size: 0.9em;
         cursor: pointer;
       }
-
       .setting-row input[type="checkbox"] {
         width: 16px;
         height: 16px;
         accent-color: var(--green);
       }
-
       #startBtn {
         font-family: "Orbitron", sans-serif;
         font-size: 1.2em;
@@ -133,7 +116,6 @@
         background: #fff;
         box-shadow: 0 0 30px var(--green);
       }
-
       .vis-btn {
         font-family: "Share Tech Mono", monospace;
         font-size: 0.8em;
@@ -156,7 +138,6 @@
       .vis-btn:hover:not(.active) {
         color: var(--green);
       }
-
       .vis-btn-hud {
         font-family: "Share Tech Mono", monospace;
         font-size: 0.7em;
@@ -180,21 +161,18 @@
         color: var(--green);
         border-color: var(--green);
       }
-
       #spoCanvas {
         border-radius: 50%;
         border: 1px solid #1a3a1a;
         background: #050e05;
         display: block;
       }
-
       #gameContainer {
         display: none;
         flex-direction: row;
         height: 100vh;
         overflow: hidden;
       }
-
       #canvasWrap {
         flex: 1;
         display: flex;
@@ -204,29 +182,49 @@
         background: #050805;
         position: relative;
       }
-
       #gameCanvas {
         image-rendering: pixelated;
         cursor: crosshair;
       }
-
+      #killNotify {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 34, 68, 0.92);
+        color: #fff;
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.85em;
+        letter-spacing: 2px;
+        padding: 8px 22px;
+        border: 1px solid #ff2244;
+        display: none;
+        z-index: 200;
+        pointer-events: none;
+        white-space: nowrap;
+      }
       #hud {
         width: 220px;
         background: var(--panel);
         border-left: 1px solid var(--border);
-        padding: 12px;
+        padding: 8px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        overflow-y: auto;
+        gap: 6px;
+        overflow: hidden;
         font-size: 0.8em;
       }
-
       .hud-section {
         border: 1px solid var(--border);
         padding: 8px;
+        flex-shrink: 0;
       }
-
+      .hud-section.scrollable {
+        overflow-y: auto;
+        flex-shrink: 1;
+        min-height: 50px;
+        max-height: 130px;
+      }
       .hud-title {
         font-family: "Orbitron", sans-serif;
         font-size: 0.7em;
@@ -236,7 +234,6 @@
         border-bottom: 1px solid var(--border);
         padding-bottom: 4px;
       }
-
       .bar-wrap {
         display: flex;
         flex-direction: column;
@@ -261,16 +258,12 @@
       .bar-fill.energy {
         background: var(--amber);
       }
-      .bar-fill.health {
-        background: var(--green);
-      }
       .bar-fill.ptur {
         background: var(--blue);
       }
       .bar-fill.smoke {
         background: #aaa;
       }
-
       .status-item {
         color: #88aa88;
         margin-bottom: 2px;
@@ -278,7 +271,16 @@
       .status-item span {
         color: var(--green);
       }
-
+      .gear-display {
+        display: inline-block;
+        background: #00ff88;
+        color: #000;
+        font-weight: bold;
+        padding: 0 5px;
+        font-size: 0.9em;
+        margin-left: 4px;
+        border-radius: 2px;
+      }
       .alert {
         color: var(--red);
         font-weight: bold;
@@ -293,7 +295,6 @@
           opacity: 0.3;
         }
       }
-
       .log-entry {
         color: #668866;
         font-size: 0.8em;
@@ -306,13 +307,11 @@
       .log-entry.warn {
         color: var(--amber);
       }
-
       #controls {
         font-size: 0.75em;
         color: #446644;
-        line-height: 1.6;
+        line-height: 1.7;
       }
-
       #deathScreen {
         display: none;
         position: absolute;
@@ -354,7 +353,7 @@
   </head>
   <body>
     <div id="menu">
-      <h1>⊕ LASER TANKS ⊕</h1>
+      <h1>&#8853; LASER TANKS &#8853;</h1>
       <h2>АТОМНЫЙ ПРОТОКОЛ</h2>
       <div class="settings-grid">
         <div class="setting-row">
@@ -371,17 +370,18 @@
           <label>Игрок видит</label>
           <div id="visMode" style="display: flex">
             <button class="vis-btn active" data-mode="reflections">
-              Отражения</button
-            ><button class="vis-btn" data-mode="map">Карту</button
-            ><button class="vis-btn" data-mode="all">Всё</button>
+              Отражения
+            </button>
+            <button class="vis-btn" data-mode="map">Карту</button>
+            <button class="vis-btn" data-mode="all">Всё</button>
           </div>
         </div>
         <div class="setting-row">
           <label>Размер карты:</label>
           <select id="cfgMapSize">
-            <option value="30">30×30</option>
-            <option value="40" selected>40×40</option>
-            <option value="50">50×50</option>
+            <option value="30">30x30</option>
+            <option value="40" selected>40x40</option>
+            <option value="50">50x50</option>
           </select>
         </div>
         <div class="setting-row">
@@ -407,7 +407,7 @@
             <option value="6">6 м/с</option>
             <option value="10" selected>10 м/с</option>
             <option value="15">15 м/с</option>
-            <option value="20">20 м/с (хардкор)</option>
+            <option value="20">20 м/с</option>
           </select>
         </div>
         <div class="setting-row">
@@ -418,21 +418,39 @@
             <option value="15">15 сек</option>
           </select>
         </div>
+        <div class="setting-row">
+          <label>Подсветка стен:</label>
+          <select id="cfgWallDotLife">
+            <option value="1">1 сек</option>
+            <option value="3">3 сек</option>
+            <option value="5" selected>5 сек</option>
+            <option value="10">10 сек</option>
+            <option value="99999">Постоянно</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>Урон ПТУР:</label>
+          <select id="cfgPturDmg">
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="100" selected>100%</option>
+          </select>
+        </div>
       </div>
-      <button id="startBtn">▶ НАЧАТЬ БОЙ</button>
+      <button id="startBtn">&#9654; НАЧАТЬ БОЙ</button>
     </div>
 
     <div id="gameContainer">
       <div id="canvasWrap">
         <canvas id="gameCanvas"></canvas>
+        <div id="killNotify">ВЫ УНИЧТОЖИЛИ: <span id="killName"></span></div>
         <div id="deathScreen">
-          <h2>УНИЧТОЖЕН</h2>
+          <h2 id="deathTitle">УНИЧТОЖЕН</h2>
           <p id="deathMsg"></p>
           <button onclick="backToMenu()">В МЕНЮ</button>
         </div>
       </div>
       <div id="hud">
-        <!-- СПО + переключатель видимости -->
         <div class="hud-section" style="padding: 8px">
           <div
             style="
@@ -442,24 +460,17 @@
               margin-bottom: 6px;
             "
           >
-            <!-- СПО индикатор -->
-            <div style="position: relative; flex-shrink: 0">
-              <canvas
-                id="spoCanvas"
-                width="64"
-                height="64"
-                title="СПО — направление облучения"
-              ></canvas>
-            </div>
+            <canvas id="spoCanvas" width="64" height="64" title="СПО"></canvas>
             <div style="flex: 1">
-              <div class="hud-title" style="margin-bottom: 4px">▸ СПО</div>
+              <div class="hud-title" style="margin-bottom: 4px">
+                &#9658; СПО
+              </div>
               <div id="spoStatus" style="font-size: 0.75em; color: #446644">
                 нет облучения
               </div>
               <div id="spoDir" style="font-size: 0.75em; color: #88aa88"></div>
             </div>
           </div>
-          <!-- Переключатель видимости в игре -->
           <div
             style="
               display: flex;
@@ -473,15 +484,16 @@
             >
             <div style="display: flex">
               <button class="vis-btn-hud active" data-mode="reflections">
-                Отражения</button
-              ><button class="vis-btn-hud" data-mode="map">Карту</button
-              ><button class="vis-btn-hud" data-mode="all">Всё</button>
+                Отражения
+              </button>
+              <button class="vis-btn-hud" data-mode="map">Карту</button>
+              <button class="vis-btn-hud" data-mode="all">Всё</button>
             </div>
           </div>
         </div>
 
         <div class="hud-section">
-          <div class="hud-title">▸ СТАТУС ТАНКА</div>
+          <div class="hud-title">&#9658; СТАТУС ТАНКА</div>
           <div class="bar-wrap">
             <div class="bar-label">
               <span>ЭНЕРГИЯ</span><span id="hudEnergy">100%</span>
@@ -496,7 +508,7 @@
           </div>
           <div class="bar-wrap">
             <div class="bar-label">
-              <span>ПТУР</span><span id="hudPtur">READY</span>
+              <span>ПТУР</span><span id="hudPtur">ГОТОВ</span>
             </div>
             <div class="bar">
               <div class="bar-fill ptur" id="barPtur" style="width: 100%"></div>
@@ -504,7 +516,7 @@
           </div>
           <div class="bar-wrap">
             <div class="bar-label">
-              <span>ДЫМ</span><span id="hudSmoke">READY</span>
+              <span>ДЫМ</span><span id="hudSmoke">ГОТОВ</span>
             </div>
             <div class="bar">
               <div
@@ -516,73 +528,74 @@
           </div>
           <div class="status-item">
             Скорость: <span id="hudSpeed">0</span> м/с
+            <span id="hudGear" class="gear-display" style="display: none"
+              >P0</span
+            >
           </div>
           <div class="status-item">Угол: <span id="hudAngle">0</span>°</div>
           <div id="spolAlert" class="alert" style="display: none">
-            ⚠ ОБЛУЧЕНИЕ!
+            &#9888; ОБЛУЧЕНИЕ!
           </div>
         </div>
 
         <div class="hud-section">
-          <div class="hud-title">▸ ЛАЗЕР</div>
+          <div class="hud-title">&#9658; ЛАЗЕР</div>
           <div class="status-item">Режим: <span id="hudLaser">ОТКЛ</span></div>
           <div class="status-item">
-            Дистанция: <span id="hudDist">—</span> м
+            Дистанция: <span id="hudDist">&#8212;</span> м
           </div>
-          <div class="status-item">Цель: <span id="hudTarget">—</span></div>
+          <div class="status-item">
+            Цель: <span id="hudTarget">&#8212;</span>
+          </div>
         </div>
 
         <div class="hud-section">
-          <div class="hud-title">▸ УПРАВЛЕНИЕ</div>
+          <div class="hud-title">&#9658; УПРАВЛЕНИЕ</div>
           <div id="controls">
-            W/S — газ/тормоз<br />
-            A/D — поворот<br />
-            Q/E — поворот башни<br />
-            ЛКМ — лазер (удерж.)<br />
-            ПКМ — ПТУР<br />
-            F — дымовая граната<br />
-            R — сброс скорости
+            W(нажим)&#8594;+1 передача<br />
+            S(нажим)&#8594;-1 / назад<br />
+            A/D &#8212; поворот<br />
+            Q/E &#8212; башня<br />
+            R &#8212; стоп<br />
+            ЛКМ &#8212; лазер<br />
+            ПКМ &#8212; ПТУР<br />
+            F &#8212; дым (задерж. 2с)
           </div>
         </div>
 
-        <div class="hud-section">
-          <div class="hud-title">▸ ЖУРНАЛ</div>
+        <div class="hud-section scrollable">
+          <div class="hud-title">&#9658; ЖУРНАЛ</div>
           <div id="logBox"></div>
         </div>
 
-        <div class="hud-section">
-          <div class="hud-title">▸ УЧАСТНИКИ</div>
+        <div class="hud-section scrollable">
+          <div class="hud-title">&#9658; УЧАСТНИКИ</div>
           <div id="enemyList"></div>
         </div>
       </div>
     </div>
 
     <script>
-      // ════════════════════════════════════════
-      // КОНСТАНТЫ
-      // ════════════════════════════════════════
-      const CELL = 16; // пикселей на клетку
-      const MAX_SPEED = 5; // м/с
-      const PTUR_SPEED = 20; // м/с
-      const LASER_DRAIN_CONT = 10; // % заряда на 1 сек непрерывного лазера
-      const LASER_DRAIN_PULSE = 1; // % заряда на импульс
-      const ENERGY_REGEN = 1.5; // % в сек (медленное восстановление — баланс)
-      const TANK_TURN_SPEED = 2.0; // рад/сек
-      const TURRET_TURN_SPEED = 3.0; // рад/сек — башня игрока (клавиши Q/E)
-      const BOT_TURRET_SPEED = 1.8; // рад/сек — башня ботов (реалистичный поворот)
+      // ═══════════════════ КОНСТАНТЫ ═══════════════════
+      const CELL = 16;
+      const MAX_SPEED = 5;
+      const LASER_DRAIN_CONT = 0.1;
+      const LASER_DRAIN_PULSE = 0.1;
+      const ENERGY_REGEN = 1;
+      const TANK_TURN_SPEED = 2.0;
+      const TURRET_TURN_SPEED = 3.0;
+      const BOT_TURRET_SPEED = 1.8;
       const ACCEL = 3;
       const FRICTION = 2;
-      const SMOKE_DURATION = 8; // сек
-      const DOT_LIFETIME = 5; // сек лазерных меток
-      const TANK_RADIUS = 0.32; // радиус коллизии танка в клетках
-      const SOUND_RANGE = 30; // клеток — радиус слышимости звуков (выстрел/взрыв)
+      const SMOKE_DURATION = 8;
+      const SMOKE_DEPLOY_DELAY = 2.0;
+      const TANK_RADIUS = 0.32;
+      const SOUND_RANGE = 30;
+      const PROX_FUSE_RANGE = 0.7;
 
       let cfg = {};
-      let game = null;
 
-      // ════════════════════════════════════════
-      // УТИЛИТЫ
-      // ════════════════════════════════════════
+      // ═══════════════════ УТИЛИТЫ ═══════════════════
       function normAngle(a) {
         while (a > Math.PI) a -= Math.PI * 2;
         while (a < -Math.PI) a += Math.PI * 2;
@@ -598,14 +611,12 @@
         return Math.floor(rnd(a, b + 1));
       }
 
-      // ════════════════════════════════════════
-      // ДЫМОВОЕ ОБЛАКО
-      // ════════════════════════════════════════
+      // ═══════════════════ СМОК ═══════════════════
       class SmokeCloud {
         constructor(x, y) {
           this.x = x;
           this.y = y;
-          this.radius = 1.5; // в клетках
+          this.radius = 1.5;
           this.life = SMOKE_DURATION;
           this.maxLife = SMOKE_DURATION;
         }
@@ -620,16 +631,15 @@
         }
       }
 
-      // ════════════════════════════════════════
-      // ЛАЗЕРНАЯ МЕТКА
-      // ════════════════════════════════════════
+      // ═══════════════════ ЛАЗЕРНАЯ МЕТКА ═══════════════════
       class LaserDot {
         constructor(x, y, isEnemy, inSmoke) {
           this.x = x;
           this.y = y;
           this.isEnemy = isEnemy;
           this.inSmoke = inSmoke;
-          this.life = DOT_LIFETIME;
+          this.life = cfg.wallDotLife || 5;
+          this.maxLife = this.life;
         }
         update(dt) {
           this.life -= dt;
@@ -639,9 +649,7 @@
         }
       }
 
-      // ════════════════════════════════════════
-      // ВЗРЫВ
-      // ════════════════════════════════════════
+      // ═══════════════════ ВЗРЫВ ═══════════════════
       class Explosion {
         constructor(x, y) {
           this.x = x;
@@ -650,13 +658,13 @@
           this.maxLife = 0.55;
           this.particles = [];
           for (let i = 0; i < 14; i++) {
-            const angle = rnd(0, Math.PI * 2);
-            const speed = rnd(0.8, 3.5);
+            const a = rnd(0, Math.PI * 2),
+              sp = rnd(0.8, 3.5);
             this.particles.push({
-              x: x,
-              y: y,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
+              x,
+              y,
+              vx: Math.cos(a) * sp,
+              vy: Math.sin(a) * sp,
               r: rnd(1.5, 4),
               life: rnd(0.2, 0.55),
               maxLife: 0.55,
@@ -679,169 +687,316 @@
         }
       }
 
+      // ═══════════════════ ПТУР ═══════════════════
       class PTUR {
-        constructor(owner, x, y, angle, targetAngle) {
+        constructor(owner, x, y, angle) {
           this.owner = owner;
           this.x = x;
           this.y = y;
-          this.angle = angle; // текущий угол полёта
-          this.guideAngle = targetAngle; // направление луча наведения
+          this.angle = angle;
+          this.guideAngle = angle;
+          this.canGuide = true;
           this.speed = cfg.pturSpeed || 10;
           this.alive = true;
           this.trail = [];
+          this.prevDist = null;
         }
+
+        static blastDamage(d) {
+          const max = cfg.pturDmg || 100;
+          if (d <= 0.1) return max;
+          if (d <= 0.5) return max * 0.5;
+          if (d <= 1.0) return max * 0.1;
+          return 0;
+        }
+
+        explode(game) {
+          game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
+          game.emitSound(this.x, this.y, "explosion");
+          playExplosion();
+          for (const tank of game.tanks) {
+            if (tank === this.owner || !tank.alive) continue;
+            const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
+            const dmg = PTUR.blastDamage(d);
+            if (dmg > 0) tank.takeDamage(dmg, game, this.owner);
+          }
+          this.alive = false;
+        }
+
         update(dt, game) {
-          // Sub-step движение чтобы не пролетать сквозь стены
           const totalDist = this.speed * dt;
           const steps = Math.max(1, Math.ceil(totalDist / 0.3));
           const stepDist = totalDist / steps;
           for (let s = 0; s < steps; s++) {
+            if (this.canGuide) this.angle = this.guideAngle;
             this.x += Math.cos(this.angle) * stepDist;
             this.y += Math.sin(this.angle) * stepDist;
-            this.trail.push({ x: this.x, y: this.y, age: 0 });
+            this.trail.push({ x: this.x, y: this.y });
             if (this.trail.length > 20) this.trail.shift();
 
-            // Проверка столкновения со стеной (с небольшим радиусом)
-            const r = 0.15;
-            const checks = [
-              [this.x, this.y],
-              [this.x + r, this.y],
-              [this.x - r, this.y],
-              [this.x, this.y + r],
-              [this.x, this.y - r],
-            ];
-            let wallHit = false;
-            for (const [cx, cy] of checks) {
-              const gx = Math.floor(cx),
-                gy = Math.floor(cy);
-              if (
-                gx < 0 ||
-                gy < 0 ||
-                gx >= game.mapW ||
-                gy >= game.mapH ||
-                game.map[gy][gx] === 1
-              ) {
-                wallHit = true;
-                break;
-              }
-            }
-            if (wallHit) {
-              game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
-              game.emitSound(this.x, this.y, "explosion");
-              playExplosion();
-              this.alive = false;
+            // Ракета видит лазерный луч?
+            if (this.owner.laserContinuous || this.owner.renderLaserLife > 0)
+              this.canGuide = !game.segmentHitsWall(
+                this.x,
+                this.y,
+                this.owner.x,
+                this.owner.y,
+              );
+            else this.canGuide = false;
+
+            // Стена
+            const cx = Math.floor(this.x),
+              cy = Math.floor(this.y);
+            if (
+              cx < 0 ||
+              cy < 0 ||
+              cx >= game.mapW ||
+              cy >= game.mapH ||
+              game.map[cy][cx] === 1
+            ) {
+              this.explode(game);
               return;
             }
 
-            // Проверка попадания в танк
+            // Радиовзрыватель
+            let minD = 9999;
             for (const tank of game.tanks) {
               if (tank === this.owner || !tank.alive) continue;
-              if (
-                dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y }) < 0.45
-              ) {
-                game.explosions.push(
-                  new Explosion(tank.x * CELL, tank.y * CELL),
-                );
-                game.emitSound(tank.x, tank.y, "explosion");
-                playExplosion();
-                tank.destroy(game, this.owner);
-                this.alive = false;
-                return;
-              }
+              const d = dist(
+                { x: this.x, y: this.y },
+                { x: tank.x, y: tank.y },
+              );
+              if (d < minD) minD = d;
             }
+            if (minD < 0.45) {
+              this.explode(game);
+              return;
+            }
+            if (
+              minD < PROX_FUSE_RANGE &&
+              this.prevDist !== null &&
+              this.prevDist < minD
+            ) {
+              this.explode(game);
+              return;
+            }
+            this.prevDist = minD < PROX_FUSE_RANGE ? minD : null;
           }
-          this.trail.forEach((t) => (t.age += dt));
+          this.trail.forEach((t) => (t.age = (t.age || 0) + dt));
         }
-        // Обновить угол наведения (лазерный луч)
+
         guide(angle) {
-          this.angle = angle;
           this.guideAngle = angle;
         }
       }
 
-      // ════════════════════════════════════════
-      // ТАНК - базовый класс
-      // ════════════════════════════════════════
+      // ═══════════════════ БАЗОВЫЙ КЛАСС ТАНКА ═══════════════════
       class Tank {
         constructor(id, x, y, angle, color, label) {
           this.id = id;
           this.x = x;
           this.y = y;
           this.angle = angle;
-          this.turretAngle = angle; // текущий физический угол башни
-          this.turretTargetAngle = angle; // куда башня хочет повернуться
+          this.turretAngle = angle;
+          this.turretTargetAngle = angle;
           this.speed = 0;
           this.energy = 100;
           this.alive = true;
           this.color = color;
           this.label = label;
-
           this.pturCD = 0;
           this.smokeCD = 0;
           this.smokeCount = 3;
-
-          this.laserActive = false;
+          this.smokePending = false;
+          this.smokePendingTimer = 0;
           this.laserContinuous = false;
-          this.laserResult = null; // { dist, isEnemy, inSmoke } — актуален только в тик когда лазер стрелял
-          this.renderLaser = null; // копия для рендера — живёт 1 кадр, не зависит от continuous
-
-          this.irradiated = false; // СПО — облучают ли нас
-          this.irradiatedBy = null;
-
-          this.activePTUR = null; // текущий летящий ПТУР
-
-          this.dots = []; // лазерные метки (для игрока)
-          this.renderLaser = null; // последний результат для рендера
+          this.laserResult = null;
+          this.renderLaser = null;
           this.renderLaserLife = 0;
           this.renderLaserAngle = 0;
+          this.irradiated = false;
+          this.irradiatedBy = null;
+          this.activePTUR = null;
+          this.dots = [];
+          // Внутренние API-события (заполняются движком)
+          this._api_sounds = [];
+          this._api_laser = null;
+          this._api_irradiatedAngle = null;
+          this._api_damaged = false;
         }
 
         isPlayer() {
           return false;
         }
 
-        // ПРОХОД 1: физика, кулдауны, движение, непрерывный лазер
+        // ─── Bot API — сенсоры и действия ───────────────────────────────
+        // Движение
+        setSpeed(v) {
+          this._desiredSpeed = Math.max(-2, Math.min(5, v));
+        }
+        stop() {
+          this._desiredSpeed = 0;
+        }
+        setDirection(deg) {
+          this._desiredAngle = (deg * Math.PI) / 180;
+        }
+        // Башня
+        setGunDegree(deg) {
+          this.turretTargetAngle = (deg * Math.PI) / 180;
+        }
+        setGunDirection(deg) {
+          this.turretTargetAngle = (deg * Math.PI) / 180;
+        }
+        // Телеметрия
+        gunDegree() {
+          return (this.turretAngle * 180) / Math.PI;
+        }
+        getGunDegree() {
+          return (this.turretAngle * 180) / Math.PI;
+        }
+        getDirection() {
+          return (this.angle * 180) / Math.PI;
+        }
+        getRandomDegree() {
+          return rnd(0, 360);
+        }
+        getCurrentInfo() {
+          return {
+            energy: this.energy,
+            speed: Math.abs(this.speed),
+            angle: this.getDirection(),
+            gunAngle: this.getGunDegree(),
+            health: this.energy,
+          };
+        }
+        getLaserData() {
+          return this._api_laser;
+        }
+        laserData() {
+          return this._api_laser;
+        }
+        isIrradiated() {
+          return this.irradiated;
+        }
+        getIrradiatedAngle() {
+          return this._api_irradiatedAngle !== null
+            ? (this._api_irradiatedAngle * 180) / Math.PI
+            : null;
+        }
+        wasDamaged() {
+          return this._api_damaged;
+        }
+        // Оружие
+        // Всё API работает через this._game — бот не получает game напрямую
+        fire() {
+          return this.shootPTUR(this._game);
+        }
+        fireSmoke() {
+          return this.throwSmoke(this._game);
+        }
+        // Лазер
+        impulseScan() {
+          const game = this._game;
+          if (!game) return null;
+          const res = this.shootLaserPulse(game);
+          this._api_laser = res
+            ? {
+                target: res.isEnemy ? "tank" : "non-tank",
+                distance: res.dist,
+                isHostile: res.isEnemy,
+                inSmoke: res.inSmoke,
+              }
+            : null;
+          if (res) this.onLaserScan(this._api_laser);
+          return this._api_laser;
+        }
+        enableContinuousLaser() {
+          this._continuousLaserCmd = true;
+        }
+        disableContinuousLaser() {
+          this._continuousLaserCmd = false;
+        }
+        enableConstntLaser() {
+          this._continuousLaserCmd = true;
+        }
+        disableConstantLaser() {
+          this._continuousLaserCmd = false;
+        }
+        // Журнал — бот просто вызывает this.log("текст")
+        log(msg) {
+          if (this._game) this._game.log(`[${this.label}] ${msg}`, "");
+        }
+        logMsg(msg) {
+          this.log(msg);
+        }
+        // runTasks — последовательно выполняет задачи
+        // Понимает что setGunDegree занимает время — ждёт пока башня довернётся
+        runTasks(...tasks) {
+          if (!this._taskQueue) this._taskQueue = [];
+          for (const t of tasks)
+            if (typeof t === "function")
+              this._taskQueue.push({ fn: t, started: false, targetGun: null });
+        }
+        // Callbacks — переопределяются ботами (без аргумента game)
+        onLaserScan(info) {}
+        onLaserDetection(info) {}
+        onSound(info) {}
+        onDamage() {}
+        main() {}
+
+        // ─── Физика ───────────────────────────────────────────────────
         updatePhysicsAndLaser(dt, game) {
           if (!this.alive) return;
-
-          // Регенерация энергии
           this.energy = Math.min(100, this.energy + ENERGY_REGEN * dt);
-
-          // Откат оружий
           if (this.pturCD > 0) this.pturCD -= dt;
           if (this.smokeCD > 0) this.smokeCD -= dt;
-
-          // Обновить метки
           this.dots = this.dots.filter((d) => {
             d.update(dt);
             return d.alive();
           });
 
-          // Движение с AABB коллизией и скольжением вдоль стен
+          // Задержанный дым
+          if (this.smokePending) {
+            this.smokePendingTimer -= dt;
+            if (this.smokePendingTimer <= 0) {
+              this.smokePending = false;
+              game.smokes.push(new SmokeCloud(this.x, this.y));
+              game.log(`${this.label}: дымовая граната!`, "warn");
+            }
+          }
+
+          // Желаемая скорость (API)
+          if (this._desiredSpeed !== undefined) {
+            const diff = this._desiredSpeed - this.speed;
+            if (Math.abs(diff) > 0.01)
+              this.speed +=
+                Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
+            else this.speed = this._desiredSpeed;
+          }
+          // Желаемый угол корпуса (API)
+          if (this._desiredAngle !== undefined) {
+            const diff = normAngle(this._desiredAngle - this.angle);
+            const step = TANK_TURN_SPEED * dt;
+            if (Math.abs(diff) <= step) this.angle = this._desiredAngle;
+            else this.angle = normAngle(this.angle + Math.sign(diff) * step);
+          }
+
+          // Движение + коллизия
           if (Math.abs(this.speed) > 0.01) {
             const spd = this.speed;
             const nx = this.x + Math.cos(this.angle) * spd * dt;
             const ny = this.y + Math.sin(this.angle) * spd * dt;
-
             if (!game.isTankBlocked(nx, ny)) {
-              // Свободно
               this.x = nx;
               this.y = ny;
             } else {
-              // Попытка скольжения по осям
               const canX = !game.isTankBlocked(nx, this.y);
               const canY = !game.isTankBlocked(this.x, ny);
-              if (canX) {
-                this.x = nx;
-                // Скользим по X — гасим только поперечную составляющую (не скорость)
-              } else if (canY) {
-                this.y = ny;
-              } else {
-                // Лобовой удар — гасим скорость полностью
-                if (cfg.wallDmg && Math.abs(spd) >= 3) {
-                  const dmg = (Math.abs(spd) - 2) * 15 * dt;
-                  this.energy = Math.max(0, this.energy - dmg);
-                }
+              if (canX) this.x = nx;
+              else if (canY) this.y = ny;
+              else {
+                if (cfg.wallDmg && Math.abs(spd) >= 3)
+                  this.takeDamage((Math.abs(spd) - 2) * 15 * dt, game, null);
                 this.speed = 0;
               }
             }
@@ -850,31 +1005,36 @@
               this.energy - Math.abs(this.speed) * 4 * dt,
             );
           }
-          // Трение
           if (this.speed > 0)
             this.speed = Math.max(0, this.speed - FRICTION * dt);
           else if (this.speed < 0)
             this.speed = Math.min(0, this.speed + FRICTION * dt);
+          if (this.energy <= 0 && Math.abs(this.speed) > 0.01)
+            this.speed *= Math.pow(0.25, dt);
 
-          // Без энергии — нет тяги, повышенное торможение (заглох двигатель)
-          if (this.energy <= 0 && Math.abs(this.speed) > 0.01) {
-            this.speed *= Math.pow(0.25, dt); // быстро гасим скорость
+          // Звук двигателя (каждые 0.3 сек при скорости > 0.5)
+          if (!this._engineSoundTimer) this._engineSoundTimer = 0;
+          this._engineSoundTimer -= dt;
+          if (this._engineSoundTimer <= 0 && Math.abs(this.speed) > 0.5) {
+            this._engineSoundTimer = 0.3;
+            game.emitSound(this.x, this.y, "engine");
           }
 
-          // Физика поворота башни — всегда с константной скоростью BOT_TURRET_SPEED
+          // Башня
           {
-            const diff = normAngle(this.turretTargetAngle - this.turretAngle);
-            const step = BOT_TURRET_SPEED * dt;
-            if (Math.abs(diff) <= step) {
+            const diff = normAngle(this.turretTargetAngle - this.turretAngle),
+              step = BOT_TURRET_SPEED * dt;
+            if (Math.abs(diff) <= step)
               this.turretAngle = this.turretTargetAngle;
-            } else {
+            else
               this.turretAngle = normAngle(
                 this.turretAngle + Math.sign(diff) * step,
               );
-            }
           }
 
-          // Непрерывный лазер — стреляет здесь, выставляет irradiated на целях
+          // Непрерывный лазер (команда API или прямой флаг)
+          if (this._continuousLaserCmd !== undefined)
+            this.laserContinuous = !!this._continuousLaserCmd;
           if (this.laserContinuous) {
             this.energy = Math.max(0, this.energy - LASER_DRAIN_CONT * dt);
             if (this.energy <= 0) this.laserContinuous = false;
@@ -891,13 +1051,82 @@
           }
         }
 
-        // ПРОХОД 2: ИИ — читает актуальные irradiated флаги (выставлены всеми лазерами)
         updateAI(dt, game) {
           if (!this.alive) return;
+          this._game = game; // движок сохраняет ссылку — бот API использует её прозрачно
+          // Заполняем API-события из данных движка
+          this._api_sounds = game.sounds
+            .map((s) => {
+              const d = dist({ x: this.x, y: this.y }, s);
+              return d <= SOUND_RANGE
+                ? {
+                    angle:
+                      (Math.atan2(s.y - this.y, s.x - this.x) * 180) / Math.PI,
+                    dist: d,
+                    soundType: s.type,
+                  }
+                : null;
+            })
+            .filter(Boolean);
+
+          if (this.irradiated && this.irradiatedBy)
+            this._api_irradiatedAngle = Math.atan2(
+              this.irradiatedBy.y - this.y,
+              this.irradiatedBy.x - this.x,
+            );
+          else this._api_irradiatedAngle = null;
+
+          // Вызов колбэков (без game — бот использует this._game через API)
+          if (this.irradiated && this.irradiatedBy)
+            this.onLaserDetection([
+              { degree: (this._api_irradiatedAngle * 180) / Math.PI },
+            ]);
+          if (this._api_sounds.length > 0) this.onSound(this._api_sounds);
+          if (this._api_damaged) {
+            this.onDamage();
+            this._api_damaged = false;
+          }
+
+          // Обработка очереди задач runTasks
+          if (this._taskQueue && this._taskQueue.length > 0) {
+            const entry = this._taskQueue[0];
+            if (!entry.started) {
+              // Запомнить targetGun ДО выполнения, если задача зовёт setGunDegree
+              const gunBefore = this.turretTargetAngle;
+              entry.fn();
+              entry.started = true;
+              // Если башня получила новый целевой угол — ждём завершения поворота
+              if (this.turretTargetAngle !== gunBefore)
+                entry.targetGun = this.turretTargetAngle;
+              else entry.targetGun = null;
+            }
+            // Задача с поворотом башни: ждём пока физика довернёт башню
+            if (entry.targetGun !== null) {
+              const diff = Math.abs(
+                normAngle(this.turretAngle - entry.targetGun),
+              );
+              if (diff < 0.05) {
+                entry.targetGun = null;
+                this._taskQueue.shift();
+              }
+              // else — продолжаем ждать
+            } else {
+              // Мгновенная задача — сразу на следующую
+              this._taskQueue.shift();
+            }
+          }
+
+          // Вызываем main() каждые ~100мс (Robocode-стиль) — без аргументов
+          if (!this._mainTimer) this._mainTimer = 0;
+          this._mainTimer -= dt;
+          if (this._mainTimer <= 0) {
+            this._mainTimer = 0.1;
+            this.main();
+          }
+
           this.aiUpdate(dt, game);
         }
 
-        // Устаревший update — оставлен для совместимости (не вызывается)
         update(dt, game) {
           this.updatePhysicsAndLaser(dt, game);
           this.updateAI(dt, game);
@@ -906,38 +1135,39 @@
         shootLaserPulse(game) {
           if (this.energy < LASER_DRAIN_PULSE) return null;
           this.energy -= LASER_DRAIN_PULSE;
-          this.laserResult = game.castLaser(this, this.turretAngle);
-          this.renderLaser = this.laserResult;
-          this.renderLaserAngle = this.turretAngle; // угол в момент импульса
-          this.renderLaserLife = 1.0; // секунды видимости импульса
-          return this.laserResult;
+          const res = game.castLaser(this, this.turretAngle);
+          this.renderLaser = res;
+          this.renderLaserAngle = this.turretAngle;
+          this.renderLaserLife = 1.0;
+          return res;
         }
 
         shootPTUR(game) {
-          if (this.pturCD > 0) return false;
-          if (this.activePTUR && this.activePTUR.alive) return false;
+          if (this.pturCD > 0 || (this.activePTUR && this.activePTUR.alive))
+            return false;
           this.pturCD = cfg.pturCD;
-          const ptur = new PTUR(
-            this,
-            this.x,
-            this.y,
-            this.turretAngle,
-            this.turretAngle,
-          );
+          const ptur = new PTUR(this, this.x, this.y, this.turretAngle);
           game.pturs.push(ptur);
           this.activePTUR = ptur;
-          game.emitSound(this.x, this.y, "shot"); // звук пуска
+          game.emitSound(this.x, this.y, "shot");
           playShot();
           return true;
         }
 
         throwSmoke(game) {
-          if (this.smokeCD > 0 || this.smokeCount <= 0) return false;
+          if (this.smokeCD > 0 || this.smokeCount <= 0 || this.smokePending)
+            return false;
           this.smokeCD = cfg.smokeCD;
           this.smokeCount--;
-          game.smokes.push(new SmokeCloud(this.x, this.y));
-          game.log(`${this.label}: дымовая граната!`, "warn");
+          this.smokePending = true;
+          this.smokePendingTimer = SMOKE_DEPLOY_DELAY;
           return true;
+        }
+
+        takeDamage(amount, game, killer) {
+          this.energy = Math.max(0, this.energy - amount);
+          this._api_damaged = true;
+          if (this.energy <= 0) this.destroy(game, killer);
         }
 
         destroy(game, killer) {
@@ -946,257 +1176,307 @@
             `${this.label} УНИЧТОЖЕН${killer ? " [" + killer.label + "]" : ""}`,
             "kill",
           );
+          if (killer && killer.isPlayer()) showKillNotify(this.label);
           game.checkWin();
         }
 
-        // Overrideable ИИ
         aiUpdate(dt, game) {}
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Dummy — стоит на месте
-      // ════════════════════════════════════════
+      // ═══════════════════ БОТЫ (чистое Bot API — нет доступа к движку) ═══════════════════
+      // Движок передаёт id/x/y/angle в super() автоматически через spawnTanks.
+      // Бот видит только свои методы API. game нигде не фигурирует.
+
+      // Dummy — стоит, ничего не делает
       class Dummy extends Tank {
         constructor(id, x, y, angle) {
           super(id, x, y, angle, "#888888", "DUMMY-" + id);
         }
-        aiUpdate(dt, game) {}
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Crazy — хаотично ездит
-      // ════════════════════════════════════════
+      // Crazy — хаотично ездит, меняет направление каждые 0.5-2.5 сек
       class Crazy extends Tank {
         constructor(id, x, y, angle) {
           super(id, x, y, angle, "#ff8800", "CRAZY-" + id);
-          this.thinkTimer = 0;
-          this.turnDir = 0;
-          this.targetSpeed = MAX_SPEED * 0.7;
+          this._thinkTimer = 0;
+          this._turnCmd = 0;
+          this._spdCmd = 3;
         }
-        aiUpdate(dt, game) {
-          this.thinkTimer -= dt;
-          if (this.thinkTimer <= 0) {
-            this.thinkTimer = rnd(0.5, 2.5);
-            this.turnDir = rndInt(-1, 1);
-            this.targetSpeed = rnd(1, MAX_SPEED);
+        main() {
+          this._thinkTimer -= 0.1;
+          if (this._thinkTimer <= 0) {
+            this._thinkTimer = rnd(0.5, 2.5);
+            this._turnCmd =
+              Math.random() < 0.33 ? -1 : Math.random() < 0.5 ? 0 : 1;
+            this._spdCmd = rnd(1, 5);
           }
-          this.angle += this.turnDir * TANK_TURN_SPEED * dt;
-          if (this.energy > 10) {
-            const diff = this.targetSpeed - this.speed;
-            this.speed += Math.sign(diff) * ACCEL * dt;
-            this.speed = Math.max(
-              -MAX_SPEED * 0.3,
-              Math.min(MAX_SPEED, this.speed),
-            );
+          const info = this.getCurrentInfo();
+          if (info.energy > 10) {
+            this.setDirection(this.getDirection() + this._turnCmd * 12);
+            this.setSpeed(this._spdCmd);
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Attacker — сканирует, стреляет
-      // ════════════════════════════════════════
+      // Attacker — сканирует импульсами, при захвате — непрерывный лазер + ПТУР
       class Attacker extends Tank {
         constructor(id, x, y, angle) {
           super(id, x, y, angle, "#ff2244", "ATTKR-" + id);
-          this.scanMode = true; // вращаемся и сканируем
-          this.targetAngle = null; // угол цели
-          this.lockTimer = 0;
-          this.scanSpeed = 1.5; // рад/сек
-          this.guideTimer = 0;
+          this._scanMode = true;
+          this._lockTimer = 0;
         }
-        aiUpdate(dt, game) {
-          if (this.scanMode) {
-            // Вращение башни — просто крутим цель, физика догонит
-            this.turretTargetAngle += this.scanSpeed * dt;
-            // Импульс лазера каждые 0.15 сек
-            this.guideTimer -= dt;
-            if (this.guideTimer <= 0) {
-              this.guideTimer = 0.15;
-              const res = this.shootLaserPulse(game);
-              if (res && res.isEnemy && !res.inSmoke) {
-                this.scanMode = false;
-                this.targetAngle = this.turretAngle; // фиксируем текущий физический угол
-                this.lockTimer = 0.5;
-              }
-            }
+        main() {
+          if (this._scanMode) {
+            this.setGunDegree(this.getGunDegree() + 15);
+            this.impulseScan();
           } else {
-            // Режим наведения — непрерывный лазер
-            this.laserContinuous = true;
-            this.lockTimer -= dt;
-            if (this.lockTimer <= 0 && this.pturCD <= 0) {
-              const res = this.laserResult;
-              if (res && res.isEnemy && !res.inSmoke) {
-                this.shootPTUR(game);
-              } else {
-                this.laserContinuous = false;
-                this.scanMode = true;
-              }
-              this.lockTimer = 0.3;
+            this._lockTimer -= 0.1;
+            const data = this.getLaserData();
+            if (data && data.isHostile && !data.inSmoke) {
+              // this.enableContinuousLaser();
+              this.fire();
+              this._lockTimer = 0.5;
+            } else if (this._lockTimer <= 0) {
+              // this.disableContinuousLaser();
+              this._scanMode = true;
             }
-            const res = game.castLaser(this, this.turretAngle);
-            if (!res || !res.isEnemy || res.inSmoke) {
-              this.lockTimer -= dt;
-              if (this.lockTimer < -1.5) {
-                this.laserContinuous = false;
-                this.scanMode = true;
-              }
-            }
+          }
+        }
+        onLaserScan(info) {
+          if (info.isHostile && !info.inSmoke) {
+            this._scanMode = false;
+            this._lockTimer = 2.0;
+            this.enableContinuousLaser();
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Тихоня (Shy) — стреляет в ответ на облучение
-      // ════════════════════════════════════════
+      // Shy — стоит на месте, реагирует на облучение: наводит башню в ответ и стреляет
       class Shy extends Tank {
         constructor(id, x, y, angle) {
           super(id, x, y, angle, "#00aaff", "SHY-" + id);
-          this.reactionTimer = 0;
-          this.reactAngle = null;
+          this._reactTimer = 0;
+          this._reactDeg = null;
         }
-        aiUpdate(dt, game) {
-          if (this.irradiated && this.irradiatedBy) {
-            const src = this.irradiatedBy;
-            this.reactAngle = Math.atan2(src.y - this.y, src.x - this.x);
-            this.reactionTimer = 1.2;
-          }
-
-          if (this.reactionTimer > 0) {
-            this.reactionTimer -= dt;
-
-            if (this.reactAngle !== null) {
-              // Задаём цель — физика сама повернёт башню
-              this.turretTargetAngle = this.reactAngle;
-
-              // Стрелять только когда башня фактически довернулась
-              const aimed =
-                Math.abs(normAngle(this.turretAngle - this.reactAngle)) < 0.08;
-              if (aimed) {
-                this.laserContinuous = true;
-                const res = game.castLaser(this, this.turretAngle);
-                this.laserResult = res;
-                if (this.pturCD <= 0 && res && res.isEnemy && !res.inSmoke) {
-                  this.shootPTUR(game);
-                  game.log(`${this.label}: ответный огонь!`, "warn");
-                }
+        onLaserDetection(info) {
+          this._reactDeg = info[0].degree;
+          this._reactTimer = 1.2;
+        }
+        main() {
+          if (this._reactTimer > 0) {
+            this._reactTimer -= 0.1;
+            if (this._reactDeg !== null) {
+              this.setGunDegree(this._reactDeg);
+              const diff = Math.abs(
+                ((this.getGunDegree() - this._reactDeg + 540) % 360) - 180,
+              );
+              if (diff < 5) {
+                this.enableContinuousLaser();
+                this.impulseScan();
+                this.fire();
               } else {
-                this.laserContinuous = false;
+                this.disableContinuousLaser();
               }
             }
           } else {
-            this.laserContinuous = false;
-            this.reactAngle = null;
+            this.disableContinuousLaser();
+            this._reactDeg = null;
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Трус — выпускает дымы и убегает при облучении
-      // ════════════════════════════════════════
+      // Coward — при облучении бросает дым и убегает в случайном направлении
       class Coward extends Tank {
+        enemyIsSeen = false;
+        mode = "scan";
+        timer = 20;
         constructor(id, x, y, angle) {
-          super(id, x, y, angle, "#bb44ff", "COWARD-" + id);
-          this.fleeing = false;
-          this.fleeTimer = 0;
-          this.fleeAngle = 0;
+          super(id, x, y, angle, "#00aacc", "COWARD-" + id);
         }
-        aiUpdate(dt, game) {
-          if (this.irradiated) {
-            // Дым — бросаем если можем (независимо от того, бежим уже или нет)
-            this.throwSmoke(game);
 
-            if (!this.fleeing) {
-              // Начать побег
-              this.fleeAngle = rnd(0, Math.PI * 2);
-              this.angle = this.fleeAngle;
-              this.fleeing = true;
-              this.fleeTimer = rnd(2.5, 4.5);
-              game.log(`${this.label}: ПАНИКА! Бежит!`, "warn");
-            } else {
-              // Уже бежим — продлить таймер пока облучают
-              this.fleeTimer = Math.max(this.fleeTimer, 1.5);
-            }
+        main() {
+          if (this.mode === "scan") {
           }
 
-          if (this.fleeing) {
-            this.fleeTimer -= dt;
-            if (this.fleeTimer > 0) {
-              if (this.energy > 10) {
-                this.speed = Math.min(MAX_SPEED, this.speed + ACCEL * dt);
-              }
-              this.angle += Math.sin(this.fleeTimer * 3) * 0.5 * dt;
-            } else {
-              this.fleeing = false;
-              this.speed *= 0.5;
-            }
+          if (this.mode === "flee" && this.timer > 0) {
+            this.setSpeed(5);
+            // this.setDirection(this.getCurrentInfo() + 5);
+            this.timer -= 1;
           }
+
+          if (this.timer <= 0) {
+            this.mode = "scan";
+            this.stop();
+            this.timer = 20;
+          }
+        }
+
+        onLaserScan(info) {}
+
+        onLaserDetection(info) {
+          console.log("COWARD: LASER!");
+          this.fireSmoke();
+          if (this.mode !== "flee") {
+            this.mode = "flee";
+          }
+
+          // this.runTasks(
+          //   // () => this.fireSmoke(),
+          //   () => this.setGunDegree(info[0].degree),
+          //   () => this.fire(),
+          //   () => console.log("Вижу облучение лазером!", info),
+          //   // () => this.setDirection(this.getRandomDegree()),
+          //   // () => this.setSpeed(5),
+          //   () => this.setDirection(this.getRandomDegree()),
+          //   () => this.setSpeed(5),
+          //   () => {
+          //     this.isAttacked = false;
+          //   },
+          // );
+        }
+
+        onSound(info) {
+          // this.setDirection(info[0].angle);
+          // this.setGunDirection(info[0].angle);
+          // if (info[0].soundType === "engine") {
+          //   this.fire();
+          // } else {
+          //   this.impulseScan();
+          //   if (this.laserData() && this.laserData().target === "tank") {
+          //     this.fire();
+          //   }
+          // }
         }
       }
 
-      // ════════════════════════════════════════
-      // БОТ: Любопытный — едет на звук выстрела/взрыва
-      // ════════════════════════════════════════
+      // Curious — стоит на месте, едет к источнику звука
       class Curious extends Tank {
         constructor(id, x, y, angle) {
           super(id, x, y, angle, "#ffcc00", "CURIO-" + id);
-          this.targetX = null;
-          this.targetY = null;
-          this.investigateTimer = 0;
+          this._soundDeg = null;
+          this._investTimer = 0;
         }
-        aiUpdate(dt, game) {
-          const sounds = game.getSoundsNear(this.x, this.y);
-          if (sounds.length > 0) {
-            const s = sounds[0];
-            // Обновляем цель только если это новый звук (другая позиция)
-            const isNew =
-              this.targetX === null ||
-              Math.hypot(s.x - this.targetX, s.y - this.targetY) > 1.0;
-            this.targetX = s.x;
-            this.targetY = s.y;
-            this.investigateTimer = 5.0;
-            if (isNew) game.log(`${this.label}: слышу звук, еду туда!`, "");
-          }
-
-          if (this.investigateTimer > 0 && this.targetX !== null) {
-            this.investigateTimer -= dt;
-
-            const dx = this.targetX - this.x;
-            const dy = this.targetY - this.y;
-            const d = Math.hypot(dx, dy);
-
-            if (d < 0.8) {
-              this.speed = 0;
-              this.investigateTimer = 0;
-              this.targetX = null;
-              this.targetY = null;
-              return;
-            }
-
-            const wantAngle = Math.atan2(dy, dx);
-            const diff = normAngle(wantAngle - this.angle);
-            const turnStep = TANK_TURN_SPEED * dt;
-            if (Math.abs(diff) > 0.1) {
-              this.angle +=
-                Math.sign(diff) * Math.min(Math.abs(diff), turnStep);
-            }
-
-            if (Math.abs(diff) < 0.5 && this.energy > 5) {
-              this.speed = Math.min(MAX_SPEED * 0.7, this.speed + ACCEL * dt);
-            } else {
-              this.speed = Math.max(0, this.speed - FRICTION * dt);
-            }
-
-            this.turretTargetAngle = wantAngle;
+        onSound(info) {
+          this._soundDeg = info[0].angle;
+          this._investTimer = 5.0;
+          this.log("Слышу звук!");
+        }
+        main() {
+          if (this._investTimer > 0 && this._soundDeg !== null) {
+            this._investTimer -= 0.1;
+            this.setDirection(this._soundDeg);
+            this.setGunDegree(this._soundDeg);
+            if (this.getCurrentInfo().energy > 5) this.setSpeed(3.5);
           } else {
-            this.speed = Math.max(0, this.speed - FRICTION * dt);
+            this.setSpeed(0);
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // ИГРОК
-      // ════════════════════════════════════════
+      // Scanner — бот-сканер, свободно путешествует, ищет врагов
+      // Написан в точности по образцу из документации — без технических параметров
+      class Scanner extends Tank {
+        enemyIsSeen = false;
+        mode = "scan";
+        timer = 20;
+        constructor(id, x, y, angle) {
+          super(id, x, y, angle, "#00ffcc", "SCAN-" + id);
+        }
 
+        main() {
+          if (this.mode === "scan") {
+            this.setGunDegree(this.gunDegree() + 5);
+            this.impulseScan();
+
+            if (Math.random() > 0.1) {
+              this.setSpeed(5);
+            } else {
+              this.stop();
+            }
+            if (Math.random() > 0.09) {
+              this.setDirection(this.getRandomDegree());
+            }
+          }
+
+          if (this.mode === "flee" && this.timer > 0) {
+            this.setSpeed(5);
+            // this.setDirection(this.getCurrentInfo() + 5);
+            this.timer -= 1;
+          }
+
+          if (this.mode === "search") {
+            this.timer -= 1;
+            this.impulseScan();
+
+            if (!this.enemyIsSeen) {
+              if (this.timer > 10) {
+                this.setGunDirection(this.gunDegree() - 1);
+              }
+              if (this.timer < 10) {
+                this.setGunDirection(this.gunDegree() + 1);
+              }
+            }
+          }
+
+          if (this.timer <= 0) {
+            this.mode = "scan";
+            this.stop();
+            this.timer = 20;
+          }
+        }
+
+        onLaserScan(info) {
+          if (info.target === "tank" && info.isHostile) {
+            this.enemyIsSeen = true;
+            this.mode = "search";
+            this.timer = 20;
+            this.fire();
+          }
+
+          if (info.target === "non-tank") {
+            if (info.distance < 5) {
+              // this.setDirection(this.getDirection() + 20);
+              // this.setDirection(this.getDirection() + 90);
+            }
+          }
+        }
+
+        onLaserDetection(info) {
+          this.fireSmoke();
+          if (this.mode !== "flee") {
+            this.mode = "flee";
+          }
+
+          // this.runTasks(
+          //   // () => this.fireSmoke(),
+          //   () => this.setGunDegree(info[0].degree),
+          //   () => this.fire(),
+          //   () => console.log("Вижу облучение лазером!", info),
+          //   // () => this.setDirection(this.getRandomDegree()),
+          //   // () => this.setSpeed(5),
+          //   () => this.setDirection(this.getRandomDegree()),
+          //   () => this.setSpeed(5),
+          //   () => {
+          //     this.isAttacked = false;
+          //   },
+          // );
+        }
+
+        onSound(info) {
+          // this.setDirection(info[0].angle);
+          // this.setGunDirection(info[0].angle);
+          // if (info[0].soundType === "engine") {
+          //   this.fire();
+          // } else {
+          //   this.impulseScan();
+          //   if (this.laserData() && this.laserData().target === "tank") {
+          //     this.fire();
+          //   }
+          // }
+        }
+      }
+
+      // ═══════════════════ ИГРОК ═══════════════════
       class Player extends Tank {
         constructor(id, x, y) {
           super(id, x, y, 0, "#00ff88", "PLAYER");
@@ -1204,68 +1484,70 @@
           this.mouseX = 0;
           this.mouseY = 0;
           this.mouseDown = false;
-          this.rightMouseDown = false;
+          this.gear = 0; // 0=стоп, 1-5 вперёд, -1 назад
         }
         isPlayer() {
           return true;
         }
 
-        // ПРОХОД 1: лазер стреляет здесь — выставляет irradiated на ботах ДО их aiUpdate
         updatePhysicsAndLaser(dt, game) {
           super.updatePhysicsAndLaser(dt, game);
+          // Управление по передачам
+          const k = this.keys;
+          if (k["KeyA"] || k["ArrowLeft"]) this.angle -= TANK_TURN_SPEED * dt;
+          if (k["KeyD"] || k["ArrowRight"]) this.angle += TANK_TURN_SPEED * dt;
+          if (k["KeyQ"]) this.turretTargetAngle -= TURRET_TURN_SPEED * dt;
+          if (k["KeyE"]) this.turretTargetAngle += TURRET_TURN_SPEED * dt;
+          if (k["KeyR"]) {
+            this.gear = 0;
+          }
+          if (k["KeyF"]) {
+            this.throwSmoke(game);
+            k["KeyF"] = false;
+          }
 
-          // Лазер игрока — стреляет в первом проходе
+          // Скорость по передаче
+          const targetSpd =
+            this.gear > 0
+              ? this.gear * (MAX_SPEED / 5)
+              : this.gear < 0
+                ? -MAX_SPEED * 0.4
+                : 0;
+          if (this.energy > 0) {
+            const diff = targetSpd - this.speed;
+            if (Math.abs(diff) > 0.05)
+              this.speed +=
+                Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
+          }
+
+          // Лазер в первом проходе — боты узнают об облучении до своего AI
           this.laserContinuous = this.mouseDown && this.energy > 0;
           if (this.laserContinuous) {
             const res = game.castLaser(this, this.turretAngle);
             this.laserResult = res;
             this.renderLaser = res;
             this.renderLaserLife = 0.08;
-            if (res) {
+            if (res)
               this.dots.push(
                 new LaserDot(res.hitX, res.hitY, res.isEnemy, res.inSmoke),
               );
-            }
-            if (this.activePTUR && this.activePTUR.alive) {
+            if (this.activePTUR && this.activePTUR.alive)
               this.activePTUR.guide(this.turretAngle);
-            }
           }
         }
-
-        // ПРОХОД 2: управление движением
-        aiUpdate(dt, game) {
-          const k = this.keys;
-
-          if (k["KeyA"] || k["ArrowLeft"]) this.angle -= TANK_TURN_SPEED * dt;
-          if (k["KeyD"] || k["ArrowRight"]) this.angle += TANK_TURN_SPEED * dt;
-          if (k["KeyQ"]) this.turretTargetAngle -= TURRET_TURN_SPEED * dt;
-          if (k["KeyE"]) this.turretTargetAngle += TURRET_TURN_SPEED * dt;
-
-          if ((k["KeyW"] || k["ArrowUp"]) && this.energy > 0)
-            this.speed = Math.min(MAX_SPEED, this.speed + ACCEL * dt);
-          if ((k["KeyS"] || k["ArrowDown"]) && this.energy > 0)
-            this.speed = Math.max(-MAX_SPEED * 0.5, this.speed - ACCEL * dt);
-          if (k["KeyR"]) this.speed = 0;
-
-          if (k["KeyF"]) {
-            this.throwSmoke(game);
-            k["KeyF"] = false;
-          }
-        }
+        aiUpdate(dt, game) {}
 
         destroy(game, killer) {
           if (cfg.immortal) {
             this.energy = Math.max(5, this.energy);
-            game.log("⚡ ПОПАДАНИЕ — бессмертие активно!", "warn");
+            game.log("Бессмертие!", "warn");
             return;
           }
           super.destroy(game, killer);
         }
       }
 
-      // ════════════════════════════════════════
-      // ИГРОВАЯ КАРТА И ЛОГИКА
-      // ════════════════════════════════════════
+      // ═══════════════════ ИГРОВОЙ МИР ═══════════════════
       class Game {
         constructor(config) {
           this.mapW = config.mapSize;
@@ -1275,48 +1557,41 @@
           this.pturs = [];
           this.smokes = [];
           this.explosions = [];
-          this.sounds = []; // { x, y, type } — события этого тика, очищаются каждый тик
+          this.sounds = [];
           this.logs = [];
           this.running = true;
           this.winner = null;
-
+          this.player = null;
           this.genMap(config.obstacleDensity);
           this.spawnTanks(config);
         }
 
         genMap(density) {
-          // Пустая карта
           for (let y = 0; y < this.mapH; y++) {
             this.map[y] = [];
-            for (let x = 0; x < this.mapW; x++) {
+            for (let x = 0; x < this.mapW; x++)
               this.map[y][x] =
                 x === 0 || y === 0 || x === this.mapW - 1 || y === this.mapH - 1
                   ? 1
                   : 0;
-            }
           }
-          // Случайные блоки
-          for (let y = 2; y < this.mapH - 2; y++) {
-            for (let x = 2; x < this.mapW - 2; x++) {
+          for (let y = 2; y < this.mapH - 2; y++)
+            for (let x = 2; x < this.mapW - 2; x++)
               if (Math.random() < density) this.map[y][x] = 1;
-            }
-          }
         }
 
-        freeCell(excludeRadius = 3) {
-          let attempts = 200;
-          while (attempts-- > 0) {
-            const x = rndInt(2, this.mapW - 3) + 0.5;
-            const y = rndInt(2, this.mapH - 3) + 0.5;
+        freeCell(excl = 3) {
+          let att = 200;
+          while (att-- > 0) {
+            const x = rndInt(2, this.mapW - 3) + 0.5,
+              y = rndInt(2, this.mapH - 3) + 0.5;
             if (!this.isBlocked(x, y)) {
-              // Проверить что не слишком близко к другим танкам
               let ok = true;
-              for (const t of this.tanks) {
-                if (dist({ x, y }, t) < excludeRadius) {
+              for (const t of this.tanks)
+                if (dist({ x, y }, t) < excl) {
                   ok = false;
                   break;
                 }
-              }
               if (ok) return { x, y };
             }
           }
@@ -1324,31 +1599,16 @@
         }
 
         spawnTanks(config) {
-          const botClasses = [
-            Dummy,
-            Attacker,
-            Crazy,
-            Attacker,
-            Shy,
-            Coward,
-            Curious,
-          ];
+          const botClasses = [Scanner, Scanner, Scanner, Scanner, Scanner];
           let id = 0;
-
-          // Боты
-          for (let i = 0; i < botClasses.length; i++) {
+          for (const BC of botClasses) {
             const pos = this.freeCell();
-            const angle = rnd(0, Math.PI * 2);
-            const bot = new botClasses[i](id++, pos.x, pos.y, angle);
-            this.tanks.push(bot);
+            this.tanks.push(new BC(id++, pos.x, pos.y, rnd(0, Math.PI * 2)));
           }
-
-          // Игрок
           if (config.hasPlayer) {
             const pos = this.freeCell();
-            const player = new Player(id++, pos.x, pos.y);
-            this.tanks.push(player);
-            this.player = player;
+            this.player = new Player(id++, pos.x, pos.y);
+            this.tanks.push(this.player);
           }
         }
 
@@ -1360,26 +1620,50 @@
           return this.map[cy][cx] === 1;
         }
 
-        // Проверка коллизии танка — 8 точек по окружности радиуса TANK_RADIUS
         isTankBlocked(x, y) {
-          const r = TANK_RADIUS;
-          const d = r * 0.707; // диагональ (r / √2)
-          const pts = [
+          const r = TANK_RADIUS,
+            d = r * 0.707;
+          for (const [cx, cy] of [
             [x - r, y],
-            [x + r, y], // лево/право
+            [x + r, y],
             [x, y - r],
-            [x, y + r], // верх/низ
+            [x, y + r],
             [x - d, y - d],
-            [x + d, y - d], // диагонали
+            [x + d, y - d],
             [x - d, y + d],
             [x + d, y + d],
-          ];
-          for (const [cx, cy] of pts) {
+          ]) {
             const gx = Math.floor(cx),
               gy = Math.floor(cy);
-            if (gx < 0 || gy < 0 || gx >= this.mapW || gy >= this.mapH)
+            if (
+              gx < 0 ||
+              gy < 0 ||
+              gx >= this.mapW ||
+              gy >= this.mapH ||
+              this.map[gy][gx] === 1
+            )
               return true;
-            if (this.map[gy][gx] === 1) return true;
+          }
+          return false;
+        }
+
+        segmentHitsWall(x1, y1, x2, y2) {
+          const steps =
+            Math.ceil(dist({ x: x1, y: y1 }, { x: x2, y: y2 }) / 0.3) + 1;
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps,
+              x = x1 + (x2 - x1) * t,
+              y = y1 + (y2 - y1) * t;
+            const cx = Math.floor(x),
+              cy = Math.floor(y);
+            if (
+              cx < 0 ||
+              cy < 0 ||
+              cx >= this.mapW ||
+              cy >= this.mapH ||
+              this.map[cy][cx] === 1
+            )
+              return true;
           }
           return false;
         }
@@ -1387,29 +1671,26 @@
         inSmoke(x, y) {
           return this.smokes.some((s) => s.alive() && s.contains(x, y));
         }
+        emitSound(x, y, type) {
+          this.sounds.push({ x, y, type });
+        }
 
-        // Лазерный луч от tank в угол angle
-        // Возвращает { dist, isEnemy, hitX, hitY, inSmoke, target }
         castLaser(fromTank, angle) {
           const step = 0.05;
           let rx = fromTank.x,
             ry = fromTank.y;
-          const dx = Math.cos(angle) * step;
-          const dy = Math.sin(angle) * step;
+          const dx = Math.cos(angle) * step,
+            dy = Math.sin(angle) * step;
           let d = 0;
           const maxDist = Math.max(this.mapW, this.mapH) * 1.5;
-
           while (d < maxDist) {
             rx += dx;
             ry += dy;
             d += step;
-
             const cx = Math.floor(rx),
               cy = Math.floor(ry);
             if (cx < 0 || cy < 0 || cx >= this.mapW || cy >= this.mapH) break;
-
-            // Стена
-            if (this.map[cy][cx] === 1) {
+            if (this.map[cy][cx] === 1)
               return {
                 dist: d,
                 isEnemy: false,
@@ -1418,43 +1699,21 @@
                 inSmoke: false,
                 target: null,
               };
-            }
-
-            // Дым — не определить тип
             const inSmk = this.inSmoke(rx, ry);
-
-            // Проверить танки
             for (const tank of this.tanks) {
               if (tank === fromTank || !tank.alive) continue;
-              if (Math.hypot(rx - tank.x, ry - tank.y) < 0.45) {
-                // Нашли танк
+              if (dist({ x: rx, y: ry }, { x: tank.x, y: tank.y }) < 0.4) {
                 tank.irradiated = true;
                 tank.irradiatedBy = fromTank;
-                // Если ПТУР этого танка летит — обновить наведение
-                if (fromTank.activePTUR && fromTank.activePTUR.alive) {
-                  fromTank.activePTUR.guide(angle);
-                }
                 return {
                   dist: d,
-                  isEnemy: true,
-                  hitX: tank.x,
-                  hitY: tank.y,
+                  isEnemy: !inSmk,
+                  hitX: rx,
+                  hitY: ry,
                   inSmoke: inSmk,
                   target: tank,
                 };
               }
-            }
-
-            if (inSmk) {
-              // Луч попал в дым — возвращаем расстояние но не знаем что там
-              return {
-                dist: d,
-                isEnemy: false,
-                hitX: rx,
-                hitY: ry,
-                inSmoke: true,
-                target: null,
-              };
             }
           }
           return null;
@@ -1462,62 +1721,30 @@
 
         update(dt) {
           if (!this.running) return;
-
-          // Очищаем звуковые события прошлого тика
           this.sounds = [];
-
-          // Обновить дым
           this.smokes = this.smokes.filter((s) => {
             s.update(dt);
             return s.alive();
           });
-
-          // Обновить ПТУР
           this.pturs = this.pturs.filter((p) => {
             p.update(dt, this);
             return p.alive;
           });
-
-          // Обновить взрывы
           this.explosions = this.explosions.filter((e) => {
             e.update(dt);
             return e.alive();
           });
-
-          // Сбросить СПО и renderLaser у всех танков ПЕРЕД обновлением
           for (const t of this.tanks) {
             t.irradiated = false;
             t.irradiatedBy = null;
             t.renderLaser = null;
           }
-
-          // ПРОХОД 1: физика, движение, лазеры — все танки стреляют лазером и
-          //            выставляют irradiated на целях
           for (const t of this.tanks) t.updatePhysicsAndLaser(dt, this);
-
-          // ПРОХОД 2: ИИ реагирует на актуальные флаги irradiated (уже выставлены)
           for (const t of this.tanks) t.updateAI(dt, this);
         }
 
-        // Зарегистрировать звуковое событие (выстрел/взрыв)
-        emitSound(x, y, type) {
-          this.sounds.push({ x, y, type });
-        }
-
-        // Получить звуки в радиусе SOUND_RANGE от точки (cx, cy)
-        // Возвращает массив { x, y, type, angle, dist } отсортированный по близости
-        getSoundsNear(cx, cy) {
-          return this.sounds
-            .map((s) => {
-              const d = Math.hypot(s.x - cx, s.y - cy);
-              return { ...s, dist: d, angle: Math.atan2(s.y - cy, s.x - cx) };
-            })
-            .filter((s) => s.dist <= SOUND_RANGE)
-            .sort((a, b) => a.dist - b.dist);
-        }
-
         log(msg, type = "") {
-          this.logs.unshift({ msg, type, time: Date.now() });
+          this.logs.unshift({ msg, type });
           if (this.logs.length > 20) this.logs.pop();
           const box = document.getElementById("logBox");
           if (!box) return;
@@ -1535,27 +1762,29 @@
             this.winner = alive[0] || null;
             setTimeout(() => {
               const ds = document.getElementById("deathScreen");
-              const dm = document.getElementById("deathMsg");
-              ds.style.display = "flex";
-              if (this.player && !this.player.alive) {
-                ds.querySelector("h2").textContent = "УНИЧТОЖЕН";
-                dm.textContent = "Вы проиграли. Ваш танк разрушен.";
+              if (!ds) return;
+              const title = document.getElementById("deathTitle");
+              if (this.winner && this.winner.isPlayer()) {
+                title.textContent = "ПОБЕДА!";
+                title.style.color = "#00ff88";
+                document.getElementById("deathMsg").textContent =
+                  "Все враги уничтожены.";
               } else if (this.winner) {
-                ds.querySelector("h2").textContent = "ПОБЕДА";
-                dm.textContent = `Победитель: ${this.winner.label}`;
-                ds.querySelector("h2").style.color = "#00ff88";
+                title.textContent = "ПОРАЖЕНИЕ";
+                title.style.color = "#ff2244";
+                document.getElementById("deathMsg").textContent =
+                  "Победитель: " + this.winner.label;
               } else {
-                ds.querySelector("h2").textContent = "НИЧЬЯ";
-                dm.textContent = "Все уничтожены.";
+                title.textContent = "НИЧЬЯ";
+                document.getElementById("deathMsg").textContent = "";
               }
-            }, 800);
+              ds.style.display = "flex";
+            }, 1500);
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // РЕНДЕРЕР
-      // ════════════════════════════════════════
+      // ═══════════════════ РЕНДЕРЕР ═══════════════════
       class Renderer {
         constructor(canvas, game) {
           this.canvas = canvas;
@@ -1563,26 +1792,19 @@
           this.game = game;
           this.resize();
         }
-
         resize() {
-          const g = this.game;
-          this.canvas.width = g.mapW * CELL;
-          this.canvas.height = g.mapH * CELL;
-        }
-
-        worldToScreen(x, y) {
-          return { sx: x * CELL, sy: y * CELL };
+          this.canvas.width = this.game.mapW * CELL;
+          this.canvas.height = this.game.mapH * CELL;
         }
 
         draw() {
-          const ctx = this.ctx;
-          const g = this.game;
-          const C = CELL;
-
+          const ctx = this.ctx,
+            g = this.game,
+            C = CELL;
           ctx.fillStyle = "#050805";
           ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-          // Сетка — только если видна карта
+          // Карта
           if (cfg.visMode === "map" || cfg.visMode === "all") {
             ctx.strokeStyle = "rgba(0,80,20,0.2)";
             ctx.lineWidth = 0.5;
@@ -1598,12 +1820,8 @@
               ctx.lineTo(g.mapW * C, y * C);
               ctx.stroke();
             }
-          }
-
-          // Стены — только если видна карта
-          if (cfg.visMode === "map" || cfg.visMode === "all") {
-            for (let y = 0; y < g.mapH; y++) {
-              for (let x = 0; x < g.mapW; x++) {
+            for (let y = 0; y < g.mapH; y++)
+              for (let x = 0; x < g.mapW; x++)
                 if (g.map[y][x] === 1) {
                   ctx.fillStyle = "#1a3a1a";
                   ctx.fillRect(x * C, y * C, C, C);
@@ -1611,39 +1829,48 @@
                   ctx.lineWidth = 1;
                   ctx.strokeRect(x * C + 0.5, y * C + 0.5, C - 1, C - 1);
                 }
-              }
-            }
           }
+
+          // Лазерные метки (подсветка стен)
+          if (g.player)
+            for (const dot of g.player.dots) {
+              const alpha = Math.min(1, dot.life / dot.maxLife);
+              ctx.fillStyle = dot.inSmoke
+                ? `rgba(200,200,200,${alpha})`
+                : dot.isEnemy
+                  ? `rgba(255,30,50,${alpha})`
+                  : `rgba(0,200,80,${alpha * 0.9})`;
+              ctx.beginPath();
+              ctx.arc(dot.x * C, dot.y * C, 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = dot.isEnemy
+                ? `rgba(255,100,100,${alpha})`
+                : dot.inSmoke
+                  ? `rgba(200,200,200,${alpha * 0.5})`
+                  : `rgba(0,255,100,${alpha * 0.5})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
 
           // Дым
           for (const s of g.smokes) {
-            const lifeFrac = s.life / s.maxLife;
-            const sx = s.x * C,
+            const lf = s.life / s.maxLife,
+              sx = s.x * C,
               sy = s.y * C,
               sr = s.radius * C;
-
             if (cfg.visMode === "all") {
-              // Режим «всё» — чёткая видимая сфера с контуром
-              const alpha = 0.55 + lifeFrac * 0.2; // 0.55–0.75
-              const grad = ctx.createRadialGradient(
-                sx,
-                sy,
-                sr * 0.1,
-                sx,
-                sy,
-                sr,
-              );
-              grad.addColorStop(0, `rgba(210,215,220,${alpha})`);
-              grad.addColorStop(0.5, `rgba(170,178,185,${alpha * 0.9})`);
-              grad.addColorStop(0.85, `rgba(120,128,135,${alpha * 0.7})`);
-              grad.addColorStop(1, `rgba(80,88,95,0)`);
-              ctx.fillStyle = grad;
+              const alpha = 0.55 + lf * 0.2;
+              const gr = ctx.createRadialGradient(sx, sy, sr * 0.1, sx, sy, sr);
+              gr.addColorStop(0, `rgba(210,215,220,${alpha})`);
+              gr.addColorStop(0.5, `rgba(170,178,185,${alpha * 0.9})`);
+              gr.addColorStop(0.85, `rgba(120,128,135,${alpha * 0.7})`);
+              gr.addColorStop(1, "rgba(80,88,95,0)");
+              ctx.fillStyle = gr;
               ctx.beginPath();
               ctx.arc(sx, sy, sr, 0, Math.PI * 2);
               ctx.fill();
-              // Чёткий контур
               ctx.save();
-              ctx.globalAlpha = lifeFrac * 0.6;
+              ctx.globalAlpha = lf * 0.6;
               ctx.strokeStyle = "rgba(160,168,175,0.9)";
               ctx.lineWidth = 1.5;
               ctx.setLineDash([4, 3]);
@@ -1652,10 +1879,9 @@
               ctx.stroke();
               ctx.setLineDash([]);
               ctx.restore();
-              // Метка «ДЫМ»
-              if (lifeFrac > 0.3) {
+              if (lf > 0.3) {
                 ctx.save();
-                ctx.globalAlpha = lifeFrac * 0.7;
+                ctx.globalAlpha = lf * 0.7;
                 ctx.fillStyle = "#aabbcc";
                 ctx.font = `bold ${Math.round(sr * 0.35)}px Share Tech Mono`;
                 ctx.textAlign = "center";
@@ -1665,12 +1891,11 @@
                 ctx.restore();
               }
             } else {
-              // Режим ограниченной видимости — полупрозрачное пятно
-              const alpha = lifeFrac * 0.45;
-              const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
-              grad.addColorStop(0, `rgba(180,180,180,${alpha})`);
-              grad.addColorStop(1, "rgba(100,100,100,0)");
-              ctx.fillStyle = grad;
+              const alpha = lf * 0.45,
+                gr = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+              gr.addColorStop(0, `rgba(180,180,180,${alpha})`);
+              gr.addColorStop(1, "rgba(100,100,100,0)");
+              ctx.fillStyle = gr;
               ctx.beginPath();
               ctx.arc(sx, sy, sr, 0, Math.PI * 2);
               ctx.fill();
@@ -1679,10 +1904,9 @@
 
           // Взрывы
           for (const exp of g.explosions) {
-            const t = exp.life / exp.maxLife;
-            // Огненный шар
-            const ballR = (1 - t) * CELL * 1.4 + CELL * 0.3;
-            const grad = ctx.createRadialGradient(
+            const t = exp.life / exp.maxLife,
+              ballR = (1 - t) * CELL * 1.4 + CELL * 0.3;
+            const gr = ctx.createRadialGradient(
               exp.x,
               exp.y,
               0,
@@ -1690,136 +1914,93 @@
               exp.y,
               ballR,
             );
-            grad.addColorStop(0, `rgba(255,255,200,${t * 0.95})`);
-            grad.addColorStop(0.3, `rgba(255,160,20,${t * 0.8})`);
-            grad.addColorStop(0.7, `rgba(200,40,0,${t * 0.5})`);
-            grad.addColorStop(1, "rgba(50,10,0,0)");
-            ctx.fillStyle = grad;
+            gr.addColorStop(0, `rgba(255,255,200,${t * 0.95})`);
+            gr.addColorStop(0.3, `rgba(255,160,20,${t * 0.8})`);
+            gr.addColorStop(0.7, `rgba(200,40,0,${t * 0.5})`);
+            gr.addColorStop(1, "rgba(50,10,0,0)");
+            ctx.fillStyle = gr;
             ctx.beginPath();
             ctx.arc(exp.x, exp.y, ballR, 0, Math.PI * 2);
             ctx.fill();
-            // Частицы
             for (const p of exp.particles) {
               if (p.life <= 0) continue;
-              const pa = p.life / p.maxLife;
-              ctx.globalAlpha = pa;
+              ctx.globalAlpha = p.life / p.maxLife;
               ctx.fillStyle = p.color;
               ctx.beginPath();
-              ctx.arc(p.x, p.y, p.r * pa, 0, Math.PI * 2);
+              ctx.arc(p.x, p.y, p.r * (p.life / p.maxLife), 0, Math.PI * 2);
               ctx.fill();
             }
             ctx.globalAlpha = 1;
           }
 
-          // ПТУР
-          for (const p of g.pturs) {
-            // Реактивный шлейф
-            for (let i = 0; i < p.trail.length; i++) {
-              const t = p.trail[i];
-              const frac = i / p.trail.length;
-              const alpha = frac * 0.6;
-              const r = frac * 2.5;
-              ctx.fillStyle = `rgba(255,${Math.floor(100 + frac * 120)},0,${alpha})`;
-              ctx.beginPath();
-              ctx.arc(t.x * C, t.y * C, r, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            // Ракета — вытянутый корпус по направлению полёта
-            ctx.save();
-            ctx.translate(p.x * C, p.y * C);
-            ctx.rotate(p.angle);
-            // Корпус ракеты
-            ctx.fillStyle = "#ccddee";
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 5, 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Нос
-            ctx.fillStyle = "#ff4422";
-            ctx.beginPath();
-            ctx.moveTo(5, 0);
-            ctx.lineTo(2, -1.5);
-            ctx.lineTo(2, 1.5);
-            ctx.closePath();
-            ctx.fill();
-            // Стабилизаторы (хвост)
-            ctx.fillStyle = "#889aaa";
-            ctx.beginPath();
-            ctx.moveTo(-5, 0);
-            ctx.lineTo(-3, -3);
-            ctx.lineTo(-2, -1);
-            ctx.closePath();
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(-5, 0);
-            ctx.lineTo(-3, 3);
-            ctx.lineTo(-2, 1);
-            ctx.closePath();
-            ctx.fill();
-            // Реактивное пламя из сопла
-            const flameLen = 3 + Math.random() * 3;
-            const flameGrad = ctx.createLinearGradient(-5, 0, -5 - flameLen, 0);
-            flameGrad.addColorStop(0, "rgba(255,200,50,0.9)");
-            flameGrad.addColorStop(1, "rgba(255,80,0,0)");
-            ctx.strokeStyle = flameGrad;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(-5, 0);
-            ctx.lineTo(-5 - flameLen, 0);
-            ctx.stroke();
-            ctx.restore();
-          }
-
-          // Лазерные метки игрока
-          if (g.player) {
-            for (const dot of g.player.dots) {
-              const alpha = dot.life / DOT_LIFETIME;
-              if (dot.inSmoke) {
-                ctx.fillStyle = `rgba(200,200,200,${alpha})`;
-              } else if (dot.isEnemy) {
-                ctx.fillStyle = `rgba(255,30,50,${alpha})`;
-              } else {
-                ctx.fillStyle = `rgba(0,200,80,${alpha * 0.9})`; // стена — зелёная точка
+          // ПТУР — только в режиме "всё"
+          if (cfg.visMode === "all")
+            for (const p of g.pturs) {
+              for (let i = 0; i < p.trail.length; i++) {
+                const t = p.trail[i],
+                  fr = i / p.trail.length;
+                ctx.fillStyle = `rgba(255,${Math.floor(100 + fr * 120)},0,${fr * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(t.x * C, t.y * C, fr * 2.5, 0, Math.PI * 2);
+                ctx.fill();
               }
+              ctx.save();
+              ctx.translate(p.x * C, p.y * C);
+              ctx.rotate(p.angle);
+              ctx.fillStyle = "#ccddee";
               ctx.beginPath();
-              ctx.arc(dot.x * C, dot.y * C, 3, 0, Math.PI * 2);
+              ctx.ellipse(0, 0, 5, 2, 0, 0, Math.PI * 2);
               ctx.fill();
-              // Обводка
-              ctx.strokeStyle = dot.isEnemy
-                ? `rgba(255,100,100,${alpha})`
-                : dot.inSmoke
-                  ? `rgba(200,200,200,${alpha * 0.5})`
-                  : `rgba(0,255,100,${alpha * 0.5})`;
-              ctx.lineWidth = 1;
+              ctx.fillStyle = "#ff4422";
+              ctx.beginPath();
+              ctx.moveTo(5, 0);
+              ctx.lineTo(2, -1.5);
+              ctx.lineTo(2, 1.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.fillStyle = "#889aaa";
+              ctx.beginPath();
+              ctx.moveTo(-5, 0);
+              ctx.lineTo(-3, -3);
+              ctx.lineTo(-2, -1);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(-5, 0);
+              ctx.lineTo(-3, 3);
+              ctx.lineTo(-2, 1);
+              ctx.closePath();
+              ctx.fill();
+              const fl = 3 + Math.random() * 3,
+                fg = ctx.createLinearGradient(-5, 0, -5 - fl, 0);
+              fg.addColorStop(0, "rgba(255,200,50,0.9)");
+              fg.addColorStop(1, "rgba(255,80,0,0)");
+              ctx.strokeStyle = fg;
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(-5, 0);
+              ctx.lineTo(-5 - fl, 0);
               ctx.stroke();
+              ctx.restore();
             }
-          }
 
-          // Лазерный луч — для игрока при зажатой ЛКМ, для всех в режиме "всё"
+          // Лазерные лучи
           for (const tank of g.tanks) {
             if (!tank.alive) continue;
-            const showForBot = cfg.visMode === "all" && !tank.isPlayer();
-            const showForPlayer = tank.isPlayer() && tank.laserContinuous;
-            if (!showForBot && !showForPlayer) continue;
+            const showBot = cfg.visMode === "all" && !tank.isPlayer(),
+              showPlayer = tank.isPlayer() && tank.laserContinuous;
+            if (!showBot && !showPlayer) continue;
             const res = tank.renderLaser;
             if (!res) continue;
-            const isContinuous = tank.laserContinuous;
-            // Для импульса — затухающий alpha
-            const maxLife = isContinuous ? 1 : 1.0;
-            const life = isContinuous ? 1 : tank.renderLaserLife || 0;
-            const alpha = isContinuous ? 0.55 : life * 0.7;
+            const isCont = tank.laserContinuous,
+              life = isCont ? 1 : tank.renderLaserLife || 0,
+              alpha = isCont ? 0.55 : life * 0.7;
             if (alpha < 0.01) continue;
-
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.strokeStyle = tank.isPlayer() ? "#00ff88" : tank.color;
-            ctx.lineWidth = isContinuous ? 1.5 : 1;
-            if (isContinuous) {
-              // Непрерывный — тире
-              ctx.setLineDash([4, 4]);
-            } else {
-              // Импульс — точки
-              ctx.setLineDash([1, 5]);
-            }
+            ctx.lineWidth = isCont ? 1.5 : 1;
+            ctx.setLineDash(isCont ? [4, 4] : [1, 5]);
             ctx.lineCap = "round";
             ctx.beginPath();
             ctx.moveTo(tank.x * C, tank.y * C);
@@ -1832,47 +2013,34 @@
           // Танки
           for (const tank of g.tanks) {
             if (!tank.alive) continue;
-            const visible = cfg.visMode === "all" || tank.isPlayer();
-            if (!visible) continue;
-
+            if (cfg.visMode !== "all" && !tank.isPlayer()) continue;
             const px = tank.x * C,
-              py = tank.y * C;
-            const sz = C * 0.6;
-
+              py = tank.y * C,
+              sz = C * 0.6;
             ctx.save();
             ctx.translate(px, py);
-
-            // Корпус
             ctx.rotate(tank.angle);
-            // Основной корпус
             ctx.fillStyle = tank.color;
             ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.9);
-            // Гусеницы — вдоль оси движения, по бокам корпуса
             ctx.fillStyle = "rgba(0,0,0,0.55)";
-            ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.2); // верхняя гусеница
-            ctx.fillRect(-sz * 0.6, sz * 0.25, sz * 1.2, sz * 0.2); // нижняя гусеница
-            // Нос — треугольник на лобовой части (указатель направления движения)
+            ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.2);
+            ctx.fillRect(-sz * 0.6, sz * 0.25, sz * 1.2, sz * 0.2);
             ctx.fillStyle = "rgba(255,255,255,0.85)";
             ctx.beginPath();
-            ctx.moveTo(sz * 0.62, 0); // острие вперёд
+            ctx.moveTo(sz * 0.62, 0);
             ctx.lineTo(sz * 0.38, -sz * 0.18);
             ctx.lineTo(sz * 0.38, sz * 0.18);
             ctx.closePath();
             ctx.fill();
             ctx.rotate(-tank.angle);
-
-            // Башня
             ctx.rotate(tank.turretAngle);
             ctx.fillStyle = tank.isPlayer() ? "#00cc66" : tank.color;
             ctx.beginPath();
             ctx.arc(0, 0, sz * 0.3, 0, Math.PI * 2);
             ctx.fill();
-            // Ствол
             ctx.fillStyle = tank.isPlayer() ? "#009944" : "#aa3300";
             ctx.fillRect(0, -sz * 0.08, sz * 0.5, sz * 0.16);
             ctx.restore();
-
-            // СПО — мигание при облучении
             if (tank.irradiated) {
               ctx.save();
               ctx.strokeStyle = "#ffff00";
@@ -1883,119 +2051,93 @@
               ctx.stroke();
               ctx.restore();
             }
-
-            // Метка
             if (cfg.visMode === "all" || tank.isPlayer()) {
               ctx.fillStyle = tank.isPlayer() ? "#00ff88" : "#ffaa00";
               ctx.font = "7px Share Tech Mono";
               ctx.fillText(tank.label, px - 15, py - sz * 0.55);
-
-              // Статус энергии
-              const barW = sz * 1.2;
+              const bw = sz * 1.2;
               ctx.fillStyle = "#0a1a0a";
-              ctx.fillRect(px - barW / 2, py + sz * 0.5, barW, 3);
+              ctx.fillRect(px - bw / 2, py + sz * 0.5, bw, 3);
               ctx.fillStyle = tank.energy > 30 ? "#ffaa00" : "#ff2244";
               ctx.fillRect(
-                px - barW / 2,
+                px - bw / 2,
                 py + sz * 0.5,
-                (barW * tank.energy) / 100,
+                (bw * tank.energy) / 100,
                 3,
               );
             }
-
-            // Лазерный луч от ботов видим в режиме всей карты
-            if (
-              cfg.visMode === "all" &&
-              !tank.isPlayer() &&
-              tank.laserContinuous &&
-              tank.laserResult
-            ) {
-              ctx.save();
-              ctx.globalAlpha = 0.35;
-              ctx.strokeStyle = tank.color;
-              ctx.lineWidth = 1;
-              ctx.setLineDash([2, 4]);
-              ctx.beginPath();
-              ctx.moveTo(tank.x * C, tank.y * C);
-              ctx.lineTo(tank.laserResult.hitX * C, tank.laserResult.hitY * C);
-              ctx.stroke();
-              ctx.setLineDash([]);
-              ctx.restore();
-            }
-          }
-
-          // Если allMap — рисуем невидимые танки прозрачно
-          if (cfg.allMap) {
-            for (const tank of g.tanks) {
-              if (!tank.alive || !tank.isPlayer()) continue;
-              // Уже нарисован выше
-            }
           }
         }
       }
 
-      // ════════════════════════════════════════
-      // ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ
-      // ════════════════════════════════════════
-      let gameInstance = null;
-      let renderer = null;
-      let lastTime = 0;
-      let animId = null;
+      // ═══════════════════ УВЕДОМЛЕНИЕ ОБ УБИЙСТВЕ ═══════════════════
+      let killNotifyTimer = 0;
+      function showKillNotify(name) {
+        document.getElementById("killName").textContent = name;
+        document.getElementById("killNotify").style.display = "block";
+        killNotifyTimer = 3.0;
+      }
+      function tickKillNotify(dt) {
+        if (killNotifyTimer > 0) {
+          killNotifyTimer -= dt;
+          if (killNotifyTimer <= 0)
+            document.getElementById("killNotify").style.display = "none";
+        }
+      }
 
+      // ═══════════════════ ГЛАВНЫЙ ЦИКЛ ═══════════════════
+      let gameInstance = null,
+        renderer = null,
+        lastTime = 0,
+        animId = null;
       function gameLoop(ts) {
         const dt = Math.min((ts - lastTime) / 1000, 0.05);
         lastTime = ts;
-
         gameInstance.update(dt);
         renderer.draw();
         updateHUD();
-
-        if (gameInstance.running || true) {
-          animId = requestAnimationFrame(gameLoop);
-        }
+        tickKillNotify(dt);
+        animId = requestAnimationFrame(gameLoop);
       }
 
+      // ═══════════════════ HUD ═══════════════════
       function updateHUD() {
-        const g = gameInstance;
-        const p = g.player;
+        const g = gameInstance,
+          p = g.player;
         if (!p) return;
-
         document.getElementById("hudEnergy").textContent =
           Math.round(p.energy) + "%";
         document.getElementById("barEnergy").style.width = p.energy + "%";
         document.getElementById("barEnergy").style.background =
           p.energy > 30 ? "#ffaa00" : "#ff2244";
-
-        const pturPct = p.pturCD > 0 ? (1 - p.pturCD / cfg.pturCD) * 100 : 100;
+        const pp = p.pturCD > 0 ? (1 - p.pturCD / cfg.pturCD) * 100 : 100;
         document.getElementById("hudPtur").textContent =
           p.pturCD > 0 ? p.pturCD.toFixed(1) + "с" : "ГОТОВ";
-        document.getElementById("barPtur").style.width = pturPct + "%";
-
-        const smokePct =
-          p.smokeCD > 0 ? (1 - p.smokeCD / cfg.smokeCD) * 100 : 100;
+        document.getElementById("barPtur").style.width = pp + "%";
+        const sp2 = p.smokeCD > 0 ? (1 - p.smokeCD / cfg.smokeCD) * 100 : 100;
         document.getElementById("hudSmoke").textContent =
           p.smokeCD > 0
             ? p.smokeCD.toFixed(1) + "с"
-            : `ГОТОВ (${p.smokeCount})`;
-        document.getElementById("barSmoke").style.width = smokePct + "%";
-
+            : "ГОТОВ (" + p.smokeCount + ")";
+        document.getElementById("barSmoke").style.width = sp2 + "%";
         document.getElementById("hudSpeed").textContent = Math.abs(
           p.speed,
         ).toFixed(1);
         document.getElementById("hudAngle").textContent = Math.round(
           (p.angle * 180) / Math.PI,
         );
-
-        // СПО — индикатор облучения
+        const gearEl = document.getElementById("hudGear");
+        if (p.gear !== 0) {
+          gearEl.style.display = "inline-block";
+          gearEl.textContent =
+            (p.gear > 0 ? "&#9658;" : "&#9668;") + Math.abs(p.gear);
+        } else gearEl.style.display = "none";
         drawSPO(p);
-
-        const laserMode = p.laserContinuous
+        document.getElementById("hudLaser").textContent = p.laserContinuous
           ? "НЕПРЕРЫВНЫЙ"
           : p.laserResult
             ? "ИМПУЛЬС"
             : "ОТКЛ";
-        document.getElementById("hudLaser").textContent = laserMode;
-
         if (p.laserResult) {
           document.getElementById("hudDist").textContent =
             p.laserResult.dist.toFixed(1);
@@ -2003,77 +2145,229 @@
             .inSmoke
             ? "ДЫМ"
             : p.laserResult.isEnemy
-              ? "⚠ ТАНК"
+              ? "&#9888; ТАНК"
               : "стена";
         } else {
-          document.getElementById("hudDist").textContent = "—";
-          document.getElementById("hudTarget").textContent = "—";
+          document.getElementById("hudDist").textContent = "&#8212;";
+          document.getElementById("hudTarget").textContent = "&#8212;";
         }
+        document.getElementById("spolAlert").style.display = p.irradiated
+          ? "block"
+          : "none";
 
-        // Список участников — живые сверху, мёртвые снизу
         const el = document.getElementById("enemyList");
         el.innerHTML = "";
-        const sorted = [...g.tanks].sort((a, b) => {
-          if (a.alive === b.alive) return 0;
-          return a.alive ? -1 : 1;
-        });
+        const sorted = [...g.tanks].sort((a, b) =>
+          a.alive === b.alive ? 0 : a.alive ? -1 : 1,
+        );
         for (const t of sorted) {
           const wrap = document.createElement("div");
           wrap.style.cssText = `margin-bottom:5px;padding:4px;border:1px solid ${t.alive ? "#1a3a1a" : "#1a1a1a"};opacity:${t.alive ? "1" : "0.45"}`;
-
-          const nameRow = document.createElement("div");
-          nameRow.style.cssText =
+          const nr = document.createElement("div");
+          nr.style.cssText =
             "display:flex;align-items:center;gap:5px;margin-bottom:2px";
-
-          // Цветной индикатор
           const dot = document.createElement("span");
           dot.style.cssText = `display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${t.alive ? t.color : "#333"};${t.alive && t.irradiated ? "box-shadow:0 0 4px #ffff00" : ""}`;
-          nameRow.appendChild(dot);
-
+          nr.appendChild(dot);
           const name = document.createElement("span");
           name.style.cssText = `font-size:0.8em;color:${t.isPlayer() ? "#00ff88" : t.alive ? t.color : "#444"};flex:1;overflow:hidden;white-space:nowrap`;
           name.textContent = t.label;
-          nameRow.appendChild(name);
-
-          const status = document.createElement("span");
-          status.style.cssText = `font-size:0.7em;color:${t.alive ? "#446644" : "#662222"}`;
-          status.textContent = t.alive ? "●" : "✕ УНИЧТ";
-          nameRow.appendChild(status);
-
-          wrap.appendChild(nameRow);
-
+          nr.appendChild(name);
+          const st = document.createElement("span");
+          st.style.cssText = `font-size:0.7em;color:${t.alive ? "#446644" : "#662222"}`;
+          st.textContent = t.alive ? "&#9679;" : "&#10005; УНИЧТ";
+          nr.appendChild(st);
+          wrap.appendChild(nr);
           if (t.alive) {
-            // Полоска энергии
-            const barBg = document.createElement("div");
-            barBg.style.cssText =
+            const bb = document.createElement("div");
+            bb.style.cssText =
               "height:3px;background:#0d1a0d;border:1px solid #0d2a0d;margin-top:1px";
-            const barFg = document.createElement("div");
-            const epct = t.energy;
-            barFg.style.cssText = `height:100%;width:${epct}%;background:${epct > 50 ? "#ffaa00" : epct > 20 ? "#ff7700" : "#ff2244"};transition:width 0.2s`;
-            barBg.appendChild(barFg);
-            wrap.appendChild(barBg);
-
-            // Статус лазера/ПТУР
+            const bf = document.createElement("div");
+            bf.style.cssText = `height:100%;width:${t.energy}%;background:${t.energy > 50 ? "#ffaa00" : t.energy > 20 ? "#ff7700" : "#ff2244"};transition:width 0.2s`;
+            bb.appendChild(bf);
+            wrap.appendChild(bb);
             if (t.laserContinuous || t.irradiated) {
-              const state = document.createElement("div");
-              state.style.cssText =
+              const s2 = document.createElement("div");
+              s2.style.cssText =
                 "font-size:0.68em;color:#884400;margin-top:1px";
-              state.textContent = t.laserContinuous ? "⊙ лазер активен" : "";
-              if (t.irradiated) state.textContent = "⚠ облучает";
-              wrap.appendChild(state);
+              s2.textContent = t.irradiated
+                ? "&#9888; облучают"
+                : "&#8857; лазер";
+              wrap.appendChild(s2);
             }
           }
-
           el.appendChild(wrap);
         }
       }
 
-      // ════════════════════════════════════════
-      // ЗАПУСК
-      // ════════════════════════════════════════
-      document.getElementById("startBtn").onclick = startGame;
+      // ═══════════════════ АУДИО ═══════════════════
+      let audioCtx = null,
+        spoBeepNode = null,
+        spoLastIrradiated = false,
+        _spoBeepTO = null;
+      function ensureAudio() {
+        if (!audioCtx)
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+      }
+      function playShot() {
+        if (!audioCtx) return;
+        const n = Math.floor(audioCtx.sampleRate * 0.18),
+          buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate),
+          d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) {
+          const t = i / n;
+          d[i] =
+            (Math.random() * 2 - 1) *
+            Math.pow(1 - t, 2.5) *
+            (i < n * 0.05 ? 1.5 : 0.6);
+        }
+        const src = audioCtx.createBufferSource(),
+          g = audioCtx.createGain(),
+          hpf = audioCtx.createBiquadFilter();
+        hpf.type = "highpass";
+        hpf.frequency.value = 800;
+        g.gain.setValueAtTime(0.35, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+        src.buffer = buf;
+        src.connect(hpf);
+        hpf.connect(g);
+        g.connect(audioCtx.destination);
+        src.start();
+      }
+      function playExplosion() {
+        if (!audioCtx) return;
+        const n = Math.floor(audioCtx.sampleRate * 0.4),
+          buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate),
+          d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++)
+          d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 1.5);
+        const src = audioCtx.createBufferSource(),
+          g = audioCtx.createGain(),
+          bq = audioCtx.createBiquadFilter();
+        bq.type = "lowpass";
+        bq.frequency.value = 400;
+        g.gain.setValueAtTime(0.6, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        src.buffer = buf;
+        src.connect(bq);
+        bq.connect(g);
+        g.connect(audioCtx.destination);
+        src.start();
+      }
+      function startSpoBeep() {
+        if (!audioCtx || spoBeepNode) return;
+        spoBeepNode = { active: true };
+        scheduleSpoBeep();
+      }
+      function scheduleSpoBeep() {
+        if (!spoBeepNode || !spoBeepNode.active || !audioCtx) return;
+        const osc = audioCtx.createOscillator(),
+          g = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+        _spoBeepTO = setTimeout(scheduleSpoBeep, 400);
+      }
+      function stopSpoBeep() {
+        if (spoBeepNode) spoBeepNode.active = false;
+        spoBeepNode = null;
+        if (_spoBeepTO) {
+          clearTimeout(_spoBeepTO);
+          _spoBeepTO = null;
+        }
+      }
 
-      // Кнопки режима видимости — меню
+      // ═══════════════════ СПО ═══════════════════
+      function drawSPO(player) {
+        const canvas = document.getElementById("spoCanvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d"),
+          W = canvas.width,
+          H = canvas.height,
+          cx = W / 2,
+          cy = H / 2,
+          R = W / 2 - 4;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = "#050e05";
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#1a4a1a";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = "#0d2a0d";
+        ctx.lineWidth = 0.5;
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, R * 0.5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(0,255,136,0.3)";
+        ctx.lineWidth = 1;
+        const ga = player.angle;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(ga) * R * 0.8, cy + Math.sin(ga) * R * 0.8);
+        ctx.stroke();
+        const sp = document.getElementById("spoStatus"),
+          sd = document.getElementById("spoDir");
+        if (player.irradiated && player.irradiatedBy) {
+          const src = player.irradiatedBy,
+            angle = Math.atan2(src.y - player.y, src.x - player.x),
+            rel = angle - player.angle;
+          const dx = Math.cos(rel) * R * 0.65,
+            dy = Math.sin(rel) * R * 0.65;
+          const gr = ctx.createRadialGradient(
+            cx + dx,
+            cy + dy,
+            0,
+            cx + dx,
+            cy + dy,
+            5,
+          );
+          gr.addColorStop(0, "rgba(255,50,50,0.95)");
+          gr.addColorStop(1, "rgba(255,0,0,0)");
+          ctx.fillStyle = gr;
+          ctx.beginPath();
+          ctx.arc(cx + dx, cy + dy, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,100,50,0.5)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + dx, cy + dy);
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255,50,50,0.4)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(cx, cy, R * 0.8, rel - 0.25, rel + 0.25);
+          ctx.stroke();
+          if (sp) sp.textContent = "&#9888; ОБЛУЧЕНИЕ";
+          if (sd) sd.textContent = Math.round((angle * 180) / Math.PI) + "°";
+          if (!spoLastIrradiated) startSpoBeep();
+          spoLastIrradiated = true;
+        } else {
+          if (sp) sp.textContent = "нет облучения";
+          if (sd) sd.textContent = "";
+          if (spoLastIrradiated) stopSpoBeep();
+          spoLastIrradiated = false;
+        }
+      }
+
+      // ═══════════════════ ЗАПУСК ═══════════════════
+      document.getElementById("startBtn").onclick = startGame;
       document.querySelectorAll(".vis-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           document
@@ -2083,280 +2377,6 @@
         });
       });
 
-      // ════════════════════════════════════════
-      // СПО — индикатор направления облучения
-      // ════════════════════════════════════════
-      let audioCtx = null;
-      let spoBeepNode = null;
-      let spoBeepGain = null;
-      let spoLastIrradiated = false;
-
-      function ensureAudio() {
-        if (!audioCtx) {
-          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === "suspended") {
-          audioCtx.resume();
-        }
-      }
-
-      function playPTURShot() {
-        if (!audioCtx) return;
-        // Короткий резкий свист + хлопок старта
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(
-          200,
-          audioCtx.currentTime + 0.18,
-        );
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          audioCtx.currentTime + 0.22,
-        );
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.25);
-      }
-
-      function playShot() {
-        if (!audioCtx) return;
-        // Резкий высокочастотный хлопок — пуск ракеты
-        const bufLen = Math.floor(audioCtx.sampleRate * 0.18);
-        const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufLen; i++) {
-          const t = i / bufLen;
-          // Начальный щелчок + убывающий шум
-          data[i] =
-            (Math.random() * 2 - 1) *
-            Math.pow(1 - t, 2.5) *
-            (i < bufLen * 0.05 ? 1.5 : 0.6);
-        }
-        const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          audioCtx.currentTime + 0.18,
-        );
-        const hpf = audioCtx.createBiquadFilter();
-        hpf.type = "highpass";
-        hpf.frequency.value = 800;
-        src.connect(hpf);
-        hpf.connect(gain);
-        gain.connect(audioCtx.destination);
-        src.start(audioCtx.currentTime);
-      }
-
-      function playExplosion() {
-        if (!audioCtx) return;
-        // Низкочастотный грохот + треск
-        const bufLen = audioCtx.sampleRate * 0.4;
-        const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < bufLen; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.5);
-        }
-        const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          audioCtx.currentTime + 0.4,
-        );
-        const biquad = audioCtx.createBiquadFilter();
-        biquad.type = "lowpass";
-        biquad.frequency.value = 400;
-        src.connect(biquad);
-        biquad.connect(gain);
-        gain.connect(audioCtx.destination);
-        src.start(audioCtx.currentTime);
-      }
-
-      function startSpoBeep() {
-        if (!audioCtx) return;
-        if (spoBeepNode) return;
-        spoBeepGain = audioCtx.createGain();
-        spoBeepGain.gain.value = 0.12;
-        spoBeepGain.connect(audioCtx.destination);
-        // Прерывистый сигнал через ScriptProcessor-free подход: используем setInterval через осциллятор
-        spoBeepNode = { active: true };
-        scheduleSpoBeep();
-      }
-
-      let _spoBeepTimeout = null;
-      function scheduleSpoBeep() {
-        if (!spoBeepNode || !spoBeepNode.active || !audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = 880;
-        g.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-        osc.connect(g);
-        g.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.08);
-        _spoBeepTimeout = setTimeout(scheduleSpoBeep, 400);
-      }
-
-      function stopSpoBeep() {
-        if (spoBeepNode) spoBeepNode.active = false;
-        spoBeepNode = null;
-        if (_spoBeepTimeout) {
-          clearTimeout(_spoBeepTimeout);
-          _spoBeepTimeout = null;
-        }
-      }
-
-      function drawSPO(player) {
-        const canvas = document.getElementById("spoCanvas");
-        const ctx = canvas.getContext("2d");
-        const W = canvas.width,
-          H = canvas.height;
-        const cx = W / 2,
-          cy = H / 2,
-          R = W / 2 - 3;
-
-        ctx.clearRect(0, 0, W, H);
-
-        // Фон
-        ctx.fillStyle = "#050e05";
-        ctx.beginPath();
-        ctx.arc(cx, cy, R + 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Концентрические кольца
-        for (let r = R * 0.33; r <= R; r += R * 0.33) {
-          ctx.strokeStyle = "rgba(0,80,20,0.35)";
-          ctx.lineWidth = 0.5;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-        // Крестик
-        ctx.strokeStyle = "rgba(0,80,20,0.35)";
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx - R, cy);
-        ctx.lineTo(cx + R, cy);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - R);
-        ctx.lineTo(cx, cy + R);
-        ctx.stroke();
-
-        // Внешний обод
-        ctx.strokeStyle = player.irradiated ? "#ff2244" : "#1a3a1a";
-        ctx.lineWidth = player.irradiated ? 1.5 : 1;
-        ctx.beginPath();
-        ctx.arc(cx, cy, R, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Танк-иконка в центре (маленький треугольник — нос вперёд = вверх по умолчанию)
-        ctx.fillStyle = "#00ff88";
-        ctx.save();
-        ctx.translate(cx, cy);
-        // Нарисуем стрелочку вперёд относительно угла игрока (север = вверх = -PI/2)
-        const tankSz = 5;
-        ctx.beginPath();
-        ctx.moveTo(0, -tankSz);
-        ctx.lineTo(-tankSz * 0.6, tankSz * 0.7);
-        ctx.lineTo(tankSz * 0.6, tankSz * 0.7);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        if (player.irradiated && player.irradiatedBy) {
-          const src = player.irradiatedBy;
-          // Угол от игрока к источнику — в мировых координатах
-          const worldAngle = Math.atan2(src.y - player.y, src.x - player.x);
-          // Относительно корпуса игрока: отнять угол танка + поворот СПО
-          // СПО показывает: север = вперёд танка (угол 0 = player.angle)
-          // Стрелка смотрит туда, откуда идёт луч, в системе координат танка
-          const relAngle = worldAngle - player.angle - Math.PI / 2;
-
-          // Расстояние (нормализованное для отображения)
-          const d = Math.hypot(src.x - player.x, src.y - player.y);
-          const dotR = Math.min(R * 0.85, R * 0.3 + (d / 20) * R * 0.5);
-
-          const dx = Math.cos(relAngle) * dotR;
-          const dy = Math.sin(relAngle) * dotR;
-
-          // Линия от центра к точке
-          ctx.strokeStyle = "rgba(255,50,50,0.5)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(cx + dx, cy + dy);
-          ctx.stroke();
-
-          // Пульсирующая точка
-          const pulse = 0.6 + 0.4 * Math.sin(Date.now() / 120);
-          const grad = ctx.createRadialGradient(
-            cx + dx,
-            cy + dy,
-            0,
-            cx + dx,
-            cy + dy,
-            5,
-          );
-          grad.addColorStop(0, `rgba(255,50,50,${pulse})`);
-          grad.addColorStop(1, "rgba(255,50,50,0)");
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(cx + dx, cy + dy, 5, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = `rgba(255,80,80,${pulse})`;
-          ctx.beginPath();
-          ctx.arc(cx + dx, cy + dy, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Дуга-сектор направления (±15°)
-          ctx.strokeStyle = `rgba(255,50,50,${0.3 * pulse})`;
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.arc(
-            cx,
-            cy,
-            R * 0.6,
-            relAngle - 0.26 - Math.PI / 2,
-            relAngle + 0.26 - Math.PI / 2,
-          );
-          ctx.stroke();
-
-          document.getElementById("spoStatus").textContent = "⚠ ОБЛУЧЕНИЕ!";
-          document.getElementById("spoStatus").style.color = "#ff2244";
-          const deg = Math.round(
-            ((((worldAngle * 180) / Math.PI) % 360) + 360) % 360,
-          );
-          document.getElementById("spoDir").textContent = `Азимут ${deg}°`;
-
-          // Аудио
-          ensureAudio();
-          if (!spoLastIrradiated) {
-            stopSpoBeep();
-            startSpoBeep();
-          }
-          spoLastIrradiated = true;
-        } else {
-          document.getElementById("spoStatus").textContent = "нет облучения";
-          document.getElementById("spoStatus").style.color = "#446644";
-          document.getElementById("spoDir").textContent = "";
-          if (spoLastIrradiated) {
-            stopSpoBeep();
-          }
-          spoLastIrradiated = false;
-        }
-      }
-
       function startGame() {
         const visMode =
           document.querySelector(".vis-btn.active")?.dataset.mode ||
@@ -2365,7 +2385,7 @@
           hasPlayer: document.getElementById("cfgPlayer").checked,
           immortal: document.getElementById("cfgImmortal").checked,
           wallDmg: document.getElementById("cfgWallDmg").checked,
-          visMode: visMode,
+          visMode,
           allMap: visMode === "all",
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
           obstacleDensity: parseFloat(
@@ -2374,19 +2394,21 @@
           pturCD: parseInt(document.getElementById("cfgPturCD").value),
           pturSpeed: parseInt(document.getElementById("cfgPturSpeed").value),
           smokeCD: parseInt(document.getElementById("cfgSmokeCD").value),
+          wallDotLife: parseFloat(
+            document.getElementById("cfgWallDotLife").value,
+          ),
+          pturDmg: parseFloat(document.getElementById("cfgPturDmg").value),
         };
-
         document.getElementById("menu").style.display = "none";
         document.getElementById("gameContainer").style.display = "flex";
         document.getElementById("deathScreen").style.display = "none";
-        ensureAudio(); // инициализируем AudioContext по клику пользователя
-
-        // Синхронизировать кнопки HUD с начальным режимом
-        document.querySelectorAll(".vis-btn-hud").forEach((b) => {
-          b.classList.toggle("active", b.dataset.mode === visMode);
-        });
-
-        // Кнопки в HUD — переключение во время игры
+        document.getElementById("killNotify").style.display = "none";
+        ensureAudio();
+        document
+          .querySelectorAll(".vis-btn-hud")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.mode === visMode),
+          );
         document.querySelectorAll(".vis-btn-hud").forEach((btn) => {
           btn.onclick = () => {
             document
@@ -2397,78 +2419,74 @@
             cfg.allMap = cfg.visMode === "all";
           };
         });
+
         gameInstance = new Game(cfg);
         const canvas = document.getElementById("gameCanvas");
         renderer = new Renderer(canvas, gameInstance);
-
-        // Масштабирование канваса под экран
         const wrap = document.getElementById("canvasWrap");
-        const scaleX = wrap.clientWidth / canvas.width;
-        const scaleY = wrap.clientHeight / canvas.height;
-        const scale = Math.min(scaleX, scaleY, 1.5);
+        const scale = Math.min(
+          wrap.clientWidth / canvas.width,
+          wrap.clientHeight / canvas.height,
+          1.5,
+        );
         canvas.style.width = canvas.width * scale + "px";
         canvas.style.height = canvas.height * scale + "px";
 
-        // Ввод
         if (gameInstance.player) {
           const p = gameInstance.player;
-
           window.addEventListener("keydown", (e) => {
+            if ((e.code === "KeyW" || e.code === "ArrowUp") && !p.keys[e.code])
+              p.gear = Math.min(5, p.gear + 1);
+            if (
+              (e.code === "KeyS" || e.code === "ArrowDown") &&
+              !p.keys[e.code]
+            ) {
+              if (p.gear > 0) p.gear = Math.max(0, p.gear - 1);
+              else p.gear = -1;
+            }
+            if (e.code === "KeyR") p.gear = 0;
             p.keys[e.code] = true;
             if (e.code === "KeyF") e.preventDefault();
           });
           window.addEventListener("keyup", (e) => {
             p.keys[e.code] = false;
           });
-
           canvas.addEventListener("mousemove", (e) => {
             const rect = canvas.getBoundingClientRect();
-            const scaleXr = canvas.width / rect.width;
-            const scaleYr = canvas.height / rect.height;
-            const mx = (e.clientX - rect.left) * scaleXr;
-            const my = (e.clientY - rect.top) * scaleYr;
-            p.mouseX = mx / CELL;
-            p.mouseY = my / CELL;
-            // Башня всегда смотрит на курсор
+            p.mouseX =
+              ((e.clientX - rect.left) * (canvas.width / rect.width)) / CELL;
+            p.mouseY =
+              ((e.clientY - rect.top) * (canvas.height / rect.height)) / CELL;
             p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
           });
-
-          let mouseDownTime = 0;
+          let mdt = 0;
           canvas.addEventListener("mousedown", (e) => {
             if (e.button === 0) {
               p.mouseDown = true;
-              mouseDownTime = performance.now();
+              mdt = performance.now();
             }
             if (e.button === 2) {
-              // ПКМ — ПТУР
-              const fired = p.shootPTUR(gameInstance);
-              if (fired) gameInstance.log("ПТУР запущен!", "warn");
+              if (p.shootPTUR(gameInstance))
+                gameInstance.log("ПТУР запущен!", "warn");
             }
             e.preventDefault();
           });
-
           canvas.addEventListener("mouseup", (e) => {
             if (e.button === 0) {
               p.mouseDown = false;
-              const held = performance.now() - mouseDownTime;
-              if (held < 180) {
-                // Короткий клик — одиночный импульс
+              if (performance.now() - mdt < 180) {
                 const res = p.shootLaserPulse(gameInstance);
                 if (res)
                   p.dots.push(
                     new LaserDot(res.hitX, res.hitY, res.isEnemy, res.inSmoke),
                   );
               }
-              // Гасим луч немедленно
               p.laserContinuous = false;
               p.laserResult = null;
             }
           });
-
           canvas.addEventListener("contextmenu", (e) => e.preventDefault());
         }
-
-        // Старт цикла
         if (animId) cancelAnimationFrame(animId);
         lastTime = performance.now();
         animId = requestAnimationFrame(gameLoop);
@@ -2481,7 +2499,6 @@
         document.getElementById("gameContainer").style.display = "none";
         document.getElementById("menu").style.display = "flex";
         document.getElementById("logBox").innerHTML = "";
-        // Сброс слушателей — перезапуск при startGame создаст новые
       }
     </script>
   </body>
