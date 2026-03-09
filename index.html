@@ -1571,6 +1571,7 @@
 
           if (this.mode === "move") {
             this.timer -= 1;
+            if (this.timer % 15 === 0) this.impulseScan();
             this.setGunDirection(this.heading);
             if (this.distance > 5) {
               this.say("Путь свободен!");
