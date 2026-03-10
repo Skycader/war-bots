@@ -439,6 +439,10 @@
           ><input type="checkbox" id="cfgTeamKill" />
         </div>
         <div class="setting-row">
+          <label>Урон себе от ПТУР:</label
+          ><input type="checkbox" id="cfgSelfDmg" />
+        </div>
+        <div class="setting-row">
           <label>Командный спавн:</label
           ><input type="checkbox" id="cfgTeamSpawn" checked />
         </div>
@@ -492,6 +496,8 @@
             <option value="25">25 HP</option>
             <option value="50">50 HP</option>
             <option value="100" selected>100 HP</option>
+            <option value="150">150 HP</option>
+            <option value="200">200 HP</option>
           </select>
         </div>
         <div class="setting-row">
@@ -842,7 +848,8 @@
           game.emitSound(this.x, this.y, "explosion", null);
           playExplosion();
           for (const tank of game.tanks) {
-            if (tank === this.owner || !tank.alive) continue;
+            if (!tank.alive) continue;
+            if (tank === this.owner && !cfg.selfDmg) continue; // урон себе
             if (!cfg.teamKill && this.owner && this.owner.isAlly(tank))
               continue; // не бьём союзников (если teamKill выкл)
             const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
@@ -891,7 +898,8 @@
             const py0 = this.y - Math.sin(this.angle) * stepDist;
             let minD = 9999;
             for (const tank of game.tanks) {
-              if (tank === this.owner || !tank.alive) continue;
+              if (!tank.alive) continue;
+              if (tank === this.owner) continue; // владелец: проксимити никогда не бьёт стрелка
               // Дистанция от отрезка [px0,py0]->[this.x,this.y] до центра танка
               const tx = tank.x,
                 ty = tank.y;
@@ -1423,7 +1431,15 @@
           )
             return false;
           this.pturCD = cfg.pturCD;
-          const ptur = new PTUR(this, this.x, this.y, this.turretAngle);
+          // Смещаем стартовую позицию вперёд на TANK_RADIUS+небольшой зазор
+          // чтобы радиовзрыватель не сработал немедленно на стрелке
+          const pturOffset = TANK_RADIUS + 0.5;
+          const ptur = new PTUR(
+            this,
+            this.x + Math.cos(this.turretAngle) * pturOffset,
+            this.y + Math.sin(this.turretAngle) * pturOffset,
+            this.turretAngle,
+          );
           game.pturs.push(ptur);
           this.activePTUR = ptur;
           game.emitSound(this.x, this.y, "shot", this);
@@ -2041,43 +2057,42 @@
             ctx.globalAlpha = 1;
           }
 
-          // ПТУР — только в режиме "всё"
-          if (cfg.visMode === "all")
-            for (const p of g.pturs) {
-              for (let i = 0; i < p.trail.length; i++) {
-                const t = p.trail[i],
-                  fr = i / p.trail.length;
-                ctx.fillStyle = `rgba(255,${Math.floor(100 + fr * 120)},0,${fr * 0.6})`;
-                ctx.beginPath();
-                ctx.arc(t.x * C, t.y * C, fr * 2.5, 0, Math.PI * 2);
-                ctx.fill();
-              }
-              ctx.save();
-              ctx.translate(p.x * C, p.y * C);
-              ctx.rotate(p.angle);
-              ctx.fillStyle = "#ccddee";
+          // ПТУР — видно всегда (физический объект)
+          for (const p of g.pturs) {
+            for (let i = 0; i < p.trail.length; i++) {
+              const t = p.trail[i],
+                fr = i / p.trail.length;
+              ctx.fillStyle = `rgba(255,${Math.floor(100 + fr * 120)},0,${fr * 0.6})`;
               ctx.beginPath();
-              ctx.ellipse(0, 0, 5, 2, 0, 0, Math.PI * 2);
+              ctx.arc(t.x * C, t.y * C, fr * 2.5, 0, Math.PI * 2);
               ctx.fill();
-              ctx.fillStyle = "#ff4422";
-              ctx.beginPath();
-              ctx.moveTo(5, 0);
-              ctx.lineTo(2, -1.5);
-              ctx.lineTo(2, 1.5);
-              ctx.closePath();
-              ctx.fill();
-              const fl = 3 + Math.random() * 3,
-                fg = ctx.createLinearGradient(-5, 0, -5 - fl, 0);
-              fg.addColorStop(0, "rgba(255,200,50,0.9)");
-              fg.addColorStop(1, "rgba(255,80,0,0)");
-              ctx.strokeStyle = fg;
-              ctx.lineWidth = 2;
-              ctx.beginPath();
-              ctx.moveTo(-5, 0);
-              ctx.lineTo(-5 - fl, 0);
-              ctx.stroke();
-              ctx.restore();
             }
+            ctx.save();
+            ctx.translate(p.x * C, p.y * C);
+            ctx.rotate(p.angle);
+            ctx.fillStyle = "#ccddee";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 5, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#ff4422";
+            ctx.beginPath();
+            ctx.moveTo(5, 0);
+            ctx.lineTo(2, -1.5);
+            ctx.lineTo(2, 1.5);
+            ctx.closePath();
+            ctx.fill();
+            const fl = 3 + Math.random() * 3,
+              fg = ctx.createLinearGradient(-5, 0, -5 - fl, 0);
+            fg.addColorStop(0, "rgba(255,200,50,0.9)");
+            fg.addColorStop(1, "rgba(255,80,0,0)");
+            ctx.strokeStyle = fg;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(-5 - fl, 0);
+            ctx.stroke();
+            ctx.restore();
+          }
 
           // Лазерные лучи
           for (const tank of g.tanks) {
@@ -2615,18 +2630,27 @@
         renderer = null,
         lastTime = 0,
         animId = null;
+      const MAX_SIM_STEP = 0.05; // максимальный шаг симуляции — ПТУР не телепортируются
       let _prevPturCount = 0;
       function gameLoop(ts) {
-        let dt = Math.min((ts - lastTime) / 1000, 0.05);
+        const realDt = Math.min((ts - lastTime) / 1000, 0.1);
         lastTime = ts;
-        if (!paused) gameInstance.update(dt * timeScale);
+        if (!paused) {
+          // Разбиваем dt*timeScale на подшаги ≤ MAX_SIM_STEP
+          let remaining = realDt * timeScale;
+          while (remaining > 0) {
+            const step = Math.min(remaining, MAX_SIM_STEP);
+            gameInstance.update(step);
+            remaining -= step;
+          }
+        }
         // Детектируем новый выстрел ПТУР
         const curPtur = gameInstance.pturs.length;
         if (curPtur > _prevPturCount) onPTURFired();
         _prevPturCount = curPtur;
         renderer.draw();
         updateHUD();
-        tickKillNotify(dt);
+        tickKillNotify(realDt);
         animId = requestAnimationFrame(gameLoop);
       }
 
@@ -2639,6 +2663,7 @@
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
+          "cfgSelfDmg",
           "cfgTeamSpawn",
           "cfgMapSize",
           "cfgObstacles",
@@ -2690,6 +2715,7 @@
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
+          "cfgSelfDmg",
           "cfgTeamSpawn",
           "cfgMapSize",
           "cfgObstacles",
@@ -2735,6 +2761,7 @@
           immortal: document.getElementById("cfgImmortal").checked,
           wallDmg: document.getElementById("cfgWallDmg").checked,
           teamKill: document.getElementById("cfgTeamKill").checked,
+          selfDmg: document.getElementById("cfgSelfDmg").checked,
           teamSpawn: document.getElementById("cfgTeamSpawn").checked,
           visMode,
           allMap: visMode === "all",
