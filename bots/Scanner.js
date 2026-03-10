@@ -78,7 +78,7 @@ class Scanner extends Tank {
 
   onLaserScan(info) {
     this.distance = info.distance;
-    if (info.target === "tank" && info.isHostile) {
+    if (info.target === "tank" && info.isHostile && info.distance > 3) {
       this.say("Обнаружен противник");
       this.enableContinuousLaser();
       this.enemyIsSeen = true;
