@@ -3,18 +3,18 @@ class Terminator extends Tank {
   mode = "scan"; // scan | pursue | evade
 
   // Цель
-  targetAngle = 0; // угол на врага (градусы)
+  targetAngle = 0;
   targetDist = 999;
-  targetLostTimer = 0; // тиков с последнего обнаружения врага
+  targetLostTimer = 0; // тиков без контакта с врагом
 
   // Преследование
   pursueAngle = 0;
 
   // Уклонение
   evadeTimer = 0; // тиков осталось (~50 = 5 сек)
-  evadeDir = 1; // направление зигзага
+  evadeDir = 1; // направление зигзага +1/-1
   evadeAngle = 0; // базовый угол зигзага
-  evadeFireAngle = 0; // откуда облучали
+  evadeFireAngle = 0; // откуда облучали — туда и стреляем
 
   // Звук
   soundAngle = null;
@@ -37,7 +37,7 @@ class Terminator extends Tank {
     if (this.mode === "evade") {
       this.evadeTimer--;
 
-      // Зигзаг каждые 10 тиков
+      // Зигзаг каждые 10 тиков (~1 сек)
       if (this.evadeTimer % 10 === 0) {
         this.evadeDir *= -1;
         this.setDirection(this.evadeAngle + this.evadeDir * 45);
@@ -64,7 +64,7 @@ class Terminator extends Tank {
       this.setDirection(this.pursueAngle);
       this.setSpeed(4);
       this.setGunDegree(this.targetAngle);
-      this.impulseScan(); // уточняем позицию врага каждый тик
+      this.impulseScan(); // уточняем позицию каждый тик
 
       if (this.getCurrentInfo().pturReady) this.fire();
 
@@ -82,13 +82,11 @@ class Terminator extends Tank {
     this.impulseScan();
 
     if (this.soundTimer > 0) {
-      // Идём на подозрительный звук
       this.soundTimer--;
       this.setDirection(this.soundAngle);
       this.setSpeed(2.5);
       if (this.soundTimer === 0) this.stop();
     } else {
-      // Медленный дрейф по карте
       if (Math.random() > 0.97) {
         this.setDirection(this.getRandomDegree());
         this.setSpeed(2);
@@ -99,10 +97,7 @@ class Terminator extends Tank {
   // ════════════════════════════════════════════════
   onLaserScan(info) {
     if (info.target === "tank") {
-      if (!info.isHostile) {
-        // Союзник — полностью игнорируем
-        return;
-      }
+      if (!info.isHostile) return; // союзник — игнорируем
 
       // Враг захвачен
       this.targetAngle = this.gunDegree();
@@ -118,19 +113,26 @@ class Terminator extends Tank {
 
       if (info.distance < 8 && this.getCurrentInfo().pturReady) this.fire();
     }
-    // non-tank: в pursue targetLostTimer считает сам
   }
 
   // ════════════════════════════════════════════════
   onLaserDetection(info) {
     const src = info[0];
 
-    if (!src.hostile) {
-      // Союзник случайно светит — не реагируем
-      return;
+    if (!src.hostile) return; // союзник случайно светит — игнорируем
+
+    // Враг облучает — немедленно выпускаем противоракету в его направлении
+    // ПТУР полетит по лучу лазера (если enableContinuousLaser активен)
+    // или просто в направлении угрозы
+    const shootCM = this.getCurrentInfo().pturReady;
+    if (shootCM) {
+      this.setGunDegree(src.degree);
+      // fire() сработает на следующем тике когда башня довернётся,
+      // но setGunDegreeAndFire сделает это автоматически
+      this.setGunDegreeAndFire(src.degree);
+      this.say("Пуск противоракеты!");
     }
 
-    // Враг облучает
     if (this.mode === "evade") {
       // Уже уклоняемся — обновляем угол и продлеваем
       this.evadeFireAngle = src.degree;
@@ -142,23 +144,24 @@ class Terminator extends Tank {
     this.say("Попал под обстрел! Уклоняюсь!");
     this.evadeFireAngle = src.degree;
     this.evadeAngle = this.getDirection();
-    this.evadeTimer = 50;
+    this.evadeTimer = 50; // ~5 сек
     this.mode = "evade";
 
     this.fireSmoke();
-    this.setGunDegreeAndFire(src.degree);
+    // Если противоракета уже запущена через setGunDegreeAndFire —
+    // повторный fire() не нужен (КД не позволит)
+    if (!shootCM) this.setGunDegreeAndFire(src.degree);
   }
 
   // ════════════════════════════════════════════════
   onSound(info) {
-    // Игнорируем звуки союзников (двигатели, выстрелы)
-    // hostile === null — взрыв, источник неизвестен — слушаем
+    // Игнорируем звуки союзников (hostile===false)
+    // hostile===null — взрыв, источник неизвестен — реагируем
     const relevant = info.filter(
       (s) => s.hostile === true || s.hostile === null,
     );
     if (relevant.length === 0) return;
 
-    // Взрывы приоритетнее двигателей
     const explosion = relevant.find((s) => s.soundType === "explosion");
     const target = explosion || relevant.sort((a, b) => a.dist - b.dist)[0];
 
