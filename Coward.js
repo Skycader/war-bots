@@ -1,63 +1,32 @@
-// Coward — при облучении бросает дым и убегает в случайном направлении
 class Coward extends Tank {
-  enemyIsSeen = false;
-  mode = "scan";
-  timer = 20;
-  constructor(id, x, y, angle) {
-    super(id, x, y, angle, "#00aacc", "COWARD-" + id);
+  constructor() {
+    super(...arguments);
+    this._fleeing = false;
+    this._fleeTimer = 0;
   }
-
-  main() {
-    if (this.mode === "scan") {
-    }
-
-    if (this.mode === "flee" && this.timer > 0) {
-      this.setSpeed(5);
-      // this.setDirection(this.getCurrentInfo() + 5);
-      this.timer -= 1;
-    }
-
-    if (this.timer <= 0) {
-      this.mode = "scan";
-      this.stop();
-      this.timer = 20;
-    }
+  static get botName() {
+    return "Coward";
   }
-
-  onLaserScan(info) {}
-
   onLaserDetection(info) {
-    console.log("COWARD: LASER!");
     this.fireSmoke();
-    if (this.mode !== "flee") {
-      this.mode = "flee";
+    if (!this._fleeing) {
+      this.setDirection(this.getRandomDegree());
+      this._fleeing = true;
+      this._fleeTimer = rnd(2.5, 4.5);
+      this.log("ПАНИКА!");
+    } else {
+      this._fleeTimer = Math.max(this._fleeTimer, 1.5);
     }
-
-    // this.runTasks(
-    //   // () => this.fireSmoke(),
-    //   () => this.setGunDegree(info[0].degree),
-    //   () => this.fire(),
-    //   () => console.log("Вижу облучение лазером!", info),
-    //   // () => this.setDirection(this.getRandomDegree()),
-    //   // () => this.setSpeed(5),
-    //   () => this.setDirection(this.getRandomDegree()),
-    //   () => this.setSpeed(5),
-    //   () => {
-    //     this.isAttacked = false;
-    //   },
-    // );
   }
-
-  onSound(info) {
-    // this.setDirection(info[0].angle);
-    // this.setGunDirection(info[0].angle);
-    // if (info[0].soundType === "engine") {
-    //   this.fire();
-    // } else {
-    //   this.impulseScan();
-    //   if (this.laserData() && this.laserData().target === "tank") {
-    //     this.fire();
-    //   }
-    // }
+  main() {
+    if (this._fleeing) {
+      this._fleeTimer -= 0.1;
+      if (this._fleeTimer > 0) {
+        if (this.getCurrentInfo().energy > 10) this.setSpeed(5);
+      } else {
+        this._fleeing = false;
+        this.setSpeed(0);
+      }
+    }
   }
 }
