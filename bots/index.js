@@ -3,11 +3,16 @@
 
 // Порядок = порядок спавна
 const botClasses = [
-  Dummy,
+  // Dummy,
   // Attacker,
   // Crazy,
   // Shy,
   // Coward,
   // Curious,
-  // Scanner,
+  Scanner,
+  Scanner,
+  Scanner,
+  Attacker,
+  Attacker,
+  Attacker,
 ];

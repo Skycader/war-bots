@@ -7,6 +7,11 @@ class Attacker extends Tank {
   static get botName() {
     return "Attacker";
   }
+
+  static get botTeam() {
+    return "BlueTeam";
+  }
+
   main() {
     if (this._scanMode) {
       this.setGunDegree(this.getGunDegree() + 1);

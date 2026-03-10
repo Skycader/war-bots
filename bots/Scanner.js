@@ -14,6 +14,10 @@ class Scanner extends Tank {
     return "Scanner";
   }
 
+  static get botTeam() {
+    return "RedTeam";
+  }
+
   main() {
     if (this.mode === "scan") {
       this.setGunDegree(this.gunDegree() + 5);
