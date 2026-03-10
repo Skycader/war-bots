@@ -1234,6 +1234,9 @@
             }
             this.renderLaserLife = 0.08;
             this.renderLaserAngle = this.turretAngle;
+            // Наводим ПТУР по лучу лазера
+            if (this.activePTUR && this.activePTUR.alive)
+              this.activePTUR.guide(this.turretAngle);
             // onLaserScan при непрерывном лазере — не чаще раза в 0.2с
             if (!this._contScanTimer) this._contScanTimer = 0;
             this._contScanTimer -= dt;
@@ -1786,37 +1789,65 @@
 
         checkWin() {
           const alive = this.tanks.filter((t) => t.alive);
-          if (alive.length <= 1) {
-            this.running = false;
-            this.winner = alive[0] || null;
-            setTimeout(() => {
-              const ds = document.getElementById("deathScreen");
-              if (!ds) return;
-              const title = document.getElementById("deathTitle");
-              const hasPlayer = !!this.player;
-              if (this.winner && this.winner.isPlayer()) {
-                title.textContent = "ПОБЕДА!";
-                title.style.color = "#00ff88";
-                document.getElementById("deathMsg").textContent =
-                  "Все враги уничтожены.";
-              } else if (this.winner) {
-                if (!hasPlayer) {
-                  title.textContent = "ПОБЕДИТЕЛЬ";
-                  title.style.color = "#ffaa00";
-                } else {
-                  title.textContent = "ПОРАЖЕНИЕ";
-                  title.style.color = "#ff2244";
-                }
-                document.getElementById("deathMsg").textContent =
-                  "Победитель: " + this.winner.label;
-              } else {
-                title.textContent = "НИЧЬЯ";
-                title.style.color = "#888";
-                document.getElementById("deathMsg").textContent = "";
-              }
-              ds.style.display = "flex";
-            }, 1500);
+
+          // Проверка командной победы: все выжившие из одной команды
+          let teamWin = null;
+          if (alive.length > 0) {
+            const teams = new Set(alive.map((t) => t.team));
+            // Одна команда осталась (null не считается — это бесхозные)
+            const realTeams = [...teams].filter((t) => t !== null);
+            if (
+              realTeams.length === 1 &&
+              [...teams].every((t) => t === realTeams[0])
+            ) {
+              teamWin = realTeams[0];
+            }
           }
+
+          const gameOver = alive.length <= 1 || teamWin !== null;
+          if (!gameOver) return;
+
+          this.running = false;
+          this.winner = alive.length === 1 ? alive[0] : null;
+
+          setTimeout(() => {
+            const ds = document.getElementById("deathScreen");
+            if (!ds) return;
+            const title = document.getElementById("deathTitle");
+            const msg = document.getElementById("deathMsg");
+            const hasPlayer = !!this.player;
+            const playerAlive = this.player && this.player.alive;
+
+            if (teamWin) {
+              // Командная победа
+              const playerWins = playerAlive && this.player.team === teamWin;
+              if (playerWins) {
+                title.textContent = "ПОБЕДА КОМАНДЫ!";
+                title.style.color = "#00ff88";
+              } else if (hasPlayer) {
+                title.textContent = "ПОРАЖЕНИЕ";
+                title.style.color = "#ff2244";
+              } else {
+                title.textContent = "ПОБЕДА КОМАНДЫ";
+                title.style.color = "#ffaa00";
+              }
+              const survivors = alive.filter((t) => t.team === teamWin);
+              msg.textContent = `Команда "${teamWin}" победила! Выжило: ${survivors.length}`;
+            } else if (this.winner && this.winner.isPlayer()) {
+              title.textContent = "ПОБЕДА!";
+              title.style.color = "#00ff88";
+              msg.textContent = "Все враги уничтожены.";
+            } else if (this.winner) {
+              title.textContent = hasPlayer ? "ПОРАЖЕНИЕ" : "ПОБЕДИТЕЛЬ";
+              title.style.color = hasPlayer ? "#ff2244" : "#ffaa00";
+              msg.textContent = "Победитель: " + this.winner.label;
+            } else {
+              title.textContent = "НИЧЬЯ";
+              title.style.color = "#888";
+              msg.textContent = "";
+            }
+            ds.style.display = "flex";
+          }, 1500);
         }
       }
 
