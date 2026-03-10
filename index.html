@@ -639,6 +639,9 @@
       const TANK_RADIUS = 0.32;
       const SOUND_RANGE = 30;
       const PROX_FUSE_RANGE = 0.7;
+      const PTUR_SPLASH_FULL = 0.5; // радиус полного урона (клеток)
+      const PTUR_SPLASH_HALF = 1.2; // радиус 50% урона
+      const PTUR_SPLASH_EDGE = 2.2; // радиус 15% урона (осколки)
 
       // Цвета для ботов (случайно назначаются при спавне)
       const BOT_COLORS = [
@@ -763,9 +766,9 @@
 
         static blastDamage(d) {
           const max = cfg.pturDmg || 100;
-          if (d <= 0.45) return max; // прямое попадание / радиовзрыватель
-          if (d <= 0.9) return max * 0.5; // близкий взрыв
-          if (d <= 1.5) return max * 0.15; // осколки
+          if (d <= PTUR_SPLASH_FULL) return max;
+          if (d <= PTUR_SPLASH_HALF) return max * 0.5;
+          if (d <= PTUR_SPLASH_EDGE) return max * 0.15;
           return 0;
         }
 
@@ -825,19 +828,21 @@
               );
               if (d < minD) minD = d;
             }
-            if (minD < 0.45) {
-              this.explode(game);
-              return;
+            if (minD < PROX_FUSE_RANGE) {
+              // Прямое попадание
+              if (minD < 0.35) {
+                this.explode(game);
+                return;
+              }
+              // Радиовзрыватель: ракета начала удаляться — взрыв
+              if (this.prevDist !== null && minD > this.prevDist + 0.01) {
+                this.explode(game);
+                return;
+              }
+              this.prevDist = minD;
+            } else {
+              this.prevDist = null;
             }
-            if (
-              minD < PROX_FUSE_RANGE &&
-              this.prevDist !== null &&
-              this.prevDist < minD
-            ) {
-              this.explode(game);
-              return;
-            }
-            this.prevDist = minD < PROX_FUSE_RANGE ? minD : null;
           }
         }
 
@@ -2713,6 +2718,5 @@
     <script src="bots/Curious.js"></script>
     <script src="bots/Scanner.js"></script>
     <script src="bots/index.js"></script>
-    <!-- тут botClasses = [Scanner, ...] -->
   </body>
 </html>
