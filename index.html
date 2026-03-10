@@ -2620,8 +2620,7 @@
       function onPTURFired() {
         if (ffShotActive) {
           ffShotStop();
-          paused = true;
-          document.getElementById("btnPause").textContent = "▶";
+          setTimeScale(0.1);
         }
       }
 
