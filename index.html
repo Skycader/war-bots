@@ -421,6 +421,10 @@
           <label>Огонь по своим:</label
           ><input type="checkbox" id="cfgTeamKill" />
         </div>
+        <div class="setting-row">
+          <label>Командный спавн:</label
+          ><input type="checkbox" id="cfgTeamSpawn" checked />
+        </div>
         <div class="setting-row" style="grid-column: 1/-1">
           <label>Игрок видит</label>
           <div id="visMode" style="display: flex">
@@ -1536,10 +1540,17 @@
         }
 
         freeCell(excl = 3) {
+          return this.freeCellZone(0, this.mapH, excl);
+        }
+
+        // zone: yMin..yMax (в клетках) — для командного спавна
+        freeCellZone(yMin, yMax, excl = 3) {
           let att = 200;
           while (att-- > 0) {
-            const x = rndInt(2, this.mapW - 3) + 0.5,
-              y = rndInt(2, this.mapH - 3) + 0.5;
+            const x = rndInt(2, this.mapW - 3) + 0.5;
+            const y =
+              rndInt(Math.max(2, yMin), Math.min(this.mapH - 3, yMax - 1)) +
+              0.5;
             if (!this.isBlocked(x, y)) {
               let ok = true;
               for (const t of this.tanks)
@@ -1550,28 +1561,55 @@
               if (ok) return { x, y };
             }
           }
-          return { x: 2.5, y: 2.5 };
+          return this.freeCell(excl); // fallback на всю карту
         }
 
         spawnTanks(config) {
           // botClasses определяется в bots/index.js
           let id = 0;
           const usedColors = new Set();
+
+          // Командный спавн: собираем уникальные команды, делим карту
+          // Команда игрока тоже учитывается
+          const teamZones = {};
+          if (config.teamSpawn) {
+            const allTeams = new Set();
+            for (const BC of botClasses)
+              if (BC.botTeam) allTeams.add(BC.botTeam);
+            if (config.playerTeam) allTeams.add(config.playerTeam);
+            const teams = [...allTeams];
+            if (teams.length >= 2) {
+              // Первая команда — верхняя половина, вторая — нижняя
+              // Остальные команды равномерно между верхом и низом
+              const H = this.mapH,
+                slice = Math.floor(H / teams.length);
+              teams.forEach((t, i) => {
+                teamZones[t] = { yMin: i * slice, yMax: (i + 1) * slice };
+              });
+            }
+          }
+
+          const getPos = (team) => {
+            if (team && teamZones[team])
+              return this.freeCellZone(
+                teamZones[team].yMin,
+                teamZones[team].yMax,
+              );
+            return this.freeCell();
+          };
+
           for (const BC of botClasses) {
-            const pos = this.freeCell();
-            // Выбираем случайный цвет (уникальный если возможно)
+            const team = BC.botTeam || null;
+            const pos = getPos(team);
             let color = BOT_COLORS[id % BOT_COLORS.length];
-            for (let c of BOT_COLORS) {
-              if (!usedColors.has(c)) {
-                color = c;
+            for (const col of BOT_COLORS) {
+              if (!usedColors.has(col)) {
+                color = col;
                 break;
               }
             }
             usedColors.add(color);
-            // Имя бота = botName + '-' + id
             const name = (BC.botName || BC.name) + "-" + id;
-            // Вызываем конструктор БЕЗ аргументов с точки зрения класса бота
-            // Движок передаёт технические параметры через аргументы конструктора Tank
             const bot = new BC(
               id++,
               pos.x,
@@ -1580,11 +1618,11 @@
               color,
               name,
             );
-            if (BC.botTeam) bot.team = BC.botTeam;
+            if (team) bot.team = team;
             this.tanks.push(bot);
           }
           if (config.hasPlayer) {
-            const pos = this.freeCell();
+            const pos = getPos(config.playerTeam);
             this.player = new Player(id++, pos.x, pos.y);
             if (config.playerTeam) this.player.team = config.playerTeam;
             this.tanks.push(this.player);
@@ -2487,6 +2525,7 @@
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
+          "cfgTeamSpawn",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2537,6 +2576,7 @@
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
+          "cfgTeamSpawn",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2581,6 +2621,7 @@
           immortal: document.getElementById("cfgImmortal").checked,
           wallDmg: document.getElementById("cfgWallDmg").checked,
           teamKill: document.getElementById("cfgTeamKill").checked,
+          teamSpawn: document.getElementById("cfgTeamSpawn").checked,
           visMode,
           allMap: visMode === "all",
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
