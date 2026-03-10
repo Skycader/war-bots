@@ -95,18 +95,20 @@ class Scanner extends Tank {
   }
 
   onLaserDetection(info) {
-    this.say("Обнаружено облучение лазером!");
-    this.setGunDegreeAndFire(info[0].degree);
-    this.fireSmoke();
-    this.disableConstantLaser();
-    if (this.mode !== "flee") {
-      this.mode = "flee";
-      this.enableConstntLaser();
+    if (info[0].hostile) {
+      this.say("Обнаружено облучение лазером!");
+      this.setGunDegreeAndFire(info[0].degree);
+      this.fireSmoke();
+      this.disableConstantLaser();
+      if (this.mode !== "flee") {
+        this.mode = "flee";
+        this.enableConstntLaser();
+      }
     }
   }
 
   onSound(info) {
-    if (info[0].dist > 0) {
+    if (info[0].dist > 0 && info[0].hostile) {
       this.soundSource = info[0].angle;
       this.soundDist = info[0].soundDist;
       this.say("Слышу противника");

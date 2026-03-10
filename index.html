@@ -394,11 +394,32 @@
           <label>Игрок:</label><input type="checkbox" id="cfgPlayer" checked />
         </div>
         <div class="setting-row">
+          <label>Команда игрока:</label
+          ><input
+            type="text"
+            id="cfgPlayerTeam"
+            placeholder="нет"
+            style="
+              background: #0a1a0a;
+              border: 1px solid var(--green);
+              color: var(--green);
+              padding: 2px 6px;
+              font-family: &quot;Share Tech Mono&quot;, monospace;
+              font-size: 0.9em;
+              width: 80px;
+            "
+          />
+        </div>
+        <div class="setting-row">
           <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
         </div>
         <div class="setting-row">
           <label>Урон от стен:</label
           ><input type="checkbox" id="cfgWallDmg" checked />
+        </div>
+        <div class="setting-row">
+          <label>Огонь по своим:</label
+          ><input type="checkbox" id="cfgTeamKill" />
         </div>
         <div class="setting-row" style="grid-column: 1/-1">
           <label>Игрок видит</label>
@@ -778,7 +799,8 @@
           playExplosion();
           for (const tank of game.tanks) {
             if (tank === this.owner || !tank.alive) continue;
-            if (this.owner && this.owner.isAlly(tank)) continue; // не бьём союзников
+            if (!cfg.teamKill && this.owner && this.owner.isAlly(tank))
+              continue; // не бьём союзников (если teamKill выкл)
             const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
             const dmg = PTUR.blastDamage(d);
             if (dmg > 0) tank.takeHPDamage(dmg, game, this.owner);
@@ -1242,14 +1264,15 @@
             .filter((s) => s.owner !== this)
             .map((s) => {
               const d = dist({ x: this.x, y: this.y }, s);
-              return d <= SOUND_RANGE
-                ? {
-                    angle:
-                      (Math.atan2(s.y - this.y, s.x - this.x) * 180) / Math.PI,
-                    dist: d,
-                    soundType: s.type,
-                  }
-                : null;
+              if (d > SOUND_RANGE) return null;
+              // hostile: null если источник неизвестен (взрывы), иначе isEnemy
+              const hostile = s.owner ? this.isEnemy(s.owner) : null;
+              return {
+                angle: (Math.atan2(s.y - this.y, s.x - this.x) * 180) / Math.PI,
+                dist: d,
+                soundType: s.type,
+                hostile,
+              };
             })
             .filter(Boolean);
 
@@ -1263,7 +1286,10 @@
           // Колбэки
           if (this.irradiated && this.irradiatedBy)
             this.onLaserDetection([
-              { degree: (this._api_irradiatedAngle * 180) / Math.PI },
+              {
+                degree: (this._api_irradiatedAngle * 180) / Math.PI,
+                hostile: this.isEnemy(this.irradiatedBy),
+              },
             ]);
           if (this._api_sounds.length > 0) this.onSound(this._api_sounds);
           if (this._api_damaged) {
@@ -1560,6 +1586,7 @@
           if (config.hasPlayer) {
             const pos = this.freeCell();
             this.player = new Player(id++, pos.x, pos.y);
+            if (config.playerTeam) this.player.team = config.playerTeam;
             this.tanks.push(this.player);
           }
         }
@@ -2457,7 +2484,9 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
+          "cfgPlayerTeam",
           "cfgWallDmg",
+          "cfgTeamKill",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2505,7 +2534,9 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
+          "cfgPlayerTeam",
           "cfgWallDmg",
+          "cfgTeamKill",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2519,6 +2550,9 @@
           const el = document.getElementById(id);
           if (el) el.addEventListener("change", saveSettings);
         }
+        document
+          .getElementById("cfgPlayerTeam")
+          .addEventListener("input", saveSettings);
       })();
 
       // ═══════════════════ МЕНЮ vis-btn ═══════════════════
@@ -2542,8 +2576,11 @@
           "reflections";
         cfg = {
           hasPlayer: document.getElementById("cfgPlayer").checked,
+          playerTeam:
+            document.getElementById("cfgPlayerTeam").value.trim() || null,
           immortal: document.getElementById("cfgImmortal").checked,
           wallDmg: document.getElementById("cfgWallDmg").checked,
+          teamKill: document.getElementById("cfgTeamKill").checked,
           visMode,
           allMap: visMode === "all",
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
@@ -2718,6 +2755,7 @@
     <script src="bots/Coward.js"></script>
     <script src="bots/Curious.js"></script>
     <script src="bots/Scanner.js"></script>
+    <script src="bots/Terminator.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>
