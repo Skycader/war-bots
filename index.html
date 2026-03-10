@@ -446,6 +446,10 @@
           <label>Командный спавн:</label
           ><input type="checkbox" id="cfgTeamSpawn" checked />
         </div>
+        <div class="setting-row">
+          <label>ПРО (ПТУР сбивает ПТУР):</label
+          ><input type="checkbox" id="cfgPturVsPtur" />
+        </div>
         <div class="setting-row" style="grid-column: 1/-1">
           <label>Игрок видит</label>
           <div id="visMode" style="display: flex">
@@ -896,23 +900,41 @@
             // Это ловит быстрые ракеты которые "проскакивают" танк за один шаг
             const px0 = this.x - Math.cos(this.angle) * stepDist; // позиция до шага
             const py0 = this.y - Math.sin(this.angle) * stepDist;
-            let minD = 9999;
-            for (const tank of game.tanks) {
-              if (!tank.alive) continue;
-              if (tank === this.owner) continue; // владелец: проксимити никогда не бьёт стрелка
-              // Дистанция от отрезка [px0,py0]->[this.x,this.y] до центра танка
-              const tx = tank.x,
-                ty = tank.y;
+            // Вспомогательная функция: дистанция от отрезка до точки
+            const segDist = (tx, ty) => {
               const dx = this.x - px0,
                 dy = this.y - py0;
               const lenSq = dx * dx + dy * dy;
               let t2 =
                 lenSq > 0 ? ((tx - px0) * dx + (ty - py0) * dy) / lenSq : 0;
               t2 = Math.max(0, Math.min(1, t2));
-              const closestX = px0 + t2 * dx,
-                closestY = py0 + t2 * dy;
-              const d = dist({ x: closestX, y: closestY }, { x: tx, y: ty });
+              return dist(
+                { x: px0 + t2 * dx, y: py0 + t2 * dy },
+                { x: tx, y: ty },
+              );
+            };
+
+            let minD = 9999;
+            // Проверка по танкам
+            for (const tank of game.tanks) {
+              if (!tank.alive) continue;
+              if (tank === this.owner) continue;
+              const d = segDist(tank.x, tank.y);
               if (d < minD) minD = d;
+            }
+            // Проверка по вражеским ПТУРам (система ПРО)
+            if (cfg.pturVsPtur) {
+              for (const other of game.pturs) {
+                if (other === this || !other.alive) continue;
+                if (other.owner === this.owner) continue; // свои ПТУРы не перехватываем
+                const d = segDist(other.x, other.y);
+                if (d < PROX_FUSE_RANGE * 0.6) {
+                  // радиус перехвата чуть меньше
+                  other.explode(game); // сбиваем вражеский ПТУР
+                  this.explode(game); // оба уничтожаются
+                  return;
+                }
+              }
             }
             if (minD < PROX_FUSE_RANGE) {
               this.explode(game);
@@ -2664,6 +2686,7 @@
           "cfgTeamKill",
           "cfgSelfDmg",
           "cfgTeamSpawn",
+          "cfgPturVsPtur",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2716,6 +2739,7 @@
           "cfgTeamKill",
           "cfgSelfDmg",
           "cfgTeamSpawn",
+          "cfgPturVsPtur",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -2762,6 +2786,7 @@
           teamKill: document.getElementById("cfgTeamKill").checked,
           selfDmg: document.getElementById("cfgSelfDmg").checked,
           teamSpawn: document.getElementById("cfgTeamSpawn").checked,
+          pturVsPtur: document.getElementById("cfgPturVsPtur").checked,
           visMode,
           allMap: visMode === "all",
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
