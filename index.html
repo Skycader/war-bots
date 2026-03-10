@@ -637,7 +637,7 @@
       const SMOKE_DURATION = 8;
       const SMOKE_DEPLOY_DELAY = 2.0;
       const TANK_RADIUS = 0.32;
-      const SOUND_RANGE = 10;
+      const SOUND_RANGE = 30;
       const PROX_FUSE_RANGE = 0.7;
 
       // Цвета для ботов (случайно назначаются при спавне)
@@ -771,10 +771,11 @@
 
         explode(game) {
           game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
-          game.emitSound(this.x, this.y, "explosion");
+          game.emitSound(this.x, this.y, "explosion", null);
           playExplosion();
           for (const tank of game.tanks) {
             if (tank === this.owner || !tank.alive) continue;
+            if (this.owner && this.owner.isAlly(tank)) continue; // не бьём союзников
             const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
             const dmg = PTUR.blastDamage(d);
             if (dmg > 0) tank.takeHPDamage(dmg, game, this.owner);
@@ -860,6 +861,7 @@
           this.alive = true;
           this.color = color;
           this.label = label;
+          this.team = null; // команда: null = нет команды, строка = название команды
           this.pturCD = 0;
           this.smokeCD = 0;
           this.smokeCount = 3;
@@ -884,7 +886,7 @@
           this._continuousLaserCmd = undefined;
           this._taskQueue = [];
           this._mainTimer = 0;
-          this._engineSoundTimer = 0;
+          this._engineSoundTimer = rnd(0, 0.3); // случайный старт чтобы не все пищали одновременно
           this._game = null;
           this._sayBubbles = [];
         }
@@ -961,6 +963,17 @@
         }
         wasDamaged() {
           return this._api_damaged;
+        }
+
+        // Команды
+        getTeam() {
+          return this.team;
+        }
+        isAlly(other) {
+          return this.team !== null && other && this.team === other.team;
+        }
+        isEnemy(other) {
+          return !this.isAlly(other) && other !== this;
         }
 
         // Оружие
@@ -1112,12 +1125,12 @@
             const spd = this.speed;
             const nx = this.x + Math.cos(this.angle) * spd * dt;
             const ny = this.y + Math.sin(this.angle) * spd * dt;
-            if (!game.isTankBlocked(nx, ny)) {
+            if (!game.isTankBlocked(nx, ny, this)) {
               this.x = nx;
               this.y = ny;
             } else {
-              const canX = !game.isTankBlocked(nx, this.y);
-              const canY = !game.isTankBlocked(this.x, ny);
+              const canX = !game.isTankBlocked(nx, this.y, this);
+              const canY = !game.isTankBlocked(this.x, ny, this);
               if (canX) this.x = nx;
               else if (canY) this.y = ny;
               else {
@@ -1141,9 +1154,11 @@
 
           // Звук двигателя
           this._engineSoundTimer -= dt;
-          if (this._engineSoundTimer <= 0 && Math.abs(this.speed) > 0.5) {
-            this._engineSoundTimer = 0.3;
-            game.emitSound(this.x, this.y, "engine");
+          if (this._engineSoundTimer <= 0) {
+            if (Math.abs(this.speed) > 0.5) {
+              game.emitSound(this.x, this.y, "engine", this);
+            }
+            this._engineSoundTimer = 0.3; // сбрасываем всегда — не накапливаем долг
           }
 
           // Башня
@@ -1216,8 +1231,9 @@
           if (!this.alive) return;
           this._game = game;
 
-          // Звуки вокруг
+          // Звуки вокруг — фильтруем: не свои, в радиусе SOUND_RANGE
           this._api_sounds = game.sounds
+            .filter((s) => s.owner !== this)
             .map((s) => {
               const d = dist({ x: this.x, y: this.y }, s);
               return d <= SOUND_RANGE
@@ -1331,7 +1347,7 @@
           const ptur = new PTUR(this, this.x, this.y, this.turretAngle);
           game.pturs.push(ptur);
           this.activePTUR = ptur;
-          game.emitSound(this.x, this.y, "shot");
+          game.emitSound(this.x, this.y, "shot", this);
           playShot();
           return true;
         }
@@ -1375,10 +1391,6 @@
 
         aiUpdate(dt, game) {}
       }
-
-      // ═══════════════════ БОТЫ ═══════════════════
-      // Движок назначает id/x/y/angle/color автоматически при спавне.
-      // Бот может задать только имя — через static botName или getName().
 
       // ═══════════════════ ИГРОК ═══════════════════
       class Player extends Tank {
@@ -1510,7 +1522,7 @@
         }
 
         spawnTanks(config) {
-          const botClasses = [Scanner, Scanner, Scanner, Scanner, Scanner];
+          // botClasses определяется в bots/index.js
           let id = 0;
           const usedColors = new Set();
           for (const BC of botClasses) {
@@ -1536,6 +1548,7 @@
               color,
               name,
             );
+            if (BC.botTeam) bot.team = BC.botTeam;
             this.tanks.push(bot);
           }
           if (config.hasPlayer) {
@@ -1553,7 +1566,7 @@
           return this.map[cy][cx] === 1;
         }
 
-        isTankBlocked(x, y) {
+        isTankBlocked(x, y, self = null) {
           const r = TANK_RADIUS,
             d = r * 0.707;
           for (const [cx, cy] of [
@@ -1576,6 +1589,14 @@
               this.map[gy][gx] === 1
             )
               return true;
+          }
+          // Коллизия с другими танками
+          if (self) {
+            const minDist = TANK_RADIUS * 2;
+            for (const t of this.tanks) {
+              if (t === self || !t.alive) continue;
+              if (dist({ x, y }, t) < minDist) return true;
+            }
           }
           return false;
         }
@@ -1604,8 +1625,8 @@
         inSmoke(x, y) {
           return this.smokes.some((s) => s.alive() && s.contains(x, y));
         }
-        emitSound(x, y, type) {
-          this.sounds.push({ x, y, type });
+        emitSound(x, y, type, owner = null) {
+          this.sounds.push({ x, y, type, owner });
         }
 
         castLaser(fromTank, angle) {
@@ -1639,9 +1660,10 @@
                 // Облучение только если нет стены между лучом и танком (уже в луче)
                 tank.irradiated = true;
                 tank.irradiatedBy = fromTank;
+                const hostile = !inSmk && fromTank.isEnemy(tank);
                 return {
                   dist: d,
-                  isEnemy: !inSmk,
+                  isEnemy: hostile,
                   hitX: rx,
                   hitY: ry,
                   inSmoke: inSmk,
@@ -1725,6 +1747,28 @@
             }, 1500);
           }
         }
+      }
+
+      // ═══════════════════ ЦВЕТА КОМАНД ═══════════════════
+      const _teamColorCache = {};
+      const _teamPalette = [
+        "#ff4466",
+        "#4488ff",
+        "#ffcc00",
+        "#44ffaa",
+        "#ff8800",
+        "#cc44ff",
+        "#00ccff",
+        "#ff44cc",
+      ];
+      let _teamColorIdx = 0;
+      function teamColor(team) {
+        if (!team) return "#ffaa00";
+        if (!_teamColorCache[team]) {
+          _teamColorCache[team] =
+            _teamPalette[_teamColorIdx++ % _teamPalette.length];
+        }
+        return _teamColorCache[team];
       }
 
       // ═══════════════════ РЕНДЕРЕР ═══════════════════
@@ -1979,9 +2023,18 @@
               ctx.restore();
             }
             if (cfg.visMode === "all" || tank.isPlayer()) {
-              ctx.fillStyle = tank.isPlayer() ? "#00ff88" : "#ffaa00";
+              const labelColor = tank.isPlayer()
+                ? "#00ff88"
+                : tank.team
+                  ? teamColor(tank.team)
+                  : "#ffaa00";
+              ctx.fillStyle = labelColor;
               ctx.font = "7px Share Tech Mono";
-              ctx.fillText(tank.label, px - 15, py - sz * 0.55);
+              ctx.fillText(
+                tank.label + (tank.team ? " [" + tank.team + "]" : ""),
+                px - 22,
+                py - sz * 0.55,
+              );
               // HP бар (красный) над танком
               const bw = sz * 1.2;
               ctx.fillStyle = "#0a1a0a";
@@ -2068,6 +2121,12 @@
           name.style.cssText = `font-size:0.8em;color:${t.isPlayer() ? "#00ff88" : t.alive ? t.color : "#444"};flex:1;overflow:hidden;white-space:nowrap`;
           name.textContent = t.label;
           nr.appendChild(name);
+          if (t.team) {
+            const tb = document.createElement("span");
+            tb.style.cssText = `font-size:0.65em;padding:0 3px;border-radius:2px;background:${teamColor(t.team)};color:#000;margin-left:2px;flex-shrink:0`;
+            tb.textContent = t.team;
+            nr.appendChild(tb);
+          }
           const st = document.createElement("span");
           st.style.cssText = `font-size:0.7em;color:${t.alive ? "#446644" : "#662222"}`;
           st.innerHTML = t.alive ? "&#9679;" : "&#10005;";
@@ -2520,6 +2579,8 @@
           };
         });
 
+        Object.keys(_teamColorCache).forEach((k) => delete _teamColorCache[k]);
+        _teamColorIdx = 0;
         gameInstance = new Game(cfg);
         const canvas = document.getElementById("gameCanvas");
         renderer = new Renderer(canvas, gameInstance);
@@ -2643,5 +2704,15 @@
         document.getElementById("logBox").innerHTML = "";
       }
     </script>
+
+    <script src="bots/Dummy.js"></script>
+    <script src="bots/Attacker.js"></script>
+    <script src="bots/Crazy.js"></script>
+    <script src="bots/Shy.js"></script>
+    <script src="bots/Coward.js"></script>
+    <script src="bots/Curious.js"></script>
+    <script src="bots/Scanner.js"></script>
+    <script src="bots/index.js"></script>
+    <!-- тут botClasses = [Scanner, ...] -->
   </body>
 </html>
