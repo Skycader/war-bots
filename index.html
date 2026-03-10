@@ -234,6 +234,23 @@
         min-width: 50px;
         text-align: center;
       }
+      .spd-btn {
+        font-size: 0.78em !important;
+        padding: 2px 6px !important;
+        border-right-width: 0 !important;
+        color: #446644 !important;
+      }
+      .spd-btn:last-child {
+        border-right-width: 1px !important;
+      }
+      .spd-btn.active {
+        background: var(--green) !important;
+        color: #000 !important;
+        font-weight: bold;
+      }
+      .spd-btn:hover:not(.active) {
+        color: var(--green) !important;
+      }
       #hud {
         width: 222px;
         background: var(--panel);
@@ -513,10 +530,33 @@
         <canvas id="gameCanvas"></canvas>
         <div id="killNotify">ВЫ УНИЧТОЖИЛИ: <span id="killName"></span></div>
         <div id="timeBar">
-          <button id="btnSlower">◀◀</button>
-          <span id="timeScale">×1.0</span>
-          <button id="btnFaster">▶▶</button>
-          <button id="btnPause" style="margin-left: 4px">⏸</button>
+          <button id="btnPause">⏸</button>
+          <div style="display: flex; gap: 2px" id="speedBtns">
+            <button class="spd-btn" data-v="0.1">×0.1</button>
+            <button class="spd-btn" data-v="0.5">×0.5</button>
+            <button class="spd-btn active" data-v="1">×1</button>
+            <button class="spd-btn" data-v="2">×2</button>
+            <button class="spd-btn" data-v="5">×5</button>
+            <button class="spd-btn" data-v="10">×10</button>
+          </div>
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              font-size: 0.78em;
+              color: #88aa88;
+              cursor: pointer;
+              margin-left: 4px;
+            "
+          >
+            <input
+              type="checkbox"
+              id="chkFfShot"
+              style="accent-color: var(--green); cursor: pointer"
+            />
+            до выстрела
+          </label>
         </div>
         <div id="deathScreen">
           <h2 id="deathTitle">УНИЧТОЖЕН</h2>
@@ -2518,29 +2558,72 @@
       // ═══════════════════ СКОРОСТЬ ВРЕМЕНИ ═══════════════════
       let timeScale = 1.0;
       let paused = false;
+      let ffShotActive = false; // режим перемотки до выстрела
+      let ffShotPrevScale = 1.0; // запомним скорость до перемотки
+
       function setTimeScale(v) {
-        timeScale = Math.max(0.1, Math.min(10, Math.round(v * 10) / 10));
-        document.getElementById("timeScale").textContent =
-          "×" + timeScale.toFixed(1);
+        timeScale = v;
+        document.querySelectorAll(".spd-btn").forEach((b) => {
+          b.classList.toggle("active", parseFloat(b.dataset.v) === v);
+        });
       }
-      document.getElementById("btnSlower").onclick = () =>
-        setTimeScale(timeScale - 0.1);
-      document.getElementById("btnFaster").onclick = () =>
-        setTimeScale(timeScale + 0.1);
+
+      document.querySelectorAll(".spd-btn").forEach((b) => {
+        b.onclick = () => {
+          ffShotStop();
+          setTimeScale(parseFloat(b.dataset.v));
+        };
+      });
+
       document.getElementById("btnPause").onclick = () => {
         paused = !paused;
         document.getElementById("btnPause").textContent = paused ? "▶" : "⏸";
       };
+
+      // Перемотка до выстрела
+      document.getElementById("chkFfShot").onchange = function () {
+        if (this.checked) {
+          ffShotStart();
+        } else {
+          ffShotStop();
+        }
+      };
+
+      function ffShotStart() {
+        ffShotActive = true;
+        ffShotPrevScale = timeScale;
+        setTimeScale(10);
+        document.getElementById("chkFfShot").checked = true;
+      }
+      function ffShotStop() {
+        if (!ffShotActive) return;
+        ffShotActive = false;
+        setTimeScale(ffShotPrevScale);
+        document.getElementById("chkFfShot").checked = false;
+      }
+      // Вызывается из gameLoop при любом выстреле ПТУР
+      function onPTURFired() {
+        if (ffShotActive) {
+          ffShotStop();
+          paused = true;
+          document.getElementById("btnPause").textContent = "▶";
+        }
+      }
 
       // ═══════════════════ ГЛАВНЫЙ ЦИКЛ ═══════════════════
       let gameInstance = null,
         renderer = null,
         lastTime = 0,
         animId = null;
+      let _prevPturCount = 0;
       function gameLoop(ts) {
         let dt = Math.min((ts - lastTime) / 1000, 0.05);
         lastTime = ts;
         if (!paused) gameInstance.update(dt * timeScale);
+        // Детектируем новый выстрел ПТУР
+        const curPtur = gameInstance.pturs.length;
+        if (curPtur > _prevPturCount) onPTURFired();
+        _prevPturCount = curPtur;
         renderer.draw();
         updateHUD();
         tickKillNotify(dt);
@@ -2676,6 +2759,8 @@
         setTimeScale(1.0);
         paused = false;
         document.getElementById("btnPause").textContent = "⏸";
+        ffShotStop();
+        _prevPturCount = 0;
         ensureAudio();
 
         document
