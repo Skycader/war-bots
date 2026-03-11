@@ -1,19 +1,32 @@
 /**
  * Tracker — стационарная зенитная установка.
- * Держит непрерывный лазер на цели, стреляет ПТУРами.
- * Использует экстраполяцию позиции цели между обновлениями умного лазера.
+ *
+ * Режимы: idle → sound → lock
+ * - idle:  вращает башню, ищет импульсным сканом
+ * - sound: звук двигателя/выстрела зафиксирован — башня едет к источнику
+ * - lock:  непрерывный лазер захватил врага — удержание + ПТУР
+ *
+ * Использует всю доступную информацию:
+ *   onSound      → приблизительный пеленг, переход в sound
+ *   onLaserScan  → точный захват, переход в lock
+ *   smartLaser   → скорость/угол цели для экстраполяции
  */
 class Tracker extends Tank {
-  mode = "scan";
+  mode = "idle";
   scanAngle = 0;
 
-  lockAngle = 0; // угол на цель (0..360)
-  lockDist = 0; // дистанция (клетки)
-  lockSpeed = 0; // скорость цели (клетки/сек)
-  lockMovDir = 0; // направление движения цели (радианы canvas)
-  lockLost = 0; // тиков подряд без попадания лазером
+  // Данные захвата
+  lockAngle = 0;
+  lockDist = 10;
+  lockSpeed = 0;
+  lockMovDir = 0; // рад canvas
+  lockLost = 0;
+  _hasTarget = false;
   _shotCD = 0;
-  _hasTarget = false; // есть ли актуальный контакт с целью
+
+  // Данные звукового пеленга
+  soundAngle = 0;
+  soundLost = 0;
 
   constructor() {
     super(...arguments);
@@ -22,44 +35,89 @@ class Tracker extends Tank {
     return "Tracker";
   }
 
+  // ── Вычислить за сколько тиков башня довернётся на delta градусов ──────────
+  _turnsIn(deltaDeg) {
+    const rps = 1.8 * (cfg.turretSpeed || 1); // рад/сек
+    const dps = (rps * 180) / Math.PI; // °/сек
+    return deltaDeg / dps; // секунд
+  }
+
+  // ── Экстраполировать lockAngle на dt секунд вперёд ─────────────────────────
+  _extrapolate(dt) {
+    if (this.lockSpeed < 0.1) return;
+    const lockRad = degToRad(this.lockAngle);
+    const cx = Math.cos(lockRad) * this.lockDist;
+    const cy = Math.sin(lockRad) * this.lockDist;
+    const nx = cx + Math.cos(this.lockMovDir) * this.lockSpeed * dt;
+    const ny = cy + Math.sin(this.lockMovDir) * this.lockSpeed * dt;
+    this.lockAngle = normDeg(Math.atan2(ny, nx));
+    this.lockDist = Math.sqrt(nx * nx + ny * ny);
+  }
+
+  // ════════════════════════════════════════════════════════════
   main() {
     this.stop();
     this._shotCD = Math.max(0, this._shotCD - 1);
 
-    if (this.mode === "scan") {
-      this._doScan();
-    } else {
-      this._doLock();
-    }
+    if (this.mode === "idle") this._doIdle();
+    else if (this.mode === "sound") this._doSound();
+    else this._doLock();
   }
 
-  _doScan() {
+  // ── РЕЖИМ: ПОИСК ─────────────────────────────────────────────────────────
+  _doIdle() {
     this.disableContinuousLaser();
     this.scanAngle = (this.scanAngle + 7) % 360;
     this.setGunDegree(this.scanAngle);
     this.impulseScan();
   }
 
+  // ── РЕЖИМ: ЗВУКОВОЙ ПЕЛЕНГ ───────────────────────────────────────────────
+  _doSound() {
+    this.disableContinuousLaser();
+    this.soundLost++;
+
+    // Разворачиваем башню к источнику звука и сканируем
+    this.setGunDegree(this.soundAngle);
+    this.impulseScan(); // onLaserScan переведёт в lock если найдёт врага
+
+    if (this.soundLost > 40) {
+      // ~4 сек без подтверждения
+      this.say("Пеленг потерян. Сканирую.");
+      this.mode = "idle";
+      this.scanAngle = this.soundAngle;
+    }
+  }
+
+  // ── РЕЖИМ: ЗАХВАТ ─────────────────────────────────────────────────────────
   _doLock() {
-    // Экстраполяция: двигаем lockAngle по вектору скорости цели между обновлениями
+    this.enableContinuousLaser();
+
+    // Экстраполяция — насколько цель сдвинулась с последнего onLaserScan (0.2с)
+    // При быстрой башне (×5) экстраполируем агрессивнее — башня успевает довернуть
     const dt = 0.1;
-    if (this.lockSpeed > 0.1 && !this._hasTarget) {
-      // Цель не видна в этом тике — экстраполируем
-      const lockRad = degToRad(this.lockAngle);
-      const cx = Math.cos(lockRad) * this.lockDist;
-      const cy = Math.sin(lockRad) * this.lockDist;
-      const nx = cx + Math.cos(this.lockMovDir) * this.lockSpeed * dt;
-      const ny = cy + Math.sin(this.lockMovDir) * this.lockSpeed * dt;
-      this.lockAngle = normDeg(Math.atan2(ny, nx));
-      this.lockDist = Math.sqrt(nx * nx + ny * ny);
+    if (!this._hasTarget) {
+      this._extrapolate(dt);
     }
 
-    // Держим лазер и башню на lockAngle
-    this.enableContinuousLaser();
     this.setGunDegree(this.lockAngle);
 
-    // Стреляем если есть контакт и ПТУР готов
+    // Проверяем насколько башня уже довернулась
+    const gunDiff = Math.abs(
+      ((this.getGunDegree() - this.lockAngle + 540) % 360) - 180,
+    );
+    const aimed = gunDiff < 4;
+
+    if (!this._hasTarget) {
+      if (aimed) this.lockLost++;
+    } else {
+      this.lockLost = 0;
+    }
+
+    // Стрелять — не ждём полного прицеливания при быстрой башне
+    const aimThreshold = Math.max(2, 8 / (cfg.turretSpeed || 1));
     if (
+      gunDiff < aimThreshold &&
       this._hasTarget &&
       this.getCurrentInfo().pturReady &&
       this._shotCD === 0
@@ -69,26 +127,20 @@ class Tracker extends Tank {
       this.say("Пуск! Д=" + Math.round(this.lockDist));
     }
 
-    // Считаем потерю
-    if (!this._hasTarget) {
-      this.lockLost++;
-    } else {
-      this.lockLost = 0;
-    }
-
-    // Сбрасываем флаг — onLaserScan поставит его снова если попадёт
+    // Сбрасываем флаг контакта — onLaserScan поставит снова если попадёт
     this._hasTarget = false;
 
-    if (this.lockLost > 30) {
-      this.say("Цель потеряна. Сканирую.");
+    if (this.lockLost > 25) {
+      // Откат в звуковой пеленг если был звук, иначе в поиск
+      this.say("Захват потерян.");
       this.disableContinuousLaser();
-      this.mode = "scan";
+      this.mode = "idle";
       this.scanAngle = this.lockAngle;
       this.lockSpeed = 0;
     }
   }
 
-  // Вызывается движком каждые 0.2с пока непрерывный лазер попадает в цель
+  // ════════════════════════════════════════════════════════════
   onLaserScan(info) {
     if (!info.isHostile || info.isDead) return;
 
@@ -109,22 +161,41 @@ class Tracker extends Tank {
             ? " V=" + info.targetSpeed.toFixed(1)
             : ""),
       );
-      this._hasTarget = true;
       this.lockLost = 0;
       this.mode = "lock";
     }
   }
 
+  // ════════════════════════════════════════════════════════════
+  onSound(info) {
+    if (this.mode === "lock") return; // захват приоритетнее звука
+
+    // Ищем ближайший враждебный звук (двигатель или выстрел)
+    const hostile = info
+      .filter((s) => s.hostile === true)
+      .sort((a, b) => a.dist - b.dist);
+    if (hostile.length === 0) return;
+
+    const src = hostile[0];
+    this.soundAngle = src.angle; // нормализованный 0..360
+    this.soundLost = 0;
+
+    if (this.mode !== "sound") {
+      const type = src.soundType === "engine" ? "двигатель" : "выстрел";
+      this.say("Пеленг! " + type + " " + Math.round(src.angle) + "°");
+      this.mode = "sound";
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
   onLaserDetection(info) {
     const src = info.find((s) => s.hostile);
-    if (!src || this.mode === "lock") return;
-    this.say("Засечён лазер!");
-    this.lockAngle = src.degree;
-    this.lockDist = 8;
-    this.lockSpeed = 0;
-    this.lockLost = 0;
-    this._hasTarget = false;
-    this.mode = "lock";
+    if (!src) return;
+    if (this.mode === "lock") return;
+    this.say("Засечён лазер! " + Math.round(src.degree) + "°");
+    this.soundAngle = src.degree;
+    this.soundLost = 0;
+    this.mode = "sound";
   }
 
   onDamage() {
