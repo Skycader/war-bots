@@ -933,7 +933,7 @@
       // Если луч проходит дальше этого расстояния — ПТУР теряет наведение и летит прямо.
       // Предотвращает резкие развороты при смене направления лазера.
       // Пример: PTUR_BEAM_GUIDE_RADIUS=1.0 → луч должен проходить в 1 клетке от ракеты.
-      const PTUR_BEAM_GUIDE_RADIUS = 5.0;
+      const PTUR_BEAM_GUIDE_RADIUS = 1.0;
 
       // Максимальная угловая скорость наведения ПТУР, радиан/сек.
       // Ограничивает насколько быстро ракета может менять курс — инерция.
@@ -1539,6 +1539,14 @@
               else {
                 if (cfg.wallDmg && Math.abs(spd) >= 3)
                   this.takeHPDamage((Math.abs(spd) - 2) * 15 * dt, game, null);
+                if (Math.abs(spd) >= 3 && !this._wallHitCD) {
+                  ensureAudio();
+                  playWallHit(calcPanForPlayer(this.x, this.y, game));
+                  this._wallHitCD = true;
+                  setTimeout(() => {
+                    this._wallHitCD = false;
+                  }, 200);
+                }
                 this.speed = 0;
               }
             }
@@ -2475,6 +2483,20 @@
             ctx.moveTo(-5, 0);
             ctx.lineTo(-5 - fl, 0);
             ctx.stroke();
+            // LED индикатор наведения: мигает красным если лазер захвачен, гаснет если нет
+            if (p.canGuide && p._beamClose) {
+              const ledOn = Math.floor(Date.now() / 120) % 2 === 0;
+              if (ledOn) {
+                // LED в носу ракеты (красный треугольник находится в +X)
+                ctx.fillStyle = "rgba(255,30,30,0.95)";
+                ctx.shadowColor = "#ff0000";
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(5, 0, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+              }
+            }
             ctx.restore();
           }
 
@@ -3100,6 +3122,35 @@
         panner.connect(audioCtx.destination);
         src.start();
       }
+      function playWallHit(pan = 0) {
+        if (!audioCtx) return;
+        const n = Math.floor(audioCtx.sampleRate * 0.08);
+        const buf = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) {
+          const t = i / n;
+          // Металлический удар: низкочастотный шум с быстрым затуханием
+          d[i] =
+            (Math.random() * 2 - 1) * Math.pow(1 - t, 3) * 0.8 +
+            Math.sin(i * 0.4) * Math.pow(1 - t, 5) * 0.4;
+        }
+        const src = audioCtx.createBufferSource();
+        const g = audioCtx.createGain();
+        const lpf = audioCtx.createBiquadFilter();
+        const panner = audioCtx.createStereoPanner();
+        lpf.type = "lowpass";
+        lpf.frequency.value = 600;
+        g.gain.setValueAtTime(0.4 * sndVol.master, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        panner.pan.value = Math.max(-1, Math.min(1, pan));
+        src.buffer = buf;
+        src.connect(lpf);
+        lpf.connect(g);
+        g.connect(panner);
+        panner.connect(audioCtx.destination);
+        src.start();
+      }
+
       function startSpoBeep() {
         if (!audioCtx || spoBeepNode) return;
         spoBeepNode = { active: true };
