@@ -117,3 +117,11 @@ class Scanner extends Tank {
     }
   }
 }
+
+// class Spike extends Scanner {
+//   main() {
+//     this.say("");
+//   }
+
+//   onLaserScan(info) {}
+// }
