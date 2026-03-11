@@ -929,6 +929,17 @@
       // Уменьши до 10-15 для реалистичного «тумана войны» по звуку.
       const SOUND_RANGE = 10;
 
+      // Максимальное расстояние от ПТУР до лазерного луча при котором наведение работает.
+      // Если луч проходит дальше этого расстояния — ПТУР теряет наведение и летит прямо.
+      // Предотвращает резкие развороты при смене направления лазера.
+      // Пример: PTUR_BEAM_GUIDE_RADIUS=1.0 → луч должен проходить в 1 клетке от ракеты.
+      const PTUR_BEAM_GUIDE_RADIUS = 5.0;
+
+      // Максимальная угловая скорость наведения ПТУР, радиан/сек.
+      // Ограничивает насколько быстро ракета может менять курс — инерция.
+      // Пример: PTUR_MAX_TURN=2.0 → ~115°/сек, полный разворот за ~1.6 сек.
+      const PTUR_MAX_TURN = 2.0;
+
       // Радиус срабатывания радиовзрывателя ПТУР, клетки.
       // ПТУР взрывается когда пролетает ближе этого расстояния к цели.
       // Пример: PROX_FUSE_RANGE=0.8 → взрыв если ракета пролетает в 0.8 клетки (~13 пикс.) от танка.
@@ -1117,13 +1128,23 @@
           const totalDist = this.speed * dt;
           const steps = Math.max(1, Math.ceil(totalDist / 0.3));
           const stepDist = totalDist / steps;
+          const maxTurn = (PTUR_MAX_TURN * dt) / steps; // макс поворот за один подшаг
           for (let s = 0; s < steps; s++) {
-            if (this.canGuide) this.angle = this.guideAngle;
+            if (this.canGuide && this._beamClose !== false) {
+              // Ограничиваем угловую скорость — инерция ракеты
+              let diff = this.guideAngle - this.angle;
+              // Нормализуем diff в -π..+π
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+              if (Math.abs(diff) <= maxTurn) this.angle = this.guideAngle;
+              else this.angle += Math.sign(diff) * maxTurn;
+            }
             this.x += Math.cos(this.angle) * stepDist;
             this.y += Math.sin(this.angle) * stepDist;
             this.trail.push({ x: this.x, y: this.y });
             if (this.trail.length > 20) this.trail.shift();
 
+            // canGuide: лазер активен И нет стены между владельцем и ПТУР
             if (this.owner.laserContinuous || this.owner.renderLaserLife > 0)
               this.canGuide = !game.segmentHitsWall(
                 this.x,
@@ -1131,7 +1152,10 @@
                 this.owner.x,
                 this.owner.y,
               );
-            else this.canGuide = false;
+            else {
+              this.canGuide = false;
+              this._beamClose = false;
+            }
 
             const cx = Math.floor(this.x),
               cy = Math.floor(this.y);
@@ -1193,8 +1217,32 @@
           }
         }
 
-        guide(angle) {
-          this.guideAngle = angle;
+        // Обновить наведение: turretAngle — угол башни (рад), laserEndX/Y — конец луча (клетки)
+        guide(turretAngle, laserEndX, laserEndY) {
+          // Проверяем: проходит ли лазерный луч рядом с ПТУР?
+          // Луч идёт от стрелка (owner) до laserEndX/Y.
+          // Считаем ближайшее расстояние от ПТУР до этого отрезка.
+          const ox = this.owner.x,
+            oy = this.owner.y;
+          const dx = laserEndX - ox,
+            dy = laserEndY - oy;
+          const lenSq = dx * dx + dy * dy;
+          let beamDist = 9999;
+          if (lenSq > 0.001) {
+            let t = ((this.x - ox) * dx + (this.y - oy) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            beamDist = dist(
+              { x: ox + t * dx, y: oy + t * dy },
+              { x: this.x, y: this.y },
+            );
+          }
+          // Наведение только если луч проходит достаточно близко
+          if (beamDist <= PTUR_BEAM_GUIDE_RADIUS) {
+            this.guideAngle = turretAngle;
+            this._beamClose = true;
+          } else {
+            this._beamClose = false;
+          }
         }
       }
 
@@ -1558,8 +1606,15 @@
             this.renderLaserLife = 0.08;
             this.renderLaserAngle = this.turretAngle;
             // Наводим ПТУР по лучу лазера
-            if (this.activePTUR && this.activePTUR.alive)
-              this.activePTUR.guide(this.turretAngle);
+            if (this.activePTUR && this.activePTUR.alive) {
+              const lx =
+                this.renderLaserEndX ??
+                this.x + Math.cos(this.turretAngle) * 50;
+              const ly =
+                this.renderLaserEndY ??
+                this.y + Math.sin(this.turretAngle) * 50;
+              this.activePTUR.guide(this.turretAngle, lx, ly);
+            }
             // onLaserScan при непрерывном лазере — не чаще раза в 0.2с
             if (!this._contScanTimer) this._contScanTimer = 0;
             this._contScanTimer -= dt;
@@ -1841,8 +1896,15 @@
               this.dots.push(
                 new LaserDot(res.hitX, res.hitY, res.isEnemy, res.inSmoke),
               );
-            if (this.activePTUR && this.activePTUR.alive)
-              this.activePTUR.guide(this.turretAngle);
+            if (this.activePTUR && this.activePTUR.alive) {
+              const lx =
+                this.renderLaserEndX ??
+                this.x + Math.cos(this.turretAngle) * 50;
+              const ly =
+                this.renderLaserEndY ??
+                this.y + Math.sin(this.turretAngle) * 50;
+              this.activePTUR.guide(this.turretAngle, lx, ly);
+            }
           }
         }
         aiUpdate(dt, game) {}
