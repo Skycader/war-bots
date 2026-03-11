@@ -596,6 +596,16 @@
           </select>
         </div>
         <div class="setting-row">
+          <label>Скорость башни:</label>
+          <select id="cfgTurretSpeed">
+            <option value="1">103°/сек (×1, текущая)</option>
+            <option value="2">206°/сек (×2)</option>
+            <option value="3">309°/сек (×3)</option>
+            <option value="4">413°/сек (×4)</option>
+            <option value="5">516°/сек (×5)</option>
+          </select>
+        </div>
+        <div class="setting-row">
           <label>Подсветка стен:</label>
           <select id="cfgWallDotLife">
             <option value="1">1 сек</option>
@@ -603,15 +613,6 @@
             <option value="5" selected>5 сек</option>
             <option value="10">10 сек</option>
             <option value="99999">Постоянно</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Урон лазера (HP/с):</label>
-          <select id="cfgLaserDmg">
-            <option value="0">0 (нет)</option>
-            <option value="5" selected>5</option>
-            <option value="15">15</option>
-            <option value="30">30</option>
           </select>
         </div>
       </div>
@@ -1508,7 +1509,7 @@
           // Башня
           {
             const diff = normAngle(this.turretTargetAngle - this.turretAngle),
-              step = BOT_TURRET_SPEED * dt;
+              step = BOT_TURRET_SPEED * (cfg.turretSpeed || 1) * dt;
             if (Math.abs(diff) <= step)
               this.turretAngle = this.turretTargetAngle;
             else
@@ -1778,8 +1779,12 @@
           const k = this.keys;
           if (k["KeyA"] || k["ArrowLeft"]) this.angle -= TANK_TURN_SPEED * dt;
           if (k["KeyD"] || k["ArrowRight"]) this.angle += TANK_TURN_SPEED * dt;
-          if (k["KeyQ"]) this.turretTargetAngle -= TURRET_TURN_SPEED * dt;
-          if (k["KeyE"]) this.turretTargetAngle += TURRET_TURN_SPEED * dt;
+          if (k["KeyQ"])
+            this.turretTargetAngle -=
+              TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
+          if (k["KeyE"])
+            this.turretTargetAngle +=
+              TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
           if (k["KeyR"]) this.gear = 0;
           if (k["KeyF"]) {
             this.throwSmoke(game);
@@ -3223,8 +3228,8 @@
           "cfgPturSpeed",
           "cfgPturDmg",
           "cfgSmokeCD",
+          "cfgTurretSpeed",
           "cfgWallDotLife",
-          "cfgLaserDmg",
         ];
         const data = {};
         for (const id of ids) {
@@ -3279,8 +3284,8 @@
           "cfgPturSpeed",
           "cfgPturDmg",
           "cfgSmokeCD",
+          "cfgTurretSpeed",
           "cfgWallDotLife",
-          "cfgLaserDmg",
         ];
         for (const id of ids) {
           const el = document.getElementById(id);
@@ -3380,10 +3385,12 @@
           pturSpeed: parseInt(document.getElementById("cfgPturSpeed").value),
           pturDmg: parseFloat(document.getElementById("cfgPturDmg").value),
           smokeCD: parseInt(document.getElementById("cfgSmokeCD").value),
+          turretSpeed: parseInt(
+            document.getElementById("cfgTurretSpeed").value,
+          ),
           wallDotLife: parseFloat(
             document.getElementById("cfgWallDotLife").value,
           ),
-          laserDmg: parseFloat(document.getElementById("cfgLaserDmg").value),
         };
 
         document.getElementById("menu").style.display = "none";
