@@ -45,8 +45,9 @@ class Terminator extends Tank {
       this.setSpeed(5);
 
       // Башня на источник угрозы — ответный огонь
-      this.setGunDegree(this.evadeFireAngle);
-      if (this.getCurrentInfo().pturReady) this.fire();
+
+      if (this.getCurrentInfo().pturReady)
+        this.setGunDegreeAndFire(this.evadeFireAngle);
 
       if (this.evadeTimer <= 0) {
         this.say("Угроза миновала. Возобновляю поиск.");
