@@ -15,7 +15,7 @@ class Scanner extends Tank {
   }
 
   static get botTeam() {
-    return "RedTeam";
+    return "Scanners";
   }
 
   main() {
