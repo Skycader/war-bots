@@ -2586,14 +2586,14 @@
                 px - 22,
                 py - sz * 0.55,
               );
-              // HP бар (красный) над танком
+              // HP бар (красный)
               const bw = sz * 1.2;
               ctx.fillStyle = "#0a1a0a";
               ctx.fillRect(px - bw / 2, py + sz * 0.5, bw, 3);
               ctx.fillStyle =
                 tank.hp > 50 ? "#cc2222" : tank.hp > 20 ? "#ff6622" : "#ff0000";
               ctx.fillRect(px - bw / 2, py + sz * 0.5, (bw * tank.hp) / 100, 3);
-              // Energy бар (жёлтый) под HP
+              // Energy бар (жёлтый)
               ctx.fillStyle = "#0a1a0a";
               ctx.fillRect(px - bw / 2, py + sz * 0.5 + 4, bw, 2);
               ctx.fillStyle = "#ffaa00";
@@ -2603,6 +2603,31 @@
                 (bw * tank.energy) / 100,
                 2,
               );
+              // КД ПТУРа — голубой бар: полный = готов, пустой = перезаряжается
+              {
+                const pturMax = cfg.pturCD || 10;
+                const pturFill =
+                  tank.pturCD > 0 ? 1 - tank.pturCD / pturMax : 1;
+                const hasActivePtur = tank.activePTUR && tank.activePTUR.alive;
+                ctx.fillStyle = "#0a1a0a";
+                ctx.fillRect(px - bw / 2, py + sz * 0.5 + 7, bw, 2);
+                // Цвет: голубой=готов, оранжевый=летит ПТУР, серый=перезаряжается
+                ctx.fillStyle = hasActivePtur
+                  ? "#ff8800"
+                  : pturFill >= 1
+                    ? "#00aaff"
+                    : "#005588";
+                ctx.fillRect(px - bw / 2, py + sz * 0.5 + 7, bw * pturFill, 2);
+                // Мигающий пиксель-маркер «ГОТОВ»
+                if (
+                  pturFill >= 1 &&
+                  !hasActivePtur &&
+                  Math.floor(Date.now() / 400) % 2 === 0
+                ) {
+                  ctx.fillStyle = "#44ddff";
+                  ctx.fillRect(px + bw / 2 - 3, py + sz * 0.5 + 6, 3, 4);
+                }
+              }
             }
             // Речевые облачки say()
             if (tank._sayBubbles && tank._sayBubbles.length > 0) {

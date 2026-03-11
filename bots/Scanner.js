@@ -90,6 +90,7 @@ class Scanner extends Tank {
     if (info.target === "non-tank") {
       if (this.enemyIsSeen) {
         this.say("Противник потерян");
+        this.disableConstantLaser();
       }
       this.enemyIsSeen = false;
     }
