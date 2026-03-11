@@ -400,6 +400,77 @@
         color: #446644;
         line-height: 1.65;
       }
+      #soundModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 500;
+        align-items: center;
+        justify-content: center;
+      }
+      #soundModal.open {
+        display: flex;
+      }
+      #soundModalBox {
+        background: #0d150d;
+        border: 1px solid var(--green);
+        padding: 24px 32px;
+        min-width: 320px;
+        max-width: 440px;
+        width: 90%;
+      }
+      #soundModalBox h3 {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.95em;
+        color: var(--green);
+        letter-spacing: 3px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+      .snd-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+      .snd-row label {
+        font-size: 0.85em;
+        color: #88bbaa;
+        flex: 1;
+      }
+      .snd-row input[type="range"] {
+        flex: 2;
+        accent-color: var(--green);
+      }
+      .snd-row .snd-val {
+        font-size: 0.8em;
+        color: var(--amber);
+        width: 36px;
+        text-align: right;
+      }
+      .snd-row input[type="checkbox"] {
+        accent-color: var(--green);
+        width: 16px;
+        height: 16px;
+      }
+      #soundModalClose {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.8em;
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 8px 24px;
+        cursor: pointer;
+        margin-top: 8px;
+        letter-spacing: 2px;
+        width: 100%;
+      }
+      #soundModalClose:hover {
+        background: #fff;
+      }
     </style>
   </head>
   <body>
@@ -544,7 +615,65 @@
           </select>
         </div>
       </div>
-      <button id="startBtn">&#9654; НАЧАТЬ БОЙ</button>
+      <div style="display: flex; gap: 12px; align-items: center">
+        <button id="startBtn">&#9654; НАЧАТЬ БОЙ</button>
+        <button
+          id="soundSettingsBtn"
+          style="
+            font-family: &quot;Share Tech Mono&quot;, monospace;
+            font-size: 0.85em;
+            background: #0a1a0a;
+            border: 1px solid var(--green);
+            color: var(--green);
+            padding: 10px 18px;
+            cursor: pointer;
+            letter-spacing: 1px;
+          "
+          title="Настройки звука"
+        >
+          &#9834; ЗВУК
+        </button>
+      </div>
+    </div>
+
+    <!-- Модалка звука -->
+    <div id="soundModal">
+      <div id="soundModalBox">
+        <h3>&#9834; НАСТРОЙКИ ЗВУКА</h3>
+        <div class="snd-row">
+          <label>Двигатели</label>
+          <input type="range" id="volEngine" min="0" max="100" value="100" />
+          <span class="snd-val" id="volEngineVal">100%</span>
+        </div>
+        <div class="snd-row">
+          <label>Выстрелы ПТУР</label>
+          <input type="range" id="volShot" min="0" max="100" value="100" />
+          <span class="snd-val" id="volShotVal">100%</span>
+        </div>
+        <div class="snd-row">
+          <label>Взрывы</label>
+          <input type="range" id="volExplosion" min="0" max="100" value="100" />
+          <span class="snd-val" id="volExplosionVal">100%</span>
+        </div>
+        <div class="snd-row">
+          <label>Сигнал СПО (облучение)</label>
+          <input type="range" id="volBeep" min="0" max="100" value="100" />
+          <span class="snd-val" id="volBeepVal">100%</span>
+        </div>
+        <div
+          class="snd-row"
+          style="
+            margin-top: 8px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+          "
+        >
+          <label>Мастер-громкость</label>
+          <input type="range" id="volMaster" min="0" max="100" value="80" />
+          <span class="snd-val" id="volMasterVal">80%</span>
+        </div>
+        <button id="soundModalClose">ЗАКРЫТЬ</button>
+      </div>
     </div>
 
     <div id="gameContainer">
@@ -810,6 +939,20 @@
       // Пример: PTUR_SPLASH_EDGE=2.2 → ~35 пикселей, «задело осколками».
       // Увеличь до 3-4 для более разрушительных взрывов.
       const PTUR_SPLASH_EDGE = 2.2;
+
+      // Нормализация угла: радианы → градусы 0..360
+      // Система координат canvas: 0=вправо, 90=вниз, 180=влево, 270=вверх
+      // Именно эти значения и отдаём в Bot API — без инверсии, round-trip безопасно
+      function normDeg(rad) {
+        let d = (rad * 180) / Math.PI;
+        d = d % 360;
+        if (d < 0) d += 360;
+        return d;
+      }
+      // Обратное: градусы → радианы (без инверсии)
+      function degToRad(deg) {
+        return (deg * Math.PI) / 180;
+      }
 
       // Цвета для ботов (случайно назначаются при спавне)
       const BOT_COLORS = [
@@ -1118,13 +1261,13 @@
 
         // Телеметрия
         gunDegree() {
-          return (this.turretAngle * 180) / Math.PI;
+          return normDeg(this.turretAngle);
         }
         getGunDegree() {
-          return (this.turretAngle * 180) / Math.PI;
+          return normDeg(this.turretAngle);
         }
         getDirection() {
-          return (this.angle * 180) / Math.PI;
+          return normDeg(this.angle);
         }
         getRandomDegree() {
           return rnd(0, 360);
@@ -1135,8 +1278,8 @@
             health: this.hp,
             hp: this.hp,
             speed: Math.abs(this.speed),
-            angle: this.getDirection(),
-            gunAngle: this.getGunDegree(),
+            angle: normDeg(this.angle),
+            gunAngle: normDeg(this.turretAngle),
             beingLasered: this.irradiated,
             pturReady: this.pturCD <= 0,
             pturCooldown: Math.max(0, this.pturCD),
@@ -1156,7 +1299,7 @@
         }
         getIrradiatedAngle() {
           return this._api_irradiatedAngle !== null
-            ? (this._api_irradiatedAngle * 180) / Math.PI
+            ? normDeg(this._api_irradiatedAngle)
             : null;
         }
         wasDamaged() {
@@ -1194,10 +1337,8 @@
                 isHostile: res.isEnemy,
                 isDead: res.isDead || false,
                 inSmoke: res.inSmoke,
-                targetSpeed: res.smart ? res.smart.targetSpeed : null,
-                targetAngle: res.smart ? res.smart.targetAngle : null,
-                targetVx: res.smart ? res.smart.targetVx : null,
-                targetVy: res.smart ? res.smart.targetVy : null,
+                targetSpeed: res.smart?.targetSpeed ?? null,
+                targetAngle: res.smart?.targetAngle ?? null,
               }
             : null;
           if (res) this.onLaserScan(this._api_laser);
@@ -1236,7 +1377,7 @@
 
         // Навести башню на угол и выстрелить как только наведётся
         setGunDegreeAndFire(deg) {
-          this._gunAndFireTarget = (deg * Math.PI) / 180;
+          this._gunAndFireTarget = degToRad(deg);
           this._gunAndFirePending = true;
         }
 
@@ -1420,19 +1561,9 @@
                     isHostile: this.laserResult.isEnemy,
                     isDead: this.laserResult.isDead || false,
                     inSmoke: this.laserResult.inSmoke,
-                    // Умный лазер: скорость и угол цели (если cfg.smartLaser и попали в танк)
-                    targetSpeed: this.laserResult.smart
-                      ? this.laserResult.smart.targetSpeed
-                      : null,
-                    targetAngle: this.laserResult.smart
-                      ? this.laserResult.smart.targetAngle
-                      : null,
-                    targetVx: this.laserResult.smart
-                      ? this.laserResult.smart.targetVx
-                      : null,
-                    targetVy: this.laserResult.smart
-                      ? this.laserResult.smart.targetVy
-                      : null,
+                    // Умный лазер: скорость (клетки/сек) и угол движения цели (градусы)
+                    targetSpeed: this.laserResult.smart?.targetSpeed ?? null,
+                    targetAngle: this.laserResult.smart?.targetAngle ?? null,
                   }
                 : null;
               if (this._api_laser) this.onLaserScan(this._api_laser);
@@ -1460,7 +1591,7 @@
               // hostile: null если источник неизвестен (взрывы), иначе isEnemy
               const hostile = s.owner ? this.isEnemy(s.owner) : null;
               return {
-                angle: (Math.atan2(s.y - this.y, s.x - this.x) * 180) / Math.PI,
+                angle: normDeg(Math.atan2(s.y - this.y, s.x - this.x)),
                 dist: d,
                 soundType: s.type,
                 hostile,
@@ -1479,7 +1610,7 @@
           if (this.irradiated && this.irradiatedBy)
             this.onLaserDetection([
               {
-                degree: (this._api_irradiatedAngle * 180) / Math.PI,
+                degree: normDeg(this._api_irradiatedAngle),
                 hostile: this.isEnemy(this.irradiatedBy),
               },
             ]);
@@ -1951,13 +2082,13 @@
                   tank.irradiatedBy = fromTank;
                 }
                 const hostile = !inSmk && !isDead && fromTank.isEnemy(tank);
+                // Умный лазер: скорость (клетки/сек) и угол движения цели (градусы)
+                // targetSpeed — скалярная скорость, targetAngle — куда едет корпус
                 const smartInfo =
-                  cfg.smartLaser && !isDead && tank.isPlayer === undefined
+                  cfg.smartLaser && !isDead
                     ? {
                         targetSpeed: tank.speed,
-                        targetAngle: (tank.angle * 180) / Math.PI,
-                        targetVx: Math.cos(tank.angle) * tank.speed,
-                        targetVy: Math.sin(tank.angle) * tank.speed,
+                        targetAngle: normDeg(tank.angle),
                       }
                     : null;
                 return {
@@ -2605,7 +2736,7 @@
           p.speed,
         ).toFixed(1);
         document.getElementById("hudAngle").textContent = Math.round(
-          (p.angle * 180) / Math.PI,
+          normDeg(p.angle),
         );
         const gearEl = document.getElementById("hudGear");
         if (p.gear !== 0) {
@@ -2647,6 +2778,14 @@
         spoBeepNode = null,
         spoLastIrradiated = false,
         _spoBeepTO = null;
+      // Громкости звуков (0..1), управляются из модалки
+      const sndVol = {
+        master: 0.8,
+        engine: 1.0,
+        shot: 1.0,
+        explosion: 1.0,
+        beep: 1.0,
+      };
       // Хранилище непрерывных звуков двигателей: tankId → {osc, gain, panner}
       const _engineNodes = {};
 
@@ -2699,7 +2838,11 @@
           audioCtx.currentTime,
           0.1,
         );
-        node.gn.gain.setTargetAtTime(vol * 0.18, audioCtx.currentTime, 0.05);
+        node.gn.gain.setTargetAtTime(
+          vol * 0.18 * sndVol.master * sndVol.engine,
+          audioCtx.currentTime,
+          0.05,
+        );
         node.panner.pan.setTargetAtTime(
           Math.max(-1, Math.min(1, pan)),
           audioCtx.currentTime,
@@ -2806,7 +2949,10 @@
         panner.pan.value = Math.max(-1, Math.min(1, pan));
         hpf.type = "highpass";
         hpf.frequency.value = 800;
-        g.gain.setValueAtTime(0.35, audioCtx.currentTime);
+        g.gain.setValueAtTime(
+          0.35 * sndVol.master * sndVol.shot,
+          audioCtx.currentTime,
+        );
         g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
         src.buffer = buf;
         src.connect(hpf);
@@ -2829,7 +2975,10 @@
         panner.pan.value = Math.max(-1, Math.min(1, pan));
         bq.type = "lowpass";
         bq.frequency.value = 400;
-        g.gain.setValueAtTime(0.6, audioCtx.currentTime);
+        g.gain.setValueAtTime(
+          0.6 * sndVol.master * sndVol.explosion,
+          audioCtx.currentTime,
+        );
         g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
         src.buffer = buf;
         src.connect(bq);
@@ -2849,7 +2998,10 @@
           g = audioCtx.createGain();
         osc.type = "sine";
         osc.frequency.value = 880;
-        g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        g.gain.setValueAtTime(
+          0.12 * sndVol.master * sndVol.beep,
+          audioCtx.currentTime,
+        );
         g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
         osc.connect(g);
         g.connect(audioCtx.destination);
@@ -2958,7 +3110,7 @@
           ctx.arc(cx, cy, R * 0.8, rel - 0.25, rel + 0.25);
           ctx.stroke();
           if (sp) sp.textContent = "⚠ ОБЛУЧЕНИЕ";
-          if (sd) sd.textContent = Math.round((angle * 180) / Math.PI) + "°";
+          if (sd) sd.textContent = Math.round(normDeg(angle)) + "°";
           if (!spoLastIrradiated) startSpoBeep();
           spoLastIrradiated = true;
         } else {
@@ -3152,6 +3304,53 @@
 
       // ═══════════════════ ЗАПУСК ═══════════════════
       document.getElementById("startBtn").onclick = startGame;
+
+      // ── Модалка звука ──
+      document.getElementById("soundSettingsBtn").onclick = () => {
+        ensureAudio();
+        document.getElementById("soundModal").classList.add("open");
+      };
+      document.getElementById("soundModalClose").onclick = () =>
+        document.getElementById("soundModal").classList.remove("open");
+      document.getElementById("soundModal").onclick = (e) => {
+        if (e.target === e.currentTarget)
+          e.currentTarget.classList.remove("open");
+      };
+
+      (function () {
+        const sliders = [
+          ["volMaster", "master"],
+          ["volEngine", "engine"],
+          ["volShot", "shot"],
+          ["volExplosion", "explosion"],
+          ["volBeep", "beep"],
+        ];
+        // Load saved values
+        const saved = JSON.parse(localStorage.getItem("ltw_snd") || "{}");
+        sliders.forEach(([id, key]) => {
+          const el = document.getElementById(id);
+          if (saved[key] !== undefined) {
+            el.value = Math.round(saved[key] * 100);
+            sndVol[key] = saved[key];
+          }
+          document.getElementById(id + "Val").textContent = el.value + "%";
+          el.oninput = function () {
+            sndVol[key] = this.value / 100;
+            document.getElementById(id + "Val").textContent = this.value + "%";
+            localStorage.setItem(
+              "ltw_snd",
+              JSON.stringify(
+                Object.fromEntries(
+                  sliders.map(([sid, sk]) => [
+                    sk,
+                    document.getElementById(sid).value / 100,
+                  ]),
+                ),
+              ),
+            );
+          };
+        });
+      })();
 
       function startGame() {
         saveSettings();
@@ -3348,6 +3547,7 @@
     <script src="bots/Curious.js"></script>
     <script src="bots/Scanner.js"></script>
     <script src="bots/Terminator.js"></script>
+    <script src="bots/Tracker.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>
