@@ -1839,9 +1839,8 @@
 
         destroy(game, killer) {
           if (cfg.immortal) {
-            this.hp = Math.max(5, this.hp);
+            this.hp = 100;
             this.energy = Math.max(10, this.energy);
-            game.log("Бессмертие!", "warn");
             return;
           }
           super.destroy(game, killer);
@@ -2720,10 +2719,16 @@
           : "none";
         if (!p) return;
 
-        document.getElementById("hudHP").textContent = Math.round(p.hp);
-        document.getElementById("barHP").style.width = p.hp + "%";
-        document.getElementById("barHP").style.background =
-          p.hp > 50 ? "#cc2222" : p.hp > 20 ? "#ff6622" : "#ff0000";
+        if (cfg.immortal) {
+          document.getElementById("hudHP").textContent = "∞";
+          document.getElementById("barHP").style.width = "100%";
+          document.getElementById("barHP").style.background = "#00cc66";
+        } else {
+          document.getElementById("hudHP").textContent = Math.round(p.hp);
+          document.getElementById("barHP").style.width = p.hp + "%";
+          document.getElementById("barHP").style.background =
+            p.hp > 50 ? "#cc2222" : p.hp > 20 ? "#ff6622" : "#ff0000";
+        }
 
         document.getElementById("hudEnergy").textContent =
           Math.round(p.energy) + "%";
@@ -3563,5 +3568,4 @@
     <script src="bots/Tracker.js"></script>
     <script src="bots/index.js"></script>
   </body>
-
-  </html>
+</html>
