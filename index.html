@@ -1588,8 +1588,14 @@
             .filter((s) => s.owner !== this)
             .map((s) => {
               const d = dist({ x: this.x, y: this.y }, s);
-              if (d > SOUND_RANGE) return null;
-              // hostile: null если источник неизвестен (взрывы), иначе isEnemy
+              // Радиус слышимости: выстрелы и взрывы — полный SOUND_RANGE,
+              // двигатель — пропорционально скорости источника (как кружок на экране)
+              let maxDist = SOUND_RANGE;
+              if (s.type === "engine" && s.owner) {
+                const spd = Math.abs(s.owner.speed);
+                maxDist = SOUND_RANGE * (spd / MAX_SPEED);
+              }
+              if (d > maxDist) return null;
               const hostile = s.owner ? this.isEnemy(s.owner) : null;
               return {
                 angle: normDeg(Math.atan2(s.y - this.y, s.x - this.x)),
@@ -3557,4 +3563,5 @@
     <script src="bots/Tracker.js"></script>
     <script src="bots/index.js"></script>
   </body>
-</html>
+
+  </html>
