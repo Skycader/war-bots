@@ -555,6 +555,14 @@
           <label>Радиус шума танков:</label
           ><input type="checkbox" id="cfgNoiseRadius" />
         </div>
+        <div class="setting-row">
+          <label>Радиосвязь (broadcast):</label
+          ><input type="checkbox" id="cfgRadioEnabled" checked />
+        </div>
+        <div class="setting-row">
+          <label>Визуализация радиоволн:</label
+          ><input type="checkbox" id="cfgRadioWaves" checked />
+        </div>
         <div class="setting-row" style="grid-column: 1/-1">
           <label>Игрок видит</label>
           <div id="visMode" style="display: flex">
@@ -575,11 +583,20 @@
         </div>
         <div class="setting-row">
           <label>Препятствия:</label>
-          <select id="cfgObstacles">
-            <option value="0.08">Мало</option>
-            <option value="0.14" selected>Средне</option>
-            <option value="0.22">Много</option>
-          </select>
+          <input
+            type="range"
+            id="cfgObstacles"
+            min="0"
+            max="0.9"
+            step="0.01"
+            value="0.15"
+            style="width: 110px; accent-color: var(--green)"
+          />
+          <span
+            id="cfgObstaclesVal"
+            style="color: var(--green); font-size: 0.85em"
+            >15%</span
+          >
         </div>
         <div class="setting-row">
           <label>Кд ПТУР:</label>
@@ -1624,11 +1641,15 @@
         broadcast(message) {
           const game = this._game;
           if (!game) return;
+          if (!cfg.radioEnabled) return; // радиосвязь отключена в настройках
           game.radioMessages.push({
-            sender: this, // движок знает позицию, бот — нет
+            sender: this,
             message: String(message),
             team: this.team || null,
           });
+          // Визуальная волна
+          if (cfg.radioWaves)
+            game.radioWaves.push({ x: this.x, y: this.y, r: 0, life: 1.0 });
           this.say("📡 " + String(message).slice(0, 20));
         }
 
@@ -2008,7 +2029,9 @@
           this.laserContinuous = false;
 
           // Взрывы, обломки и огонь — ВСЕГДА, независимо от галочки "Трупы"
-          // Серия внутренних взрывов — детонация БК
+          // Звук детонации БК — мощный, отдельный от обычного взрыва ПТУР
+          playDetonation(calcPanForPlayer(this.x, this.y, game));
+          // Серия визуальных взрывов
           game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
           for (let i = 0; i < rndInt(2, 3); i++) {
             const ox = (Math.random() - 0.5) * 0.6,
@@ -2167,6 +2190,7 @@
           this.debris = [];
           this.wreckFires = [];
           this.radioMessages = [];
+          this.radioWaves = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -2445,6 +2469,12 @@
           if (!this.running) return;
           this.sounds = [];
           this.radioMessages = [];
+          this.radioWaves = this.radioWaves.filter((w) => {
+            w.r += SOUND_RANGE * 1.5 * 0.1;
+            w.life -= 0.1;
+            return w.life > 0;
+          });
+          this.radioWaves = [];
           this.smokes = this.smokes.filter((s) => {
             s.update(dt);
             return s.alive();
@@ -2796,6 +2826,22 @@
             }
             ctx.setLineDash([]);
             ctx.restore();
+          }
+
+          // Радиоволны
+          if (cfg.radioWaves && g.radioWaves) {
+            for (const w of g.radioWaves) {
+              ctx.save();
+              ctx.globalAlpha = w.life * 0.5;
+              ctx.strokeStyle = "#00ffcc";
+              ctx.lineWidth = 1.5;
+              ctx.setLineDash([4, 8]);
+              ctx.beginPath();
+              ctx.arc(w.x * C, w.y * C, w.r * C, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.restore();
+            }
           }
 
           // Радиус шума танков
@@ -3460,6 +3506,127 @@
         panner.connect(audioCtx.destination);
         src.start();
       }
+      // Детонация БК — три слоя: глубокий бас, шум взрыва, металлический звон
+      function playDetonation(pan = 0) {
+        if (!audioCtx) return;
+        const sr = audioCtx.sampleRate;
+        const vol = sndVol.master * sndVol.explosion;
+        const pv = Math.max(-1, Math.min(1, pan));
+
+        function layer(
+          dur,
+          fillFn,
+          filterType,
+          freq,
+          gainPeak,
+          gainDur,
+          startDelay = 0,
+        ) {
+          const n = Math.floor(sr * dur);
+          const buf = audioCtx.createBuffer(1, n, sr);
+          fillFn(buf.getChannelData(0), n);
+          const src = audioCtx.createBufferSource();
+          const flt = audioCtx.createBiquadFilter();
+          flt.type = filterType;
+          flt.frequency.value = freq;
+          const g = audioCtx.createGain();
+          const panner = audioCtx.createStereoPanner();
+          panner.pan.value = pv;
+          g.gain.setValueAtTime(
+            gainPeak * vol,
+            audioCtx.currentTime + startDelay,
+          );
+          g.gain.exponentialRampToValueAtTime(
+            0.0001,
+            audioCtx.currentTime + startDelay + gainDur,
+          );
+          src.buffer = buf;
+          src.connect(flt);
+          flt.connect(g);
+          g.connect(panner);
+          panner.connect(audioCtx.destination);
+          src.start(audioCtx.currentTime + startDelay);
+        }
+
+        // Бас-удар: синусоида 60Гц с быстрым спадом — ощущается как сотрясение
+        {
+          const n = Math.floor(sr * 1.2);
+          const buf = audioCtx.createBuffer(1, n, sr);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < n; i++) {
+            const t = i / sr;
+            // Синус + субгармоника — имитация давления взрывной волны
+            const env = Math.exp(-t * 4) * (1 - Math.exp(-t * 80)); // быстрый attack, медленный release
+            d[i] =
+              Math.sin(2 * Math.PI * 55 * t) * env * 0.8 +
+              Math.sin(2 * Math.PI * 28 * t) * env * 0.5;
+          }
+          const src = audioCtx.createBufferSource();
+          const lp = audioCtx.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.value = 200;
+          const g = audioCtx.createGain();
+          g.gain.value = 0.9 * vol;
+          const panner = audioCtx.createStereoPanner();
+          panner.pan.value = pv;
+          src.buffer = buf;
+          src.connect(lp);
+          lp.connect(g);
+          g.connect(panner);
+          panner.connect(audioCtx.destination);
+          src.start();
+        }
+
+        // Взрывной шум: широкополосный с пиком на средних
+        layer(
+          1.5,
+          (d, n) => {
+            for (let i = 0; i < n; i++) {
+              const t = i / n;
+              d[i] =
+                (Math.random() * 2 - 1) *
+                Math.pow(Math.exp(-t * 2.5) * (1 - Math.exp(-t * 60)), 0.7);
+            }
+          },
+          "bandpass",
+          350,
+          1.8,
+          1.5,
+        );
+
+        // Высокий свист разлетающихся осколков (0.6 сек, с задержкой 80мс)
+        layer(
+          0.6,
+          (d, n) => {
+            for (let i = 0; i < n; i++) {
+              const t = i / n;
+              d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 3);
+            }
+          },
+          "highpass",
+          3500,
+          0.4,
+          0.6,
+          0.08,
+        );
+
+        // Металлический резонанс корпуса (долгий хвост)
+        layer(
+          2.0,
+          (d, n) => {
+            for (let i = 0; i < n; i++) {
+              const t = i / n;
+              d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 5);
+            }
+          },
+          "bandpass",
+          180,
+          0.6,
+          2.0,
+          0.12,
+        );
+      }
+
       function playWallHit(pan = 0) {
         if (!audioCtx) return;
         const n = Math.floor(audioCtx.sampleRate * 0.08);
@@ -3720,6 +3887,8 @@
           "cfgWrecks",
           "cfgSmartLaser",
           "cfgNoiseRadius",
+          "cfgRadioEnabled",
+          "cfgRadioWaves",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -3777,6 +3946,8 @@
           "cfgWrecks",
           "cfgSmartLaser",
           "cfgNoiseRadius",
+          "cfgRadioEnabled",
+          "cfgRadioWaves",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -3808,6 +3979,27 @@
 
       // ═══════════════════ ЗАПУСК ═══════════════════
       document.getElementById("startBtn").onclick = startGame;
+      (function () {
+        const sl = document.getElementById("cfgObstacles");
+        const lbl = document.getElementById("cfgObstaclesVal");
+        sl.oninput = function () {
+          lbl.textContent = Math.round(this.value * 100) + "%";
+        };
+        sl.addEventListener(
+          "wheel",
+          function (e) {
+            e.preventDefault();
+            const step = 0.01,
+              dir = e.deltaY < 0 ? 1 : -1;
+            this.value = Math.max(
+              0,
+              Math.min(0.9, parseFloat(this.value) + dir * step),
+            );
+            lbl.textContent = Math.round(this.value * 100) + "%";
+          },
+          { passive: false },
+        );
+      })();
 
       // ── Модалка звука ──
       document.getElementById("soundSettingsBtn").onclick = () => {
@@ -3878,6 +4070,8 @@
           smartLaserStill:
             parseInt(document.getElementById("cfgSmartLaser").value) >= 2,
           noiseRadius: document.getElementById("cfgNoiseRadius").checked,
+          radioEnabled: document.getElementById("cfgRadioEnabled").checked,
+          radioWaves: document.getElementById("cfgRadioWaves").checked,
           visMode,
           allMap: visMode === "all",
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
