@@ -77,6 +77,94 @@
         letter-spacing: 4px;
         margin-bottom: 4px;
       }
+      #presetLine {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        margin-bottom: 8px;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 0.9em;
+        color: var(--green);
+        border: 1px solid #1a4a2a;
+        padding: 6px 14px;
+        transition: all 0.2s;
+      }
+      #presetLine:hover {
+        border-color: var(--green);
+        background: rgba(0, 255, 136, 0.05);
+      }
+      #presetLine .pencil {
+        font-size: 0.85em;
+        opacity: 0.7;
+      }
+      #presetModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 500;
+        align-items: center;
+        justify-content: center;
+      }
+      #presetModal.open {
+        display: flex;
+      }
+      #presetModalBox {
+        background: #0d150d;
+        border: 1px solid var(--green);
+        padding: 24px 32px;
+        min-width: 360px;
+        max-width: 500px;
+        width: 90%;
+      }
+      #presetModalBox h3 {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.9em;
+        color: var(--green);
+        letter-spacing: 3px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+      .preset-item {
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        border: 1px solid #1a3a1a;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .preset-item:hover {
+        border-color: var(--green);
+        background: rgba(0, 255, 136, 0.05);
+      }
+      .preset-item.active {
+        border-color: var(--green);
+        background: rgba(0, 255, 136, 0.08);
+      }
+      .preset-item .preset-name {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.8em;
+        color: var(--green);
+        letter-spacing: 2px;
+      }
+      .preset-item .preset-desc {
+        font-size: 0.78em;
+        color: #556655;
+        margin-top: 3px;
+      }
+      #presetModalClose {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.8em;
+        background: var(--green);
+        color: #000;
+        border: none;
+        padding: 8px 24px;
+        cursor: pointer;
+        margin-top: 12px;
+        letter-spacing: 2px;
+        width: 100%;
+      }
       .settings-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -580,6 +668,10 @@
     <div id="menu">
       <h1>&#8853; LASER TANKS &#8853;</h1>
       <h2>АТОМНЫЙ ПРОТОКОЛ</h2>
+      <div id="presetLine" onclick="openPresetModal()">
+        <span class="pencil">✏</span>
+        <span id="presetLineText">загрузка...</span>
+      </div>
       <div class="settings-grid">
         <!-- ══ ЛЕВАЯ КОЛОНКА: галочки ══ -->
         <div style="display: flex; flex-direction: column; gap: 6px">
@@ -771,6 +863,17 @@
           title="Настройки звука"
         >
           &#9834; ЗВУК
+        </button>
+      </div>
+    </div>
+
+    <!-- Модалка пресетов команд -->
+    <div id="presetModal">
+      <div id="presetModalBox">
+        <h3>⚔ ВЫБОР ПРЕСЕТА</h3>
+        <div id="presetList"></div>
+        <button id="presetModalClose" onclick="closePresetModal()">
+          ПРИНЯТЬ
         </button>
       </div>
     </div>
@@ -2321,6 +2424,13 @@
             return;
           }
           super.destroy(game, killer);
+          // После смерти игрока — автоматически режим наблюдения
+          cfg.visMode = "all";
+          document
+            .querySelectorAll(".vis-btn-hud")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.mode === "all"),
+            );
         }
       }
 
@@ -2399,17 +2509,34 @@
         }
 
         spawnTanks(config) {
-          // botClasses определяется в bots/index.js
+          // Используем пресет если выбран, иначе botClasses из index.js
+          const activeBots =
+            typeof getActiveBotClasses === "function"
+              ? getActiveBotClasses()
+              : botClasses;
+          // Команды из пресета (если есть)
+          const preset =
+            typeof battleTeamsPresets !== "undefined"
+              ? battleTeamsPresets[activePresetIdx]
+              : null;
+          const presetTeamMap = {}; // className → teamName
+          if (preset && preset.teams) {
+            for (const [teamName, t] of Object.entries(preset.teams)) {
+              presetTeamMap[t.bot.name] = teamName;
+            }
+          }
+
           let id = 0;
           const usedColors = new Set();
 
           // Командный спавн: собираем уникальные команды, делим карту
-          // Команда игрока тоже учитывается
           const teamZones = {};
           if (config.teamSpawn) {
             const allTeams = new Set();
-            for (const BC of botClasses)
-              if (BC.botTeam) allTeams.add(BC.botTeam);
+            for (const BC of activeBots) {
+              const team = presetTeamMap[BC.name] || BC.botTeam;
+              if (team) allTeams.add(team);
+            }
             if (config.playerTeam) allTeams.add(config.playerTeam);
             const teams = [...allTeams];
             if (teams.length >= 2) {
@@ -2445,8 +2572,8 @@
             return this.freeCell();
           };
 
-          for (const BC of botClasses) {
-            const team = BC.botTeam || null;
+          for (const BC of activeBots) {
+            const team = presetTeamMap[BC.name] || BC.botTeam || null;
             const pos = getPos(team);
             let color = BOT_COLORS[id % BOT_COLORS.length];
             for (const col of BOT_COLORS) {
@@ -4239,6 +4366,77 @@
 
       // ═══════════════════ ЗАПУСК ═══════════════════
       document.getElementById("startBtn").onclick = startGame;
+
+      // ═══════════════════ ПРЕСЕТЫ КОМАНД ═══════════════════
+      // Определяются в bots/index.js после загрузки всех классов ботов
+      // Здесь только заглушка — реальное значение придёт позже
+      let battleTeamsPresets = [];
+
+      let activePresetIdx = 0; // текущий пресет
+
+      function applyPreset(idx) {
+        activePresetIdx = idx;
+        const preset = battleTeamsPresets[idx];
+        // Обновляем строку под заголовком
+        const text = presetLineText(preset);
+        document.getElementById("presetLineText").textContent = text;
+        // Сохраняем выбор
+        try {
+          localStorage.setItem("ltw_preset", idx);
+        } catch (e) {}
+      }
+
+      function presetLineText(preset) {
+        if (!preset.teams && !preset.customClasses) return preset.name;
+        if (preset.customClasses) return preset.name;
+        const teams = Object.entries(preset.teams);
+        const parts = teams.map(([name, t]) => name + " ×" + t.count);
+        const counts = teams.map(([, t]) => t.count);
+        const score = counts.join("v");
+        return parts.join("  vs  ") + "  (" + score + ")";
+      }
+
+      function openPresetModal() {
+        const list = document.getElementById("presetList");
+        list.innerHTML = "";
+        battleTeamsPresets.forEach((p, i) => {
+          const div = document.createElement("div");
+          div.className =
+            "preset-item" + (i === activePresetIdx ? " active" : "");
+          div.innerHTML = `<div class="preset-name">${p.name}</div><div class="preset-desc">${p.desc}</div>`;
+          div.onclick = () => {
+            document
+              .querySelectorAll(".preset-item")
+              .forEach((el) => el.classList.remove("active"));
+            div.classList.add("active");
+            applyPreset(i);
+          };
+          list.appendChild(div);
+        });
+        document.getElementById("presetModal").classList.add("open");
+      }
+
+      function closePresetModal() {
+        document.getElementById("presetModal").classList.remove("open");
+      }
+      document.getElementById("presetModal").onclick = (e) => {
+        if (e.target === e.currentTarget) closePresetModal();
+      };
+
+      // Получить активный список классов ботов для старта
+      function getActiveBotClasses() {
+        const preset = battleTeamsPresets[activePresetIdx];
+        if (preset.customClasses) return preset.customClasses;
+        if (!preset.teams) return botClasses; // index.js
+        // Из teams: разворачиваем count экземпляров каждого класса
+        const classes = [];
+        for (const [, t] of Object.entries(preset.teams)) {
+          for (let i = 0; i < t.count; i++) classes.push(t.bot);
+        }
+        return classes;
+      }
+
+      // Пресет загружается из bots/index.js после инициализации всех классов
       // Вставляем .dots между label и контролом в каждом setting-row
       (function () {
         document.querySelectorAll(".setting-row").forEach((row) => {
@@ -4324,9 +4522,18 @@
 
       function startGame() {
         saveSettings();
-        const visMode =
-          document.querySelector(".vis-btn.active")?.dataset.mode ||
-          "reflections";
+        // Если игрок не участвует — режим наблюдения (всё видно)
+        const hasPlayerChecked = document.getElementById("cfgPlayer").checked;
+        const visMode = hasPlayerChecked
+          ? document.querySelector(".vis-btn.active")?.dataset.mode ||
+            "reflections"
+          : "all";
+        // Синхронизируем кнопки HUD
+        document
+          .querySelectorAll(".vis-btn,.vis-btn-hud")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.mode === visMode),
+          );
         cfg = {
           hasPlayer: document.getElementById("cfgPlayer").checked,
           playerTeam:
@@ -4518,7 +4725,6 @@
       }
     </script>
 
-    <script src="bots/NavMixin.js"></script>
     <script src="bots/Dummy.js"></script>
     <script src="bots/Attacker.js"></script>
     <script src="bots/Crazy.js"></script>
