@@ -1061,6 +1061,38 @@
         }
       }
 
+      // Постоянные обломки — живут до конца боя (alive() всегда true)
+      class Debris {
+        constructor(x, y, angle, type, color) {
+          this.x = x;
+          this.y = y;
+          this.angle = angle;
+          this.type = type; // 'turret' | 'chunk'
+          this.color = color;
+          this.vx = 0;
+          this.vy = 0;
+          this.va = 0; // скорости (для анимации вылета)
+          this.settled = false; // уже остановился?
+          this.life = 1.0; // для анимации вылета (не для удаления)
+          this.alpha = 0.85;
+        }
+        update(dt) {
+          if (this.settled) return;
+          this.x += this.vx * dt;
+          this.y += this.vy * dt;
+          this.angle += this.va * dt;
+          this.vx *= Math.pow(0.15, dt);
+          this.vy *= Math.pow(0.15, dt);
+          this.va *= Math.pow(0.1, dt);
+          this.life = Math.max(0, this.life - dt * 0.8);
+          if (Math.abs(this.vx) < 0.02 && Math.abs(this.vy) < 0.02)
+            this.settled = true;
+        }
+        alive() {
+          return true;
+        } // постоянные
+      }
+
       class Explosion {
         constructor(x, y) {
           this.x = x;
@@ -1884,10 +1916,47 @@
 
         destroy(game, killer) {
           this.alive = false;
-          this.isWreck = true; // остов — остаётся на карте если cfg.wrecks
+          this.isWreck = true;
           this.speed = 0;
           this._desiredSpeed = 0;
           this.laserContinuous = false;
+
+          // Спавним обломки если включены трупы
+          if (cfg.wrecks) {
+            // Башня — улетает резко вверх/в сторону (взрыв БК)
+            const turret = new Debris(
+              this.x,
+              this.y,
+              this.turretAngle,
+              "turret",
+              this.color,
+            );
+            const blastAngle = this.turretAngle + rnd(-0.5, 0.5);
+            const blastSpeed = rnd(4, 8);
+            turret.vx = Math.cos(blastAngle) * blastSpeed;
+            turret.vy = Math.sin(blastAngle) * blastSpeed;
+            turret.va = rnd(-6, 6);
+            game.debris.push(turret);
+
+            // 3-5 кусков брони разлетаются во все стороны
+            const nChunks = rndInt(3, 5);
+            for (let i = 0; i < nChunks; i++) {
+              const chunk = new Debris(
+                this.x,
+                this.y,
+                rnd(0, Math.PI * 2),
+                "chunk",
+                this.color,
+              );
+              const a = rnd(0, Math.PI * 2),
+                sp = rnd(1.5, 5);
+              chunk.vx = Math.cos(a) * sp;
+              chunk.vy = Math.sin(a) * sp;
+              chunk.va = rnd(-4, 4);
+              game.debris.push(chunk);
+            }
+          }
+
           game.log(
             `${this.label} УНИЧТОЖЕН${killer ? " [" + killer.label + "]" : ""}`,
             "kill",
@@ -1997,6 +2066,7 @@
           this.pturs = [];
           this.smokes = [];
           this.explosions = [];
+          this.debris = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -2278,6 +2348,7 @@
             s.update(dt);
             return s.alive();
           });
+          for (const d of this.debris) d.update(dt);
           this.pturs = this.pturs.filter((p) => {
             p.update(dt, this);
             return p.alive;
@@ -2661,7 +2732,7 @@
             }
           }
 
-          // Остовы (wreck) — уничтоженные танки если галочка стоит
+          // Остовы — корпус на месте (цвет сохранён, слегка потемневший)
           if (cfg.wrecks) {
             for (const tank of g.tanks) {
               if (tank.alive || !tank.isWreck) continue;
@@ -2670,22 +2741,75 @@
                 py = tank.y * C,
                 sz = C * 0.6;
               ctx.save();
-              ctx.globalAlpha = 0.35;
               ctx.translate(px, py);
               ctx.rotate(tank.angle);
-              ctx.fillStyle = "#333";
+              ctx.globalAlpha = 0.55;
+
+              // Корпус — тот же цвет что был, но затемнённый
+              ctx.fillStyle = tank.color;
               ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.9);
-              // Крестик — уничтожен
-              ctx.strokeStyle = "#662222";
-              ctx.lineWidth = 1.5;
+              // Гусеничные полосы
+              ctx.fillStyle = "rgba(0,0,0,0.45)";
+              ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.22);
+              ctx.fillRect(-sz * 0.6, sz * 0.23, sz * 1.2, sz * 0.22);
+              // Копоть поверх
+              ctx.fillStyle = "rgba(0,0,0,0.35)";
+              ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.9);
+              // Пробоина
+              ctx.fillStyle = "rgba(0,0,0,0.8)";
               ctx.beginPath();
-              ctx.moveTo(-sz * 0.4, -sz * 0.3);
-              ctx.lineTo(sz * 0.4, sz * 0.3);
-              ctx.stroke();
+              ctx.arc(-sz * 0.15, sz * 0.05, sz * 0.16, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = "rgba(80,40,10,0.9)";
+              ctx.lineWidth = 1;
               ctx.beginPath();
-              ctx.moveTo(sz * 0.4, -sz * 0.3);
-              ctx.lineTo(-sz * 0.4, sz * 0.3);
+              ctx.arc(-sz * 0.15, sz * 0.05, sz * 0.16, 0, Math.PI * 2);
               ctx.stroke();
+
+              ctx.globalAlpha = 1;
+              ctx.restore();
+            }
+
+            // Обломки — башня и куски брони
+            for (const d of g.debris) {
+              const px = d.x * C,
+                py = d.y * C,
+                sz = C * 0.6;
+              ctx.save();
+              ctx.translate(px, py);
+              ctx.rotate(d.angle);
+              ctx.globalAlpha = d.alpha;
+              if (d.type === "turret") {
+                // Башня — круг с обломком ствола
+                ctx.fillStyle = d.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, sz * 0.28, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "rgba(0,0,0,0.4)";
+                ctx.beginPath();
+                ctx.arc(0, 0, sz * 0.28, 0, Math.PI * 2);
+                ctx.fill();
+                // Обломок ствола
+                ctx.strokeStyle = d.color;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(sz * 0.28, 0);
+                ctx.lineTo(sz * 0.55, sz * 0.15);
+                ctx.stroke();
+              } else {
+                // Кусок брони — неровный четырёхугольник
+                ctx.fillStyle = d.color;
+                ctx.beginPath();
+                ctx.moveTo(-sz * 0.18, -sz * 0.1);
+                ctx.lineTo(sz * 0.18, -sz * 0.08);
+                ctx.lineTo(sz * 0.15, sz * 0.12);
+                ctx.lineTo(-sz * 0.12, sz * 0.1);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = "rgba(0,0,0,0.45)";
+                ctx.fill();
+              }
+              ctx.globalAlpha = 1;
               ctx.restore();
             }
           }
