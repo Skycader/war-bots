@@ -91,12 +91,20 @@
       .setting-row {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
         font-size: 0.83em;
       }
       .setting-row label {
         color: #88bbaa;
         white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .setting-row .dots {
+        flex: 1;
+        border-bottom: 1px dotted #1a4a2a;
+        min-width: 8px;
+        align-self: center;
+        margin-bottom: 2px;
       }
       .setting-row select,
       .setting-row input[type="checkbox"] {
@@ -107,11 +115,18 @@
         font-family: "Share Tech Mono", monospace;
         font-size: 0.9em;
         cursor: pointer;
+        flex-shrink: 0;
       }
       .setting-row input[type="checkbox"] {
         width: 16px;
         height: 16px;
         accent-color: var(--green);
+      }
+      .setting-row input[type="range"] {
+        flex-shrink: 0;
+      }
+      .setting-row input[type="text"] {
+        flex-shrink: 0;
       }
       #startBtn {
         font-family: "Orbitron", sans-serif;
@@ -566,165 +581,177 @@
       <h1>&#8853; LASER TANKS &#8853;</h1>
       <h2>АТОМНЫЙ ПРОТОКОЛ</h2>
       <div class="settings-grid">
-        <div class="setting-row">
-          <label>Игрок:</label><input type="checkbox" id="cfgPlayer" />
-        </div>
-        <div class="setting-row">
-          <label>Команда игрока:</label
-          ><input
-            type="text"
-            id="cfgPlayerTeam"
-            placeholder="нет"
-            style="
-              background: #0a1a0a;
-              border: 1px solid var(--green);
-              color: var(--green);
-              padding: 2px 6px;
-              font-family: &quot;Share Tech Mono&quot;, monospace;
-              font-size: 0.9em;
-              width: 80px;
-            "
-          />
-        </div>
-        <div class="setting-row">
-          <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
-        </div>
-        <div class="setting-row">
-          <label>Урон от стен:</label><input type="checkbox" id="cfgWallDmg" />
-        </div>
-        <div class="setting-row">
-          <label>Огонь по своим:</label
-          ><input type="checkbox" id="cfgTeamKill" />
-        </div>
-        <div class="setting-row">
-          <label>Урон себе от ПТУР:</label
-          ><input type="checkbox" id="cfgSelfDmg" />
-        </div>
-        <div class="setting-row">
-          <label>Командный спавн:</label
-          ><input type="checkbox" id="cfgTeamSpawn" />
-        </div>
-        <div class="setting-row">
-          <label>ПРО (ПТУР сбивает ПТУР):</label
-          ><input type="checkbox" id="cfgPturVsPtur" />
-        </div>
-        <div class="setting-row">
-          <label>Умный ПТУР:</label><input type="checkbox" id="cfgSmartPtur" />
-        </div>
-        <div class="setting-row">
-          <label>Трупы не исчезают:</label
-          ><input type="checkbox" id="cfgWrecks" />
-        </div>
-        <div class="setting-row">
-          <label>Лазер:</label>
-          <select id="cfgSmartLaser">
-            <option value="0">Обычный</option>
-            <option value="1">Умный (скорость/угол)</option>
-            <option value="2">Умный + стоячие</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Радиус шума танков:</label
-          ><input type="checkbox" id="cfgNoiseRadius" />
-        </div>
-        <div class="setting-row">
-          <label>Радиосвязь (broadcast):</label
-          ><input type="checkbox" id="cfgRadioEnabled" />
-        </div>
-        <div class="setting-row">
-          <label>Визуализация радиоволн:</label
-          ><input type="checkbox" id="cfgRadioWaves" />
-        </div>
-        <div class="setting-row" style="grid-column: 1/-1">
-          <label>Игрок видит</label>
-          <div id="visMode" style="display: flex">
-            <button class="vis-btn active" data-mode="reflections">
-              Отражения
-            </button>
-            <button class="vis-btn" data-mode="map">Карту</button>
-            <button class="vis-btn" data-mode="all">Всё</button>
+        <!-- ══ ЛЕВАЯ КОЛОНКА: галочки ══ -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div class="setting-row">
+            <label>Игрок:</label><input type="checkbox" id="cfgPlayer" />
+          </div>
+          <div class="setting-row">
+            <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
+          </div>
+          <div class="setting-row">
+            <label>Урон от стен:</label
+            ><input type="checkbox" id="cfgWallDmg" />
+          </div>
+          <div class="setting-row">
+            <label>Огонь по своим:</label
+            ><input type="checkbox" id="cfgTeamKill" />
+          </div>
+          <div class="setting-row">
+            <label>Урон себе от ПТУР:</label
+            ><input type="checkbox" id="cfgSelfDmg" />
+          </div>
+          <div class="setting-row">
+            <label>Командный спавн:</label
+            ><input type="checkbox" id="cfgTeamSpawn" />
+          </div>
+          <div class="setting-row">
+            <label>Симметричная карта:</label
+            ><input type="checkbox" id="cfgSymmetric" />
+          </div>
+          <div class="setting-row">
+            <label>ПРО (ПТУР сбивает ПТУР):</label
+            ><input type="checkbox" id="cfgPturVsPtur" />
+          </div>
+          <div class="setting-row">
+            <label>Умный ПТУР:</label
+            ><input type="checkbox" id="cfgSmartPtur" />
+          </div>
+          <div class="setting-row">
+            <label>Трупы не исчезают:</label
+            ><input type="checkbox" id="cfgWrecks" />
+          </div>
+          <div class="setting-row">
+            <label>Радиус шума танков:</label
+            ><input type="checkbox" id="cfgNoiseRadius" />
+          </div>
+          <div class="setting-row">
+            <label>Радиосвязь (broadcast):</label
+            ><input type="checkbox" id="cfgRadioEnabled" />
+          </div>
+          <div class="setting-row">
+            <label>Визуализация радиоволн:</label
+            ><input type="checkbox" id="cfgRadioWaves" />
           </div>
         </div>
-        <div class="setting-row">
-          <label>Размер карты:</label>
-          <select id="cfgMapSize">
-            <option value="30">30×30</option>
-            <option value="40">40×40</option>
-            <option value="50">50×50</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Препятствия:</label>
-          <input
-            type="range"
-            id="cfgObstacles"
-            min="0"
-            max="0.9"
-            step="0.01"
-            value="0"
-            style="width: 110px; accent-color: var(--green)"
-          />
-          <span
-            id="cfgObstaclesVal"
-            style="color: var(--green); font-size: 0.85em"
-            >15%</span
-          >
-        </div>
-        <div class="setting-row">
-          <label>Кд ПТУР:</label>
-          <select id="cfgPturCD">
-            <option value="5">5 сек</option>
-            <option value="10">10 сек</option>
-            <option value="15">15 сек</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Скорость ПТУР:</label>
-          <select id="cfgPturSpeed">
-            <option value="3">3 м/с</option>
-            <option value="6">6 м/с</option>
-            <option value="10">10 м/с</option>
-            <option value="15">15 м/с</option>
-            <option value="20">20 м/с</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Урон ПТУР:</label>
-          <select id="cfgPturDmg">
-            <option value="25">25 HP</option>
-            <option value="50">50 HP</option>
-            <option value="100">100 HP</option>
-            <option value="150">150 HP</option>
-            <option value="200">200 HP</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Кд дыма:</label>
-          <select id="cfgSmokeCD">
-            <option value="5">5 сек</option>
-            <option value="10">10 сек</option>
-            <option value="15">15 сек</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Скорость башни:</label>
-          <select id="cfgTurretSpeed">
-            <option value="1">103°/сек (×1, текущая)</option>
-            <option value="2">206°/сек (×2)</option>
-            <option value="3">309°/сек (×3)</option>
-            <option value="4">413°/сек (×4)</option>
-            <option value="5">516°/сек (×5)</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label>Подсветка стен:</label>
-          <select id="cfgWallDotLife">
-            <option value="1">1 сек</option>
-            <option value="3">3 сек</option>
-            <option value="5">5 сек</option>
-            <option value="10">10 сек</option>
-            <option value="99999">Постоянно</option>
-          </select>
+        <!-- ══ ПРАВАЯ КОЛОНКА: селекты и ползунки ══ -->
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div class="setting-row">
+            <label>Команда игрока:</label
+            ><input
+              type="text"
+              id="cfgPlayerTeam"
+              placeholder="нет"
+              style="
+                background: #0a1a0a;
+                border: 1px solid var(--green);
+                color: var(--green);
+                padding: 2px 6px;
+                font-family: &quot;Share Tech Mono&quot;, monospace;
+                font-size: 0.9em;
+                width: 80px;
+              "
+            />
+          </div>
+          <div class="setting-row">
+            <label>Лазер:</label>
+            <select id="cfgSmartLaser">
+              <option value="0">Обычный</option>
+              <option value="1">Умный (скорость/угол)</option>
+              <option value="2">Умный + стоячие</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Игрок видит:</label>
+            <div id="visMode" style="display: flex">
+              <button class="vis-btn active" data-mode="reflections">
+                Отражения
+              </button>
+              <button class="vis-btn" data-mode="map">Карту</button>
+              <button class="vis-btn" data-mode="all">Всё</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>Размер карты:</label>
+            <select id="cfgMapSize">
+              <option value="30">30×30</option>
+              <option value="40">40×40</option>
+              <option value="50">50×50</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Препятствия:</label>
+            <input
+              type="range"
+              id="cfgObstacles"
+              min="0"
+              max="0.9"
+              step="0.01"
+              value="0"
+              style="width: 110px; accent-color: var(--green)"
+            />
+            <span
+              id="cfgObstaclesVal"
+              style="color: var(--green); font-size: 0.85em"
+              >15%</span
+            >
+          </div>
+          <div class="setting-row">
+            <label>Кд ПТУР:</label>
+            <select id="cfgPturCD">
+              <option value="5">5 сек</option>
+              <option value="10">10 сек</option>
+              <option value="15">15 сек</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Скорость ПТУР:</label>
+            <select id="cfgPturSpeed">
+              <option value="3">3 м/с</option>
+              <option value="6">6 м/с</option>
+              <option value="10">10 м/с</option>
+              <option value="15">15 м/с</option>
+              <option value="20">20 м/с</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Урон ПТУР:</label>
+            <select id="cfgPturDmg">
+              <option value="25">25 HP</option>
+              <option value="50">50 HP</option>
+              <option value="100">100 HP</option>
+              <option value="150">150 HP</option>
+              <option value="200">200 HP</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Кд дыма:</label>
+            <select id="cfgSmokeCD">
+              <option value="5">5 сек</option>
+              <option value="10">10 сек</option>
+              <option value="15">15 сек</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Скорость башни:</label>
+            <select id="cfgTurretSpeed">
+              <option value="1">103°/сек (×1, текущая)</option>
+              <option value="2">206°/сек (×2)</option>
+              <option value="3">309°/сек (×3)</option>
+              <option value="4">413°/сек (×4)</option>
+              <option value="5">516°/сек (×5)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Подсветка стен:</label>
+            <select id="cfgWallDotLife">
+              <option value="1">1 сек</option>
+              <option value="3">3 сек</option>
+              <option value="5">5 сек</option>
+              <option value="10">10 сек</option>
+              <option value="99999">Постоянно</option>
+            </select>
+          </div>
         </div>
       </div>
       <div style="display: flex; gap: 12px; align-items: center">
@@ -955,11 +982,13 @@
           <div class="hud-title">
             &#9658; УЧАСТНИКИ
             <span
+              onclick="toggleScoreboard()"
               style="
                 font-size: 0.75em;
                 color: #00cc66;
                 letter-spacing: 0;
-                opacity: 0.8;
+                cursor: pointer;
+                pointer-events: all;
               "
               >[Tab &#9654;]</span
             >
@@ -990,6 +1019,7 @@
         cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
         cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
         cfgRadioWaves: true, // Визуализация радиоволн — кольца при broadcast (true/false)
+        cfgSymmetric: false, // Симметричная карта — нижняя половина = зеркало верхней (true/false)
         cfgMapSize: "40", // Размер карты — '30', '40', '50' (клетки)
         cfgObstacles: "0.15", // Плотность препятствий — 0.0..0.9 (0%..90%)
         cfgPturCD: "10", // Кулдаун ПТУР — '5', '10', '15' (секунды)
@@ -2318,17 +2348,29 @@
         }
 
         genMap(density) {
-          for (let y = 0; y < this.mapH; y++) {
+          const W = this.mapW,
+            H = this.mapH;
+          for (let y = 0; y < H; y++) {
             this.map[y] = [];
-            for (let x = 0; x < this.mapW; x++)
+            for (let x = 0; x < W; x++)
               this.map[y][x] =
-                x === 0 || y === 0 || x === this.mapW - 1 || y === this.mapH - 1
-                  ? 1
-                  : 0;
+                x === 0 || y === 0 || x === W - 1 || y === H - 1 ? 1 : 0;
           }
-          for (let y = 2; y < this.mapH - 2; y++)
-            for (let x = 2; x < this.mapW - 2; x++)
-              if (Math.random() < density) this.map[y][x] = 1;
+          if (cfg.symmetric) {
+            const half = Math.floor(H / 2);
+            for (let y = 2; y < half; y++)
+              for (let x = 2; x < W - 2; x++)
+                if (Math.random() < density) this.map[y][x] = 1;
+            for (let y = 2; y < half; y++)
+              for (let x = 2; x < W - 2; x++)
+                this.map[H - 1 - y][x] = this.map[y][x];
+            if (H % 2 !== 0)
+              for (let x = 1; x < W - 1; x++) this.map[half][x] = 0;
+          } else {
+            for (let y = 2; y < H - 2; y++)
+              for (let x = 2; x < W - 2; x++)
+                if (Math.random() < density) this.map[y][x] = 1;
+          }
         }
 
         freeCell(excl = 3) {
@@ -3994,15 +4036,19 @@
         });
       }
 
+      function toggleScoreboard() {
+        const sb = document.getElementById("scoreboard");
+        sb.classList.toggle("open");
+        if (sb.classList.contains("open")) updateScoreboard();
+      }
       window.addEventListener("keydown", (e) => {
         if (e.code === "Tab") {
           e.preventDefault();
-          document.getElementById("scoreboard").classList.add("open");
-          updateScoreboard();
+          toggleScoreboard();
         }
       });
-      window.addEventListener("keyup", (e) => {
-        if (e.code === "Tab")
+      document.getElementById("scoreboard").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget)
           document.getElementById("scoreboard").classList.remove("open");
       });
 
@@ -4088,6 +4134,7 @@
           "cfgNoiseRadius",
           "cfgRadioEnabled",
           "cfgRadioWaves",
+          "cfgSymmetric",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -4160,6 +4207,7 @@
           "cfgNoiseRadius",
           "cfgRadioEnabled",
           "cfgRadioWaves",
+          "cfgSymmetric",
           "cfgMapSize",
           "cfgObstacles",
           "cfgPturCD",
@@ -4191,6 +4239,20 @@
 
       // ═══════════════════ ЗАПУСК ═══════════════════
       document.getElementById("startBtn").onclick = startGame;
+      // Вставляем .dots между label и контролом в каждом setting-row
+      (function () {
+        document.querySelectorAll(".setting-row").forEach((row) => {
+          const label = row.querySelector("label");
+          const control = label && label.nextElementSibling;
+          if (!label || !control) return;
+          // Не добавляем если уже есть
+          if (control.classList && control.classList.contains("dots")) return;
+          const dots = document.createElement("span");
+          dots.className = "dots";
+          row.insertBefore(dots, control);
+        });
+      })();
+
       (function () {
         const sl = document.getElementById("cfgObstacles");
         const lbl = document.getElementById("cfgObstaclesVal");
@@ -4286,6 +4348,7 @@
           radioWaves: document.getElementById("cfgRadioWaves").checked,
           visMode,
           allMap: visMode === "all",
+          symmetric: document.getElementById("cfgSymmetric").checked,
           mapSize: parseInt(document.getElementById("cfgMapSize").value),
           obstacleDensity: parseFloat(
             document.getElementById("cfgObstacles").value,
