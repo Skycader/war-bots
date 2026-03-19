@@ -1611,8 +1611,26 @@
         onLaserScan(info) {}
         onLaserDetection(info) {}
         onSound(info) {}
+        onRadio(info) {} // info: {angle, dist|null, message, fromTeam}
         onDamage() {}
         main() {}
+
+        // Отправить радиосообщение всем в игре.
+        // Бот передаёт только текст — он не знает своих координат.
+        // Движок сам вычисляет геометрию для каждого получателя:
+        //   angle  — угол откуда пришло (всегда, даже врагу)
+        //   dist   — расстояние до отправителя (только союзникам)
+        //   message — текст (только союзникам, враги получают null)
+        broadcast(message) {
+          const game = this._game;
+          if (!game) return;
+          game.radioMessages.push({
+            sender: this, // движок знает позицию, бот — нет
+            message: String(message),
+            team: this.team || null,
+          });
+          this.say("📡 " + String(message).slice(0, 20));
+        }
 
         // ══════════════════════════════════════════════════
         // ДВИЖОК — внутренняя физика
@@ -1833,6 +1851,8 @@
               },
             ]);
           if (this._api_sounds.length > 0) this.onSound(this._api_sounds);
+
+          // Радио доставляется отдельным проходом после всех AI (см. deliverRadio)
           if (this._api_damaged) {
             this.onDamage();
             this._api_damaged = false;
@@ -1889,6 +1909,26 @@
         update(dt, game) {
           this.updatePhysicsAndLaser(dt, game);
           this.updateAI(dt, game);
+        }
+
+        // Вызывается после того как ВСЕ боты отработали AI на этом тике
+        deliverRadio(game) {
+          const radioMsgs = game.radioMessages
+            .filter((m) => m.sender !== this)
+            .map((m) => {
+              const dx = m.sender.x - this.x,
+                dy = m.sender.y - this.y;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              const angle = normDeg(Math.atan2(dy, dx));
+              const isAlly = this.team && m.team && this.team === m.team;
+              return {
+                angle,
+                dist: isAlly ? d : null,
+                message: isAlly ? m.message : null,
+                fromTeam: isAlly,
+              };
+            });
+          if (radioMsgs.length > 0) this.onRadio(radioMsgs);
         }
 
         shootLaserPulse(game) {
@@ -2129,6 +2169,7 @@
           this.explosions = [];
           this.debris = [];
           this.wreckFires = [];
+          this.radioMessages = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -2406,6 +2447,7 @@
         update(dt) {
           if (!this.running) return;
           this.sounds = [];
+          this.radioMessages = [];
           this.smokes = this.smokes.filter((s) => {
             s.update(dt);
             return s.alive();
@@ -2430,8 +2472,12 @@
           }
           // Проход 1: физика + лазеры (irradiated устанавливается)
           for (const t of this.tanks) t.updatePhysicsAndLaser(dt, this);
-          // Проход 2: AI (видит irradiated, вызывает колбэки)
+          // Проход 2: AI (видит irradiated, вызывает колбэки, может вызвать broadcast)
           for (const t of this.tanks) t.updateAI(dt, this);
+          // Проход 3: доставка радио — ПОСЛЕ того как все боты отработали AI
+          // Так broadcast одного бота гарантированно дойдёт до всех союзников
+          if (this.radioMessages.length > 0)
+            for (const t of this.tanks) if (t.alive) t.deliverRadio(this);
         }
 
         log(msg, type = "") {
@@ -4016,6 +4062,7 @@
     <script src="bots/Terminator.js"></script>
     <script src="bots/Tracker.js"></script>
     <script src="bots/Specter.js"></script>
+    <script src="bots/TeamHunter.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>
