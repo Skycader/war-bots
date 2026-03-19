@@ -1131,6 +1131,7 @@
         cfgSmokeCD: "10", // Кулдаун дыма — '5', '10', '15' (секунды)
         cfgTurretSpeed: "1", // Скорость башни — '1'=103°/с, '2'=206°/с, '3'=309°/с, '4'=413°/с, '5'=516°/с
         cfgWallDotLife: "99999", // Подсветка стен — '1','3','5','10' сек или '99999'=постоянно
+        visMode: "reflections", // Режим видимости — 'reflections', 'map', 'all'
       };
 
       // ═══════════════════ КОНСТАНТЫ ═══════════════════
@@ -4286,6 +4287,14 @@
       function loadSettings() {
         // Шаг 1: применяем дефолты из DEFAULT_CFG
         for (const [id, val] of Object.entries(DEFAULT_CFG)) {
+          if (id === "visMode") {
+            document
+              .querySelectorAll(".vis-btn")
+              .forEach((b) =>
+                b.classList.toggle("active", b.dataset.mode === val),
+              );
+            continue;
+          }
           const el = document.getElementById(id);
           if (!el) continue;
           if (el.type === "checkbox") el.checked = !!val;

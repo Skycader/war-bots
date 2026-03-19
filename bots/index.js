@@ -2,17 +2,7 @@
 // Добавь сюда свой класс чтобы он появился в игре
 
 // Порядок = порядок спавна
-const botClasses = [
-  TeamHunter,
-  TeamHunter,
-  TeamHunter,
-  TeamHunter,
-  TeamHunter,
-  TeamHunter,
-  Scanner,
-  Scanner,
-  Scanner,
-];
+const botClasses = [];
 
 // ═══════════════════ ПРЕСЕТЫ КОМАНД ═══════════════════
 // Добавляй свои пресеты сюда.
@@ -24,6 +14,14 @@ battleTeamsPresets = [
     name: "Без пресета",
     desc: "Боты из botClasses, команды не назначены",
     teams: null,
+  },
+  {
+    name: "Сканеры vs Охотники",
+    desc: "12 Scanner  против  12 TeamHunter",
+    teams: {
+      Scanners: { bot: Scanner, count: 12 },
+      Hunters: { bot: TeamHunter, count: 12 },
+    },
   },
   {
     name: "Сканеры vs Охотники",
