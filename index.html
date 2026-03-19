@@ -541,7 +541,7 @@
         </div>
         <div class="setting-row">
           <label>Трупы не исчезают:</label
-          ><input type="checkbox" id="cfgWrecks" />
+          ><input type="checkbox" id="cfgWrecks" checked />
         </div>
         <div class="setting-row">
           <label>Лазер:</label>
@@ -2007,56 +2007,53 @@
           this._desiredSpeed = 0;
           this.laserContinuous = false;
 
-          // Взрыв БК + обломки
-          if (cfg.wrecks) {
-            // Серия внутренних взрывов — имитация детонации БК
-            game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
-            // Ещё 2-3 взрыва с задержкой — но Explosion не поддерживает задержку,
-            // добавим смещённые взрывы рядом для объёма
-            for (let i = 0; i < rndInt(2, 3); i++) {
-              const ox = (Math.random() - 0.5) * 0.6,
-                oy = (Math.random() - 0.5) * 0.6;
-              game.explosions.push(
-                new Explosion((this.x + ox) * CELL, (this.y + oy) * CELL),
-              );
-            }
+          // Взрывы, обломки и огонь — ВСЕГДА, независимо от галочки "Трупы"
+          // Серия внутренних взрывов — детонация БК
+          game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
+          for (let i = 0; i < rndInt(2, 3); i++) {
+            const ox = (Math.random() - 0.5) * 0.6,
+              oy = (Math.random() - 0.5) * 0.6;
+            game.explosions.push(
+              new Explosion((this.x + ox) * CELL, (this.y + oy) * CELL),
+            );
+          }
 
-            // Башня — улетает резко в сторону ствола (взрыв БК)
-            const turret = new Debris(
+          // Башня улетает
+          const turret = new Debris(
+            this.x,
+            this.y,
+            this.turretAngle,
+            "turret",
+            this.color,
+          );
+          const blastAngle = this.turretAngle + rnd(-0.5, 0.5);
+          const blastSpeed = rnd(4, 8);
+          turret.vx = Math.cos(blastAngle) * blastSpeed;
+          turret.vy = Math.sin(blastAngle) * blastSpeed;
+          turret.va = rnd(-6, 6);
+          game.debris.push(turret);
+
+          // Куски брони
+          const nChunks = rndInt(3, 5);
+          for (let i = 0; i < nChunks; i++) {
+            const chunk = new Debris(
               this.x,
               this.y,
-              this.turretAngle,
-              "turret",
+              rnd(0, Math.PI * 2),
+              "chunk",
               this.color,
             );
-            const blastAngle = this.turretAngle + rnd(-0.5, 0.5);
-            const blastSpeed = rnd(4, 8);
-            turret.vx = Math.cos(blastAngle) * blastSpeed;
-            turret.vy = Math.sin(blastAngle) * blastSpeed;
-            turret.va = rnd(-6, 6);
-            game.debris.push(turret);
-
-            // 3-5 кусков брони разлетаются во все стороны
-            const nChunks = rndInt(3, 5);
-            for (let i = 0; i < nChunks; i++) {
-              const chunk = new Debris(
-                this.x,
-                this.y,
-                rnd(0, Math.PI * 2),
-                "chunk",
-                this.color,
-              );
-              const a = rnd(0, Math.PI * 2),
-                sp = rnd(1.5, 5);
-              chunk.vx = Math.cos(a) * sp;
-              chunk.vy = Math.sin(a) * sp;
-              chunk.va = rnd(-4, 4);
-              game.debris.push(chunk);
-            }
-
-            // Горение и дым 30 сек
-            game.wreckFires.push(new WreckFire(this.x, this.y));
+            const a = rnd(0, Math.PI * 2),
+              sp = rnd(1.5, 5);
+            chunk.vx = Math.cos(a) * sp;
+            chunk.vy = Math.sin(a) * sp;
+            chunk.va = rnd(-4, 4);
+            game.debris.push(chunk);
           }
+
+          // Горение и дым 30 сек
+          game.wreckFires.push(new WreckFire(this.x, this.y));
+          // Корпус-остов остаётся только если галочка стоит (управляет рендером и коллизией)
 
           game.log(
             `${this.label} УНИЧТОЖЕН${killer ? " [" + killer.label + "]" : ""}`,
@@ -4052,6 +4049,7 @@
       }
     </script>
 
+    <script src="bots/NavMixin.js"></script>
     <script src="bots/Dummy.js"></script>
     <script src="bots/Attacker.js"></script>
     <script src="bots/Crazy.js"></script>
