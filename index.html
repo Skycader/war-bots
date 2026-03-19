@@ -1071,9 +1071,9 @@
           this.color = color;
           this.vx = 0;
           this.vy = 0;
-          this.va = 0; // скорости (для анимации вылета)
-          this.settled = false; // уже остановился?
-          this.life = 1.0; // для анимации вылета (не для удаления)
+          this.va = 0;
+          this.settled = false;
+          this.life = 1.0;
           this.alpha = 0.85;
         }
         update(dt) {
@@ -1090,7 +1090,53 @@
         }
         alive() {
           return true;
-        } // постоянные
+        }
+      }
+
+      // Горение корпуса — дым и огонь 30 сек после уничтожения
+      class WreckFire {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.burnLife = 30.0; // 30 сек горения
+          this.smokeTime = 0;
+          this.fireTime = 0;
+          this.particles = []; // частицы дыма/огня
+        }
+        update(dt) {
+          this.burnLife -= dt;
+          this.smokeTime -= dt;
+          this.fireTime -= dt;
+          // Спавним дым — каждые 0.15 сек пока горит
+          if (this.smokeTime <= 0 && this.burnLife > 0) {
+            this.smokeTime = 0.12 + Math.random() * 0.08;
+            // Тип: fire (первые 3 сек) или smoke
+            const isFire = this.burnLife > 27;
+            this.particles.push({
+              x: this.x + (Math.random() - 0.5) * 0.3,
+              y: this.y + (Math.random() - 0.5) * 0.15,
+              vx: (Math.random() - 0.5) * 0.3,
+              vy: -0.8 - Math.random() * 0.6, // вверх (Y вверх в мировых координатах = вниз в canvas — нет, y растёт вниз)
+              life: isFire
+                ? 0.5 + Math.random() * 0.3
+                : 1.2 + Math.random() * 0.8,
+              maxLife: isFire ? 0.8 : 2.0,
+              r: isFire ? 2.5 : 3.5 + Math.random() * 2,
+              isFire,
+            });
+          }
+          // Обновляем частицы
+          for (const p of this.particles) {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= Math.pow(0.7, dt);
+            p.life -= dt;
+          }
+          this.particles = this.particles.filter((p) => p.life > 0);
+        }
+        alive() {
+          return this.burnLife > 0 || this.particles.length > 0;
+        }
       }
 
       class Explosion {
@@ -1921,9 +1967,21 @@
           this._desiredSpeed = 0;
           this.laserContinuous = false;
 
-          // Спавним обломки если включены трупы
+          // Взрыв БК + обломки
           if (cfg.wrecks) {
-            // Башня — улетает резко вверх/в сторону (взрыв БК)
+            // Серия внутренних взрывов — имитация детонации БК
+            game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
+            // Ещё 2-3 взрыва с задержкой — но Explosion не поддерживает задержку,
+            // добавим смещённые взрывы рядом для объёма
+            for (let i = 0; i < rndInt(2, 3); i++) {
+              const ox = (Math.random() - 0.5) * 0.6,
+                oy = (Math.random() - 0.5) * 0.6;
+              game.explosions.push(
+                new Explosion((this.x + ox) * CELL, (this.y + oy) * CELL),
+              );
+            }
+
+            // Башня — улетает резко в сторону ствола (взрыв БК)
             const turret = new Debris(
               this.x,
               this.y,
@@ -1955,6 +2013,9 @@
               chunk.va = rnd(-4, 4);
               game.debris.push(chunk);
             }
+
+            // Горение и дым 30 сек
+            game.wreckFires.push(new WreckFire(this.x, this.y));
           }
 
           game.log(
@@ -2067,6 +2128,7 @@
           this.smokes = [];
           this.explosions = [];
           this.debris = [];
+          this.wreckFires = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -2349,6 +2411,10 @@
             return s.alive();
           });
           for (const d of this.debris) d.update(dt);
+          this.wreckFires = this.wreckFires.filter((f) => {
+            f.update(dt);
+            return f.alive();
+          });
           this.pturs = this.pturs.filter((p) => {
             p.update(dt, this);
             return p.alive;
@@ -2728,6 +2794,37 @@
               ctx.arc(tank.x * C, tank.y * C, noiseR * 0.3, 0, Math.PI * 2);
               ctx.stroke();
               ctx.setLineDash([]);
+              ctx.restore();
+            }
+          }
+
+          // Горение остовов — дым и огонь
+          for (const fire of g.wreckFires) {
+            for (const p of fire.particles) {
+              const fr = Math.max(0, p.life / p.maxLife);
+              ctx.save();
+              if (p.isFire) {
+                // Огонь — жёлто-оранжевый, яркий
+                ctx.globalAlpha = fr * 0.9;
+                ctx.fillStyle = `hsl(${30 + fr * 30},100%,${50 + fr * 20}%)`;
+                ctx.shadowColor = "#ff6600";
+                ctx.shadowBlur = 6;
+              } else {
+                // Дым — серо-чёрный, поднимается вверх (vy отрицательный = вверх на экране)
+                ctx.globalAlpha = fr * 0.35;
+                const gray = Math.floor(40 + fr * 60);
+                ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+              }
+              ctx.beginPath();
+              ctx.arc(
+                p.x * CELL,
+                p.y * CELL,
+                p.r * (0.5 + fr * 0.5),
+                0,
+                Math.PI * 2,
+              );
+              ctx.fill();
+              ctx.shadowBlur = 0;
               ctx.restore();
             }
           }
