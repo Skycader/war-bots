@@ -9,4 +9,7 @@ const botClasses = [
   TeamHunter,
   TeamHunter,
   TeamHunter,
+  Scanner,
+  Scanner,
+  Scanner,
 ];
