@@ -43,9 +43,12 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
+        min-height: 100vh;
         gap: 18px;
         background: radial-gradient(ellipse at center, #0a1f0a 0%, #000 100%);
+        padding: 20px 0;
+        box-sizing: border-box;
+        overflow-y: auto;
       }
       #menu h1 {
         font-family: "Orbitron", sans-serif;
@@ -77,12 +80,13 @@
       .settings-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 9px 28px;
+        gap: 9px 20px;
         background: rgba(0, 255, 136, 0.03);
         border: 1px solid var(--border);
-        padding: 18px 28px;
-        max-width: 660px;
+        padding: 16px 22px;
+        max-width: 700px;
         width: 100%;
+        box-sizing: border-box;
       }
       .setting-row {
         display: flex;
@@ -532,12 +536,20 @@
           ><input type="checkbox" id="cfgPturVsPtur" />
         </div>
         <div class="setting-row">
+          <label>Умный ПТУР:</label
+          ><input type="checkbox" id="cfgSmartPtur" checked />
+        </div>
+        <div class="setting-row">
           <label>Трупы не исчезают:</label
           ><input type="checkbox" id="cfgWrecks" />
         </div>
         <div class="setting-row">
-          <label>Умный лазер (скорость/угол):</label
-          ><input type="checkbox" id="cfgSmartLaser" checked />
+          <label>Лазер:</label>
+          <select id="cfgSmartLaser">
+            <option value="0">Обычный</option>
+            <option value="1">Умный (скорость/угол)</option>
+            <option value="2" selected>Умный + стоячие</option>
+          </select>
         </div>
         <div class="setting-row">
           <label>Радиус шума танков:</label
@@ -933,7 +945,7 @@
       // Если луч проходит дальше этого расстояния — ПТУР теряет наведение и летит прямо.
       // Предотвращает резкие развороты при смене направления лазера.
       // Пример: PTUR_BEAM_GUIDE_RADIUS=1.0 → луч должен проходить в 1 клетке от ракеты.
-      const PTUR_BEAM_GUIDE_RADIUS = 3.0;
+      const PTUR_BEAM_GUIDE_RADIUS = 5.0;
 
       // Максимальная угловая скорость наведения ПТУР, радиан/сек.
       // Ограничивает насколько быстро ракета может менять курс — инерция.
@@ -1188,31 +1200,79 @@
               );
             };
 
-            let minD = 9999;
+            // ── Радиовзрыватель ──────────────────────────────────────────────────
+            // Умный ПТУР: подрыв только в точке минимального сближения
+            //   (расстояние перестало уменьшаться → цель миновали)
+            // Обычный ПТУР: подрывается как только d < PROX_FUSE_RANGE,
+            //   и реагирует на стены тоже
+
+            // Проверка стен для обычного взрывателя
+            if (!cfg.smartPtur) {
+              // Проверяем стены в радиусе PROX_FUSE_RANGE вокруг текущей позиции
+              const wallCheckR = PROX_FUSE_RANGE;
+              const wx0 = Math.floor(this.x - wallCheckR),
+                wx1 = Math.floor(this.x + wallCheckR);
+              const wy0 = Math.floor(this.y - wallCheckR),
+                wy1 = Math.floor(this.y + wallCheckR);
+              outer: for (let wy = wy0; wy <= wy1; wy++)
+                for (let wx = wx0; wx <= wx1; wx++) {
+                  if (wx < 0 || wy < 0 || wx >= game.mapW || wy >= game.mapH)
+                    continue;
+                  if (game.map[wy][wx] !== 1) continue;
+                  // Дистанция от ПТУР до ближайшей точки клетки стены
+                  const nearX = Math.max(wx, Math.min(this.x, wx + 1));
+                  const nearY = Math.max(wy, Math.min(this.y, wy + 1));
+                  if (
+                    dist({ x: this.x, y: this.y }, { x: nearX, y: nearY }) <
+                    PROX_FUSE_RANGE
+                  ) {
+                    this.explode(game);
+                    return;
+                  }
+                }
+            }
+
             // Проверка по танкам
             for (const tank of game.tanks) {
               if (!tank.alive) continue;
               if (tank === this.owner) continue;
               const d = segDist(tank.x, tank.y);
-              if (d < minD) minD = d;
+              if (d >= PROX_FUSE_RANGE) continue;
+
+              if (cfg.smartPtur) {
+                // Умный: следим за расстоянием до конкретного танка
+                // Если расстояние начало расти (или равно) — точка сближения пройдена → взрыв
+                const key = "_pd_" + tank.id;
+                const prev = this[key];
+                this[key] = d;
+                if (prev !== undefined && d >= prev) {
+                  // Сближение прекратилось — подрыв
+                  this.explode(game);
+                  return;
+                }
+                // Ещё сближаемся — ждём
+              } else {
+                // Обычный: подрывается сразу как d < PROX_FUSE_RANGE
+                this.explode(game);
+                return;
+              }
             }
-            // Проверка по вражеским ПТУРам (система ПРО)
+
+            // ПРО: перехват вражеских ПТУРов
             if (cfg.pturVsPtur) {
               for (const other of game.pturs) {
                 if (other === this || !other.alive) continue;
-                if (other.owner === this.owner) continue; // свои ПТУРы не перехватываем
-                const d = segDist(other.x, other.y);
+                if (other.owner === this.owner) continue;
+                const d = dist(
+                  { x: this.x, y: this.y },
+                  { x: other.x, y: other.y },
+                );
                 if (d < PROX_FUSE_RANGE * 0.6) {
-                  // радиус перехвата чуть меньше
-                  other.explode(game); // сбиваем вражеский ПТУР
-                  this.explode(game); // оба уничтожаются
+                  other.explode(game);
+                  this.explode(game);
                   return;
                 }
               }
-            }
-            if (minD < PROX_FUSE_RANGE) {
-              this.explode(game);
-              return;
             }
           }
         }
@@ -2167,13 +2227,27 @@
               if (!tank.alive && (!tank.isWreck || !cfg.wrecks)) continue;
               if (dist({ x: rx, y: ry }, { x: tank.x, y: tank.y }) < 0.4) {
                 const isDead = !tank.alive && tank.isWreck;
+                // Обычный лазер: стоячий живой танк воспринимается как препятствие (стена)
+                // Умный лазер с опознаванием стоячих — всегда видит танк как танк
+                const isStill = !isDead && Math.abs(tank.speed) < 0.15;
+                // irradiated выставляем ВСЕГДА — СПО цели должно сработать независимо от режима лазера
                 if (!isDead) {
                   tank.irradiated = true;
                   tank.irradiatedBy = fromTank;
                 }
+                if (isStill && !cfg.smartLaserStill) {
+                  // Обычный лазер + стоячий танк: стрелок видит стену, но цель всё равно облучена
+                  return {
+                    dist: d,
+                    isEnemy: false,
+                    hitX: rx,
+                    hitY: ry,
+                    inSmoke: inSmk,
+                    target: null,
+                    isDead: false,
+                  };
+                }
                 const hostile = !inSmk && !isDead && fromTank.isEnemy(tank);
-                // Умный лазер: скорость (клетки/сек) и угол движения цели (градусы)
-                // targetSpeed — скалярная скорость, targetAngle — куда едет корпус
                 const smartInfo =
                   cfg.smartLaser && !isDead
                     ? {
@@ -3378,6 +3452,7 @@
           "cfgSelfDmg",
           "cfgTeamSpawn",
           "cfgPturVsPtur",
+          "cfgSmartPtur",
           "cfgWrecks",
           "cfgSmartLaser",
           "cfgNoiseRadius",
@@ -3434,6 +3509,7 @@
           "cfgSelfDmg",
           "cfgTeamSpawn",
           "cfgPturVsPtur",
+          "cfgSmartPtur",
           "cfgWrecks",
           "cfgSmartLaser",
           "cfgNoiseRadius",
@@ -3531,8 +3607,12 @@
           selfDmg: document.getElementById("cfgSelfDmg").checked,
           teamSpawn: document.getElementById("cfgTeamSpawn").checked,
           pturVsPtur: document.getElementById("cfgPturVsPtur").checked,
+          smartPtur: document.getElementById("cfgSmartPtur").checked,
           wrecks: document.getElementById("cfgWrecks").checked,
-          smartLaser: document.getElementById("cfgSmartLaser").checked,
+          smartLaser:
+            parseInt(document.getElementById("cfgSmartLaser").value) >= 1,
+          smartLaserStill:
+            parseInt(document.getElementById("cfgSmartLaser").value) >= 2,
           noiseRadius: document.getElementById("cfgNoiseRadius").checked,
           visMode,
           allMap: visMode === "all",
