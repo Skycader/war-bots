@@ -217,6 +217,80 @@
         pointer-events: none;
         white-space: nowrap;
       }
+      #scoreboard {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.82);
+        z-index: 300;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 60px;
+        gap: 40px;
+        font-family: "Share Tech Mono", monospace;
+        pointer-events: none;
+      }
+      #scoreboard.open {
+        display: flex;
+      }
+      .sb-team {
+        flex: 1;
+        max-width: 280px;
+      }
+      .sb-team-name {
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.95em;
+        letter-spacing: 3px;
+        margin-bottom: 6px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid;
+      }
+      .sb-bar-wrap {
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        margin-bottom: 12px;
+        overflow: hidden;
+      }
+      .sb-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s;
+      }
+      .sb-tank {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 0.82em;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .sb-tank.dead {
+        opacity: 0.35;
+      }
+      .sb-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .sb-label {
+        flex: 1;
+      }
+      .sb-status {
+        font-size: 0.75em;
+        color: #888;
+      }
+      .sb-hint {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: "Share Tech Mono", monospace;
+        font-size: 0.75em;
+        color: #446644;
+        letter-spacing: 2px;
+      }
       #timeBar {
         position: absolute;
         bottom: 10px;
@@ -493,7 +567,7 @@
       <h2>АТОМНЫЙ ПРОТОКОЛ</h2>
       <div class="settings-grid">
         <div class="setting-row">
-          <label>Игрок:</label><input type="checkbox" id="cfgPlayer" checked />
+          <label>Игрок:</label><input type="checkbox" id="cfgPlayer" />
         </div>
         <div class="setting-row">
           <label>Команда игрока:</label
@@ -516,8 +590,7 @@
           <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
         </div>
         <div class="setting-row">
-          <label>Урон от стен:</label
-          ><input type="checkbox" id="cfgWallDmg" checked />
+          <label>Урон от стен:</label><input type="checkbox" id="cfgWallDmg" />
         </div>
         <div class="setting-row">
           <label>Огонь по своим:</label
@@ -529,26 +602,25 @@
         </div>
         <div class="setting-row">
           <label>Командный спавн:</label
-          ><input type="checkbox" id="cfgTeamSpawn" checked />
+          ><input type="checkbox" id="cfgTeamSpawn" />
         </div>
         <div class="setting-row">
           <label>ПРО (ПТУР сбивает ПТУР):</label
           ><input type="checkbox" id="cfgPturVsPtur" />
         </div>
         <div class="setting-row">
-          <label>Умный ПТУР:</label
-          ><input type="checkbox" id="cfgSmartPtur" checked />
+          <label>Умный ПТУР:</label><input type="checkbox" id="cfgSmartPtur" />
         </div>
         <div class="setting-row">
           <label>Трупы не исчезают:</label
-          ><input type="checkbox" id="cfgWrecks" checked />
+          ><input type="checkbox" id="cfgWrecks" />
         </div>
         <div class="setting-row">
           <label>Лазер:</label>
           <select id="cfgSmartLaser">
             <option value="0">Обычный</option>
             <option value="1">Умный (скорость/угол)</option>
-            <option value="2" selected>Умный + стоячие</option>
+            <option value="2">Умный + стоячие</option>
           </select>
         </div>
         <div class="setting-row">
@@ -557,11 +629,11 @@
         </div>
         <div class="setting-row">
           <label>Радиосвязь (broadcast):</label
-          ><input type="checkbox" id="cfgRadioEnabled" checked />
+          ><input type="checkbox" id="cfgRadioEnabled" />
         </div>
         <div class="setting-row">
           <label>Визуализация радиоволн:</label
-          ><input type="checkbox" id="cfgRadioWaves" checked />
+          ><input type="checkbox" id="cfgRadioWaves" />
         </div>
         <div class="setting-row" style="grid-column: 1/-1">
           <label>Игрок видит</label>
@@ -577,7 +649,7 @@
           <label>Размер карты:</label>
           <select id="cfgMapSize">
             <option value="30">30×30</option>
-            <option value="40" selected>40×40</option>
+            <option value="40">40×40</option>
             <option value="50">50×50</option>
           </select>
         </div>
@@ -589,7 +661,7 @@
             min="0"
             max="0.9"
             step="0.01"
-            value="0.15"
+            value="0"
             style="width: 110px; accent-color: var(--green)"
           />
           <span
@@ -602,7 +674,7 @@
           <label>Кд ПТУР:</label>
           <select id="cfgPturCD">
             <option value="5">5 сек</option>
-            <option value="10" selected>10 сек</option>
+            <option value="10">10 сек</option>
             <option value="15">15 сек</option>
           </select>
         </div>
@@ -611,7 +683,7 @@
           <select id="cfgPturSpeed">
             <option value="3">3 м/с</option>
             <option value="6">6 м/с</option>
-            <option value="10" selected>10 м/с</option>
+            <option value="10">10 м/с</option>
             <option value="15">15 м/с</option>
             <option value="20">20 м/с</option>
           </select>
@@ -621,7 +693,7 @@
           <select id="cfgPturDmg">
             <option value="25">25 HP</option>
             <option value="50">50 HP</option>
-            <option value="100" selected>100 HP</option>
+            <option value="100">100 HP</option>
             <option value="150">150 HP</option>
             <option value="200">200 HP</option>
           </select>
@@ -630,7 +702,7 @@
           <label>Кд дыма:</label>
           <select id="cfgSmokeCD">
             <option value="5">5 сек</option>
-            <option value="10" selected>10 сек</option>
+            <option value="10">10 сек</option>
             <option value="15">15 сек</option>
           </select>
         </div>
@@ -649,7 +721,7 @@
           <select id="cfgWallDotLife">
             <option value="1">1 сек</option>
             <option value="3">3 сек</option>
-            <option value="5" selected>5 сек</option>
+            <option value="5">5 сек</option>
             <option value="10">10 сек</option>
             <option value="99999">Постоянно</option>
           </select>
@@ -720,6 +792,11 @@
       <div id="canvasWrap">
         <canvas id="gameCanvas"></canvas>
         <div id="killNotify">ВЫ УНИЧТОЖИЛИ: <span id="killName"></span></div>
+        <div id="scoreboard">
+          <div class="sb-team" id="sbTeam0"></div>
+          <div class="sb-team" id="sbTeam1"></div>
+          <div class="sb-hint">TAB — закрыть</div>
+        </div>
         <div id="timeBar">
           <button id="btnPause">⏸</button>
           <div style="display: flex; gap: 2px" id="speedBtns">
@@ -875,7 +952,18 @@
         </div>
 
         <div class="hud-section scrollable">
-          <div class="hud-title">&#9658; УЧАСТНИКИ</div>
+          <div class="hud-title">
+            &#9658; УЧАСТНИКИ
+            <span
+              style="
+                font-size: 0.75em;
+                color: #00cc66;
+                letter-spacing: 0;
+                opacity: 0.8;
+              "
+              >[Tab &#9654;]</span
+            >
+          </div>
           <div id="enemyList"></div>
         </div>
       </div>
@@ -883,6 +971,35 @@
 
     <script>
       "use strict";
+
+      // ═══════════════════ НАСТРОЙКИ ПО УМОЛЧАНИЮ ═══════════════════
+      // Единое место для всех дефолтных значений меню.
+      // Изменяй здесь — не ищи по всему HTML.
+      const DEFAULT_CFG = {
+        cfgPlayer: false, // Игрок — участвует ли человек в бою (true/false)
+        cfgPlayerTeam: "", // Команда игрока — строка или '' (нет команды)
+        cfgImmortal: false, // Бессмертие игрока — HP не падает ниже 100 (true/false)
+        cfgWallDmg: true, // Урон от стен при столкновении на высокой скорости (true/false)
+        cfgTeamKill: true, // Огонь по своим — ПТУР бьёт союзников (true/false)
+        cfgSelfDmg: true, // Урон себе от своего ПТУР (true/false)
+        cfgTeamSpawn: true, // Командный спавн — команды в разных зонах карты (true/false)
+        cfgPturVsPtur: true, // ПРО — ПТУР может сбить вражеский ПТУР (true/false)
+        cfgSmartPtur: true, // Умный ПТУР — взрыв в точке сближения, игнорирует стены (true/false)
+        cfgWrecks: true, // Трупы — остовы остаются на карте и блокируют проезд (true/false)
+        cfgSmartLaser: "2", // Лазер — '0'=обычный, '1'=умный (скорость/угол), '2'=умный+стоячие
+        cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
+        cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
+        cfgRadioWaves: true, // Визуализация радиоволн — кольца при broadcast (true/false)
+        cfgMapSize: "40", // Размер карты — '30', '40', '50' (клетки)
+        cfgObstacles: "0.15", // Плотность препятствий — 0.0..0.9 (0%..90%)
+        cfgPturCD: "10", // Кулдаун ПТУР — '5', '10', '15' (секунды)
+        cfgPturSpeed: "15", // Скорость ПТУР — '3','6','10','15','20' (клетки/сек)
+        cfgPturDmg: "200", // Урон ПТУР — '25','50','100','150','200' (HP прямого попадания)
+        cfgSmokeCD: "10", // Кулдаун дыма — '5', '10', '15' (секунды)
+        cfgTurretSpeed: "1", // Скорость башни — '1'=103°/с, '2'=206°/с, '3'=309°/с, '4'=413°/с, '5'=516°/с
+        cfgWallDotLife: "99999", // Подсветка стен — '1','3','5','10' сек или '99999'=постоянно
+      };
+
       // ═══════════════════ КОНСТАНТЫ ═══════════════════
       // Единица расстояния в игре = 1 клетка = CELL пикселей на экране.
       // Скорости и расстояния везде в клетках (или клетках/сек).
@@ -2254,12 +2371,25 @@
             if (config.playerTeam) allTeams.add(config.playerTeam);
             const teams = [...allTeams];
             if (teams.length >= 2) {
-              // Первая команда — верхняя половина, вторая — нижняя
-              // Остальные команды равномерно между верхом и низом
+              // Узкая полоса у стены — 4 клетки от края
+              // Команда 0 — у верхней стены (y=1..4), команда 1 — у нижней (y=H-5..H-2)
+              // Три и более команд: первая сверху, последняя снизу, остальные равномерно
               const H = this.mapH,
-                slice = Math.floor(H / teams.length);
+                STRIP = 4;
               teams.forEach((t, i) => {
-                teamZones[t] = { yMin: i * slice, yMax: (i + 1) * slice };
+                if (i === 0) {
+                  teamZones[t] = { yMin: 1, yMax: 1 + STRIP };
+                } else if (i === teams.length - 1) {
+                  teamZones[t] = { yMin: H - 1 - STRIP, yMax: H - 2 };
+                } else {
+                  // Промежуточные команды — равномерно в середине
+                  const mid = Math.floor(H / 2);
+                  const spread = Math.floor(H / (teams.length + 1)) * i;
+                  teamZones[t] = {
+                    yMin: STRIP + spread,
+                    yMax: STRIP + spread + STRIP,
+                  };
+                }
               });
             }
           }
@@ -2474,7 +2604,6 @@
             w.life -= 0.1;
             return w.life > 0;
           });
-          this.radioWaves = [];
           this.smokes = this.smokes.filter((s) => {
             s.update(dt);
             return s.alive();
@@ -3808,6 +3937,75 @@
         }
       }
 
+      // ═══════════════════ СКОРБОРД (Tab) ═══════════════════
+      function updateScoreboard() {
+        if (!gameInstance) return;
+        const sb = document.getElementById("scoreboard");
+        if (!sb.classList.contains("open")) return;
+
+        const tanks = gameInstance.tanks;
+        // Собираем команды
+        const teams = {};
+        for (const t of tanks) {
+          const key = t.team || "__none__";
+          if (!teams[key])
+            teams[key] = {
+              name: t.team || "Без команды",
+              color: t.team ? teamColor(t.team) : "#ffaa00",
+              tanks: [],
+            };
+          teams[key].tanks.push(t);
+        }
+
+        const keys = Object.keys(teams).filter((k) => k !== "__none__");
+        // Если нет команд — показать всех в одной колонке
+        if (keys.length === 0) keys.push("__none__");
+
+        const slots = [
+          document.getElementById("sbTeam0"),
+          document.getElementById("sbTeam1"),
+        ];
+        slots.forEach((s) => (s.innerHTML = ""));
+
+        keys.slice(0, 2).forEach((key, i) => {
+          const team = teams[key];
+          const slot = slots[i];
+          if (!slot) return;
+          const alive = team.tanks.filter((t) => t.alive).length;
+          const total = team.tanks.length;
+          const pct = total > 0 ? (alive / total) * 100 : 0;
+          const col = team.color;
+
+          slot.innerHTML = `
+      <div class="sb-team-name" style="color:${col};border-color:${col}40">${team.name.toUpperCase()}</div>
+      <div class="sb-bar-wrap"><div class="sb-bar" style="width:${pct}%;background:${col}"></div></div>
+      ${[...team.tanks]
+        .sort((a, b) => (a.alive === b.alive ? 0 : a.alive ? -1 : 1))
+        .map(
+          (t) => `
+        <div class="sb-tank ${t.alive ? "" : "dead"}">
+          <div class="sb-dot" style="background:${t.alive ? col : "#333"}"></div>
+          <div class="sb-label">${t.label}</div>
+          <div class="sb-status">${t.alive ? "▶ живой" : "✕ уничтожен"}</div>
+        </div>`,
+        )
+        .join("")}
+    `;
+        });
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Tab") {
+          e.preventDefault();
+          document.getElementById("scoreboard").classList.add("open");
+          updateScoreboard();
+        }
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "Tab")
+          document.getElementById("scoreboard").classList.remove("open");
+      });
+
       // ═══════════════════ СКОРОСТЬ ВРЕМЕНИ ═══════════════════
       let timeScale = 1.0;
       let paused = false;
@@ -3868,6 +4066,7 @@
         updateHUD();
         tickKillNotify(realDt);
         updateEngineSoundsForPlayer();
+        updateScoreboard();
         animId = requestAnimationFrame(gameLoop);
       }
 
@@ -3911,6 +4110,14 @@
         } catch (e) {}
       }
       function loadSettings() {
+        // Шаг 1: применяем дефолты из DEFAULT_CFG
+        for (const [id, val] of Object.entries(DEFAULT_CFG)) {
+          const el = document.getElementById(id);
+          if (!el) continue;
+          if (el.type === "checkbox") el.checked = !!val;
+          else el.value = val;
+        }
+        // Шаг 2: поверх — сохранённые пользователем настройки
         try {
           const raw = localStorage.getItem(SAVE_KEY);
           if (!raw) return;
@@ -3928,6 +4135,11 @@
             else el.value = val;
           }
         } catch (e) {}
+        // Обновляем лейбл ползунка препятствий
+        const obsEl = document.getElementById("cfgObstacles");
+        if (obsEl)
+          document.getElementById("cfgObstaclesVal").textContent =
+            Math.round(obsEl.value * 100) + "%";
       }
       loadSettings();
 
