@@ -1224,11 +1224,18 @@
       // Пример: TANK_TURN_SPEED=2.0 → полный разворот на 180° за ~0.5 сек.
       const TANK_TURN_SPEED = 2.0;
 
+      // Алиасы направлений для Bot API — интуитивные названия сторон света
+      // (в canvas Y растёт вниз, поэтому юг=90°, север=270°)
+      const DIR_NORTH = 270; // вверх на экране
+      const DIR_SOUTH = 90; // вниз на экране
+      const DIR_EAST = 0; // вправо
+      const DIR_WEST = 180; // влево
+
       // Скорость поворота башни игрока по клавишам Q/E, рад/сек × 1/π.
       // Пример: TURRET_TURN_SPEED=3.0 → полный оборот башни за ~0.33 сек.
       const TURRET_TURN_SPEED = 3.0;
 
-      // Скорость поворота башни ботов (используется в setGunDegree/setGunDegreeAndFire).
+      // Скорость поворота башни ботов (используется в setGunDirection/setGunDirectionAndFire).
       // Чуть меньше чем у игрока — делает ботов менее «читерными».
       // Пример: BOT_TURRET_SPEED=1.8 → полный оборот за ~0.56 сек.
       const BOT_TURRET_SPEED = 1.8;
@@ -1843,6 +1850,7 @@
             maxLife: 3.0,
           });
           if (this._sayBubbles.length > 3) this._sayBubbles.shift();
+          return this;
         }
 
         // Журнал
@@ -1866,6 +1874,7 @@
           if (cfg.radioWaves)
             game.radioWaves.push({ x: this.x, y: this.y, r: 0, life: 1.0 });
           this.say("📡 " + String(message).slice(0, 20));
+          return this;
         }
 
         // Доставка радио (вызывается движком после всех AI)
@@ -1944,32 +1953,44 @@
         // ══════════════════════════════════════════════════
 
         // Движение
-        setSpeed(v) {
-          this._desiredSpeed = Math.max(-2, Math.min(5, +v || 0));
-        }
+
         stop() {
           this._desiredSpeed = 0;
+          return this;
         }
-        setDirection(deg) {
+        setTankDirection(deg) {
           this._desiredAngle = ((+deg || 0) * Math.PI) / 180;
+          return this;
+        }
+
+        // Повернуть корпус на deg градусов, и только когда довернул — начать движение со speed
+        setSpeed(v) {
+          const spd = Math.max(-2, Math.min(5, +v || 0));
+          // Если вызван в цепочке после setTankDirection и поворот ещё не завершён — ждём
+          if (
+            this._desiredAngle !== undefined &&
+            Math.abs(normAngle(this._desiredAngle - this.angle)) > 0.05
+          ) {
+            this._dirAndGoTarget = this._desiredAngle;
+            this._dirAndGoSpeed = spd;
+            this._desiredSpeed = 0;
+          } else {
+            this._desiredSpeed = spd;
+          }
+          return this;
         }
 
         // Башня
-        setGunDegree(deg) {
-          this.turretTargetAngle = ((+deg || 0) * Math.PI) / 180;
-        }
         setGunDirection(deg) {
           this.turretTargetAngle = ((+deg || 0) * Math.PI) / 180;
+          return this;
         }
 
         // Телеметрия
-        gunDegree() {
+        getGunDirection() {
           return normDeg(this.turretAngle);
         }
-        getGunDegree() {
-          return normDeg(this.turretAngle);
-        }
-        getDirection() {
+        getTankDirection() {
           return normDeg(this.angle);
         }
         getRandomDegree() {
@@ -2061,39 +2082,33 @@
           if (res) this.onLaserScan(this._api_laser);
           return this._api_laser;
         }
-        enableContinuousLaser() {
+        enableLaser() {
           this._continuousLaserCmd = true;
+          return this;
         }
-        disableContinuousLaser() {
+        disableLaser() {
           this._continuousLaserCmd = false;
-        }
-        enableConstntLaser() {
-          this._continuousLaserCmd = true;
-        }
-        disableConstantLaser() {
-          this._continuousLaserCmd = false;
+          return this;
         }
 
         // Журнал
         log(msg) {
           if (this._game) this._game.log(`[${this.label}] ${msg}`, "");
         }
-        logMsg(msg) {
-          this.log(msg);
-        }
 
         // Навести башню на угол и выстрелить как только наведётся
-        setGunDegreeAndFire(deg) {
+        setGunDirectionAndFire(deg) {
           this._gunAndFireTarget = degToRad(deg);
           this._gunAndFirePending = true;
+          return this;
         }
 
         // runTasks: принимает функции () => void и специальный объект await(ms)
-        // Задачи с setGunDegree внутри — ждут завершения поворота башни
+        // Задачи с setGunDirection внутри — ждут завершения поворота башни
         // Объект {_awaitMs: N} — ждёт N миллисекунд игрового времени
         runTasks(...tasks) {
-          // Очищаем и ставим задачи заново (не накапливаем при многократном вызове)
-          this._taskQueue = [];
+          // Если очередь ещё не пуста — игнорируем вызов (задача ещё выполняется)
+          if (this._taskQueue && this._taskQueue.length > 0) return;
           for (const t of tasks) {
             if (typeof t === "function")
               this._taskQueue.push({
@@ -2162,8 +2177,17 @@
           if (this._desiredAngle !== undefined) {
             const diff = normAngle(this._desiredAngle - this.angle);
             const step = TANK_TURN_SPEED * dt;
-            if (Math.abs(diff) <= step) this.angle = this._desiredAngle;
-            else this.angle = normAngle(this.angle + Math.sign(diff) * step);
+            if (Math.abs(diff) <= step) {
+              this.angle = this._desiredAngle;
+              // Довернули — если был setTankDirectionAndGo, отпускаем скорость
+              if (this._dirAndGoTarget !== undefined) {
+                this._desiredSpeed = this._dirAndGoSpeed;
+                this._dirAndGoTarget = undefined;
+                this._dirAndGoSpeed = undefined;
+              }
+            } else {
+              this.angle = normAngle(this.angle + Math.sign(diff) * step);
+            }
           }
 
           // Движение + коллизия
@@ -2345,7 +2369,7 @@
                 this.turretAngle + Math.sign(diff) * step,
               );
           }
-          // setGunDegreeAndFire: навести и выстрелить
+          // setGunDirectionAndFire: навести и выстрелить
           if (this._gunAndFirePending) {
             this.turretTargetAngle = this._gunAndFireTarget;
             const diff = Math.abs(
@@ -4058,7 +4082,7 @@
             ctx.textAlign = "center";
             ctx.shadowBlur = 4;
             ctx.fillText(
-              "⚠ " + Math.round(normDeg((angle * 180) / Math.PI)) + "°",
+              "⚠ " + Math.round(normDeg(angle)) + "°",
               arrowX,
               arrowY - (blink ? 12 : 10),
             );
@@ -5855,8 +5879,8 @@
     <script src="bots/Specter.js"></script>
     <script src="bots/TeamHunter.js"></script>
     <script src="bots/Saboteur.js"></script>
-    <script src="bots/BoomBox.js"></script>
+    <script src="bots/Patrol.js"></script>
     <script src="bots/Guardian.js"></script>
-    <script src="bots/index.js"></script>
+    <script src="index.js"></script>
   </body>
 </html>
