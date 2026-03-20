@@ -15,6 +15,7 @@ class Scanner extends Tank {
     this.setMemory("soundSource", 0);
     this.setMemory("soundDist", 0);
     this.setMemory("enemyIsSeen", false);
+    console.log(Date.now());
   }
 
   main() {
