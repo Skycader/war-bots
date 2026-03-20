@@ -2742,7 +2742,7 @@
             if (msg.message === "BASE_WHERE") {
               // Отвечаем не чаще раза в 5 сек чтобы не спамить
               if (!this._hereTimer || this._hereTimer <= 0) {
-                this._hereTimer = 50; // ~5 сек
+                this._hereTimer = 2; // 2 сек
                 this.broadcast("BASE_HERE");
               }
             }
@@ -3101,7 +3101,7 @@
           for (const BC of activeBots) {
             let team = presetTeamMap[BC.name] || BC.botTeam || null;
             // Королевская битва: каждый бот — отдельная команда
-            if (isRoyalBattle()) team = "rb_" + _rbIdx++;
+            if (isRoyalBattle()) team = null; // каждый сам за себя
             const pos = isRoyalBattle() ? this._freeCellEdge() : getPos(team);
             let color = BOT_COLORS[id % BOT_COLORS.length];
             for (const col of BOT_COLORS) {
@@ -5423,9 +5423,7 @@
           teamKill: document.getElementById("cfgTeamKill").checked,
           selfDmg: document.getElementById("cfgSelfDmg").checked,
           teamSpawn: document.getElementById("cfgTeamSpawn").checked,
-          assault: ["1", "2"].includes(
-            document.getElementById("cfgAssault").value,
-          ),
+          assault: document.getElementById("cfgAssault").value === "1",
           royalBattle: document.getElementById("cfgAssault").value === "2",
           baseHp: parseInt(
             document.getElementById("cfgBaseHp")?.value || "5000",

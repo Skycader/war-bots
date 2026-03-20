@@ -80,7 +80,7 @@ battleTeamsPresets = [
     desc: "Режим Штурм. 4 Saboteur против 4 Guardian",
     teams: {
       Saboteurs: { bot: Saboteur, count: 4 },
-      Defenders: { bot: Guardian, count: 4 },
+      Guardians: { bot: Guardian, count: 4 },
     },
   },
   {

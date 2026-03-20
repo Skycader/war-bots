@@ -62,9 +62,9 @@ class Guardian extends Tank {
     if (this._modeTimer > 0) this._modeTimer--;
 
     this._askTimer--;
-    if (this._askTimer <= 0 && !this._homeKnown) {
+    if (this._askTimer <= 0) {
       this.broadcast("BASE_WHERE");
-      this._askTimer = 80;
+      this._askTimer = 60; // переспрашиваем регулярно чтобы вектор не устарел
     }
 
     if (this.mode === "patrol") this._doPatrol();
@@ -76,8 +76,17 @@ class Guardian extends Tank {
   _doPatrol() {
     this.disableContinuousLaser();
     // Держимся вплотную к воротам — не дальше 2 клеток
-    if (this._homeKnown && this._homeDist() > 2) {
-      this._nav(this._homeAngle(), 2);
+    const ha = this._homeAngle();
+    if (ha !== null && this._homeDist() > 2) {
+      this._nav(ha, 2.5);
+      return;
+    }
+    if (!this._homeKnown) {
+      // Не знаем где база — просто стоим и ждём ответа
+      this.stop();
+      this.scanAngle = (this.scanAngle + 10) % 360;
+      this.setGunDegree(this.scanAngle);
+      this.impulseScan();
       return;
     }
     // У ворот: стоим и вращаем башней в сторону поля
@@ -119,7 +128,7 @@ class Guardian extends Tank {
     const hd = this._homeDist();
     const ha = this._homeAngle();
 
-    if (hd < 2 || ha === null || this._modeTimer <= 0) {
+    if (hd < 2.5 || ha === null || this._modeTimer <= 0) {
       this.stop();
       this.mode = "hunt";
       this._modeTimer = 100;
@@ -233,6 +242,7 @@ class Guardian extends Tank {
         this._homeVx = Math.cos(r) * msg.dist;
         this._homeVy = Math.sin(r) * msg.dist;
         this._homeKnown = true;
+        if (msg.dist > 2) this.say("База " + Math.round(msg.dist) + "кл →");
       }
 
       if (
