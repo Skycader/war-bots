@@ -677,6 +677,10 @@
             <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
           </div>
           <div class="setting-row">
+            <label>Возрождение игрока:</label
+            ><input type="checkbox" id="cfgRespawn" />
+          </div>
+          <div class="setting-row">
             <label>Урон от стен:</label
             ><input type="checkbox" id="cfgWallDmg" />
           </div>
@@ -1114,12 +1118,7 @@
         <div class="hud-section" style="padding: 5px 7px">
           <div
             id="timeBar"
-            style="
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              flex-wrap: wrap;
-            "
+            style="display: inline-flex; flex-direction: column; gap: 2px"
           >
             <div style="display: flex; gap: 0" id="speedBtns">
               <button class="spd-btn" data-v="0.1">×0.1</button>
@@ -1129,9 +1128,9 @@
               <button class="spd-btn" data-v="5">×5</button>
               <button class="spd-btn" data-v="10">×10</button>
             </div>
-            <div style="display: flex; gap: 0">
-              <button id="btnPause" style="border-right-width: 0">⏸</button
-              ><button
+            <div style="display: flex; gap: 0; width: 100%">
+              <button id="btnPause" style="border-right-width: 0">⏸</button>
+              <button
                 id="chkFfShot"
                 style="
                   font-family: &quot;Share Tech Mono&quot;, monospace;
@@ -1142,6 +1141,7 @@
                   padding: 2px 8px;
                   cursor: pointer;
                   letter-spacing: 1px;
+                  flex: 1;
                 "
                 title="Замедлить до выстрела"
               >
@@ -1163,6 +1163,7 @@
         cfgPlayer: false, // Игрок — участвует ли человек в бою (true/false)
         cfgPlayerTeam: "", // Команда игрока — строка или '' (нет команды)
         cfgImmortal: false, // Бессмертие игрока — HP не падает ниже 100 (true/false)
+        cfgRespawn: false, // Возрождение — пробел после смерти возрождает игрока (true/false)
         cfgWallDmg: true, // Урон от стен при столкновении на высокой скорости (true/false)
         cfgTeamKill: true, // Огонь по своим — ПТУР бьёт союзников (true/false)
         cfgSelfDmg: true, // Урон себе от своего ПТУР (true/false)
@@ -1555,6 +1556,23 @@
           game.explosions.push(new Explosion(this.x * CELL, this.y * CELL));
           game.emitSound(this.x, this.y, "explosion", null);
           playExplosion(calcPanForPlayer(this.x, this.y, game));
+          // Разлёт осколков от удара ПТУР (10 сек)
+          if (game.wallParticles) {
+            const n = 6 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < n; i++) {
+              const a = rnd(0, Math.PI * 2);
+              game.wallParticles.push({
+                x: this.x,
+                y: this.y,
+                vx: Math.cos(a) * rnd(1.5, 5),
+                vy: Math.sin(a) * rnd(1.5, 5),
+                type: "debris",
+                life: 6 + Math.random() * 4,
+                maxLife: 10,
+                color: "#3a3a1a",
+              });
+            }
+          }
           for (const tank of game.tanks) {
             if (!tank.alive) continue;
             if (tank === this.owner && !cfg.selfDmg) continue;
@@ -1593,6 +1611,23 @@
             this.y += Math.sin(this.angle) * stepDist;
             this.trail.push({ x: this.x, y: this.y });
             if (this.trail.length > 20) this.trail.shift();
+            // Дымный след ПТУР — позади ракеты, мелкий
+            if (game.wallParticles && Math.random() < 0.5) {
+              const trailX = this.x - Math.cos(this.angle) * 0.35;
+              const trailY = this.y - Math.sin(this.angle) * 0.35;
+              const a = this.angle + Math.PI + rnd(-0.25, 0.25);
+              game.wallParticles.push({
+                x: trailX,
+                y: trailY,
+                vx: Math.cos(a) * rnd(0.1, 0.4),
+                vy: Math.sin(a) * rnd(0.1, 0.4),
+                type: "exhaust",
+                life: 4.5 + Math.random() * 1.0,
+                maxLife: 5.5,
+                color: "#4a4a4a",
+                small: true,
+              });
+            }
 
             // canGuide: лазер активен И нет стены между владельцем и ПТУР
             if (this.owner.laserContinuous || this.owner.renderLaserLife > 0)
@@ -2252,6 +2287,39 @@
           if (this._engineSoundTimer <= 0) {
             if (Math.abs(this.speed) > 0.5) {
               game.emitSound(this.x, this.y, "engine", this);
+              // Выхлопные газы — из 2 труб (как у Тигра), сзади корпуса
+              if (game.wallParticles && Math.abs(this.speed) > 0.3) {
+                const spd = Math.abs(this.speed);
+                // Трубы расположены сзади (-0.62*sz) и смещены по Y (±0.21*sz)
+                // В мировых координатах: повернуть относительно угла танка
+                const bk = -0.45; // X назад вдоль корпуса (нормализовано)
+                const pipes = [
+                  { ox: bk, oy: -0.13 },
+                  { ox: bk, oy: 0.13 },
+                ];
+                for (const pipe of pipes) {
+                  // Каждую трубу — 2-3 частицы каждый тик
+                  const n = Math.random() < 0.5 ? 2 : 3;
+                  for (let i = 0; i < n; i++) {
+                    const cos = Math.cos(this.angle),
+                      sin = Math.sin(this.angle);
+                    const px = this.x + pipe.ox * cos - pipe.oy * sin;
+                    const py = this.y + pipe.ox * sin + pipe.oy * cos;
+                    const ea = this.angle + Math.PI + rnd(-0.3, 0.3);
+                    game.wallParticles.push({
+                      x: px,
+                      y: py,
+                      vx: Math.cos(ea) * rnd(0.15, 0.4 + spd * 0.1),
+                      vy: Math.sin(ea) * rnd(0.15, 0.4 + spd * 0.1),
+                      type: "exhaust",
+                      life: 0.4 + Math.random() * 0.35,
+                      maxLife: 0.75,
+                      color: spd > 3 ? "#4a4a4a" : "#5a5a5a", // быстро = темнее
+                      small: true,
+                    });
+                  }
+                }
+              }
             }
             this._engineSoundTimer = 0.3; // сбрасываем всегда — не накапливаем долг
           }
@@ -2849,13 +2917,39 @@
             return;
           }
           super.destroy(game, killer);
-          // После смерти игрока — автоматически режим наблюдения
-          cfg.visMode = "all";
-          document
-            .querySelectorAll(".vis-btn-hud")
-            .forEach((b) =>
-              b.classList.toggle("active", b.dataset.mode === "all"),
-            );
+          // После смерти: если возрождение — показываем подсказку
+          // Если нет — переключаем в режим наблюдения
+          // Всегда переключаем на "всю карту"
+          if (cfg.respawn) {
+            // Через 800мс появляется новый танк, остов остаётся
+            setTimeout(() => {
+              const spawn = game.freeCell(3);
+              this.x = spawn.x;
+              this.y = spawn.y;
+              this.hp = 100;
+              this.energy = 100;
+              this.speed = 0;
+              this.gear = 0;
+              this.alive = true;
+              this.isWreck = false;
+              this.pturCD = 0;
+              this.smokeCD = 0;
+              this.smokeCount = 3;
+              this.laserContinuous = false;
+              this.renderLaser = null;
+              this._againstWall = false;
+              if (cfg.assault) this.pturAmmo = cfg.pturAmmo;
+              game.running = true;
+              game.winner = null;
+            }, 800);
+          } else {
+            cfg.visMode = "all";
+            document
+              .querySelectorAll(".vis-btn-hud")
+              .forEach((b) =>
+                b.classList.toggle("active", b.dataset.mode === "all"),
+              );
+          }
         }
       }
 
@@ -3407,6 +3501,8 @@
         }
 
         checkWin() {
+          // В режиме возрождения — победа только если игрок погиб окончательно
+          if (cfg.respawn) return;
           const alive = this.tanks.filter((t) => t.alive && !t.isBaseObj);
 
           // Режим Штурм: победа если база врага уничтожена ИЛИ все танки врага мертвы
@@ -3941,13 +4037,32 @@
             for (const p of g.wallParticles) {
               const fr = Math.max(0, p.life / p.maxLife);
               ctx.save();
-              ctx.globalAlpha = p.type === "spark" ? fr * 0.95 : fr * 0.7;
+              ctx.globalAlpha =
+                p.type === "spark"
+                  ? fr * 0.95
+                  : p.type === "exhaust"
+                    ? fr * 0.85
+                    : fr * 0.7;
               if (p.type === "spark") {
                 ctx.fillStyle = `hsl(${40 + fr * 20},100%,${60 + fr * 30}%)`;
                 ctx.shadowColor = "#ffaa00";
                 ctx.shadowBlur = 4;
                 ctx.beginPath();
                 ctx.arc(p.x * C, p.y * C, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+              } else if (p.type === "exhaust") {
+                // Дым: растёт и тускнеет; small=true → радиус вдвое меньше
+                const maxR = p.small ? C * 0.14 : C * 0.45;
+                const r = maxR * (0.5 + 0.5 * (1 - fr));
+                ctx.fillStyle = p.color || "#444";
+                // Более чёткий дым — два слоя: тёмное ядро + светлый ореол
+                ctx.beginPath();
+                ctx.arc(p.x * C, p.y * C, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha *= 0.4;
+                ctx.fillStyle = "#888";
+                ctx.beginPath();
+                ctx.arc(p.x * C, p.y * C, r * 0.5, 0, Math.PI * 2);
                 ctx.fill();
               } else {
                 ctx.fillStyle = p.color || "#2a4a2a";
@@ -4087,13 +4202,12 @@
             ctx.fillStyle = "rgba(0,0,0,0.55)";
             ctx.fillRect(-sz * 0.6, -sz * 0.45, sz * 1.2, sz * 0.2);
             ctx.fillRect(-sz * 0.6, sz * 0.25, sz * 1.2, sz * 0.2);
+            // Белое пятно сзади — обозначает корму
             ctx.fillStyle = "rgba(255,255,255,0.85)";
             ctx.beginPath();
-            ctx.moveTo(sz * 0.62, 0);
-            ctx.lineTo(sz * 0.38, -sz * 0.18);
-            ctx.lineTo(sz * 0.38, sz * 0.18);
-            ctx.closePath();
+            ctx.arc(-sz * 0.5, 0, sz * 0.12, 0, Math.PI * 2);
             ctx.fill();
+
             ctx.rotate(-tank.angle);
             ctx.rotate(tank.turretAngle);
             ctx.fillStyle = tank.isPlayer() ? "#00cc66" : tank.color;
@@ -4130,9 +4244,19 @@
               const bw = sz * 1.2;
               ctx.fillStyle = "#0a1a0a";
               ctx.fillRect(px - bw / 2, py + sz * 0.5, bw, 3);
+              const hpDisplay = cfg.immortal && tank.isPlayer() ? 100 : tank.hp;
               ctx.fillStyle =
-                tank.hp > 50 ? "#cc2222" : tank.hp > 20 ? "#ff6622" : "#ff0000";
-              ctx.fillRect(px - bw / 2, py + sz * 0.5, (bw * tank.hp) / 100, 3);
+                hpDisplay > 50
+                  ? "#cc2222"
+                  : hpDisplay > 20
+                    ? "#ff6622"
+                    : "#ff0000";
+              ctx.fillRect(
+                px - bw / 2,
+                py + sz * 0.5,
+                (bw * hpDisplay) / 100,
+                3,
+              );
               // Energy бар (жёлтый)
               ctx.fillStyle = "#0a1a0a";
               ctx.fillRect(px - bw / 2, py + sz * 0.5 + 4, bw, 2);
@@ -5061,6 +5185,7 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
+          "cfgRespawn",
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
@@ -5146,6 +5271,7 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
+          "cfgRespawn",
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
@@ -5420,6 +5546,7 @@
           playerTeam:
             document.getElementById("cfgPlayerTeam").value.trim() || null,
           immortal: document.getElementById("cfgImmortal").checked,
+          respawn: document.getElementById("cfgRespawn")?.checked || false,
           wallDmg: document.getElementById("cfgWallDmg").checked,
           teamKill: document.getElementById("cfgTeamKill").checked,
           selfDmg: document.getElementById("cfgSelfDmg").checked,
@@ -5516,8 +5643,17 @@
               if (
                 (e.code === "KeyW" || e.code === "ArrowUp") &&
                 !p.keys[e.code]
-              )
+              ) {
+                console.log(
+                  "W pressed alive=",
+                  p.alive,
+                  "gear=",
+                  p.gear,
+                  "running=",
+                  gameInstance.running,
+                );
                 p.gear = Math.min(5, p.gear + 1);
+              }
               if (
                 (e.code === "KeyS" || e.code === "ArrowDown") &&
                 !p.keys[e.code]
