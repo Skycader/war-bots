@@ -677,10 +677,6 @@
             <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
           </div>
           <div class="setting-row">
-            <label>Возрождение игрока:</label
-            ><input type="checkbox" id="cfgRespawn" />
-          </div>
-          <div class="setting-row">
             <label>Урон от стен:</label
             ><input type="checkbox" id="cfgWallDmg" />
           </div>
@@ -1163,7 +1159,6 @@
         cfgPlayer: false, // Игрок — участвует ли человек в бою (true/false)
         cfgPlayerTeam: "", // Команда игрока — строка или '' (нет команды)
         cfgImmortal: false, // Бессмертие игрока — HP не падает ниже 100 (true/false)
-        cfgRespawn: false, // Возрождение — пробел после смерти возрождает игрока (true/false)
         cfgWallDmg: true, // Урон от стен при столкновении на высокой скорости (true/false)
         cfgTeamKill: true, // Огонь по своим — ПТУР бьёт союзников (true/false)
         cfgSelfDmg: true, // Урон себе от своего ПТУР (true/false)
@@ -2920,36 +2915,12 @@
           // После смерти: если возрождение — показываем подсказку
           // Если нет — переключаем в режим наблюдения
           // Всегда переключаем на "всю карту"
-          if (cfg.respawn) {
-            // Через 800мс появляется новый танк, остов остаётся
-            setTimeout(() => {
-              const spawn = game.freeCell(3);
-              this.x = spawn.x;
-              this.y = spawn.y;
-              this.hp = 100;
-              this.energy = 100;
-              this.speed = 0;
-              this.gear = 0;
-              this.alive = true;
-              this.isWreck = false;
-              this.pturCD = 0;
-              this.smokeCD = 0;
-              this.smokeCount = 3;
-              this.laserContinuous = false;
-              this.renderLaser = null;
-              this._againstWall = false;
-              if (cfg.assault) this.pturAmmo = cfg.pturAmmo;
-              game.running = true;
-              game.winner = null;
-            }, 800);
-          } else {
-            cfg.visMode = "all";
-            document
-              .querySelectorAll(".vis-btn-hud")
-              .forEach((b) =>
-                b.classList.toggle("active", b.dataset.mode === "all"),
-              );
-          }
+          cfg.visMode = "all";
+          document
+            .querySelectorAll(".vis-btn-hud")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.mode === "all"),
+            );
         }
       }
 
@@ -3501,8 +3472,6 @@
         }
 
         checkWin() {
-          // В режиме возрождения — победа только если игрок погиб окончательно
-          if (cfg.respawn) return;
           const alive = this.tanks.filter((t) => t.alive && !t.isBaseObj);
 
           // Режим Штурм: победа если база врага уничтожена ИЛИ все танки врага мертвы
@@ -5185,7 +5154,6 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
-          "cfgRespawn",
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
@@ -5271,7 +5239,6 @@
         const ids = [
           "cfgPlayer",
           "cfgImmortal",
-          "cfgRespawn",
           "cfgPlayerTeam",
           "cfgWallDmg",
           "cfgTeamKill",
@@ -5546,7 +5513,6 @@
           playerTeam:
             document.getElementById("cfgPlayerTeam").value.trim() || null,
           immortal: document.getElementById("cfgImmortal").checked,
-          respawn: document.getElementById("cfgRespawn")?.checked || false,
           wallDmg: document.getElementById("cfgWallDmg").checked,
           teamKill: document.getElementById("cfgTeamKill").checked,
           selfDmg: document.getElementById("cfgSelfDmg").checked,
