@@ -1,108 +1,55 @@
-// bots/index.js — список ботов и пресеты команд
-// Загружается ПОСЛЕ всех классов — все ссылки на классы безопасны
+// index.js — загрузчик ботов и пресеты команд
+// Единственный <script> тег в HTML. Загружает ботов по очереди,
+// затем инициализирует пресеты и применяет сохранённый.
 
-const botClasses = [Patrol];
+const BOTS = ["bots/Scanner.js"];
 
-// ═══════════════════ ПРЕСЕТЫ КОМАНД ═══════════════════
-battleTeamsPresets = [
-  {
-    name: "Все боты",
-    desc: "Все доступные боты без команд",
-    teams: null,
-  },
-
-  // ── Классические ─────────────────────────────────────
-  {
-    name: "Сканеры vs Охотники",
-    desc: "6 Scanner  против  6 TeamHunter",
-    teams: {
-      Scanners: { bot: Scanner, count: 6 },
-      Hunters: { bot: TeamHunter, count: 6 },
-    },
-  },
-  {
-    name: "Терминаторы vs Охотники",
-    desc: "4 Terminator  против  4 TeamHunter",
-    teams: {
-      Terminators: { bot: Terminator, count: 4 },
-      Hunters: { bot: TeamHunter, count: 4 },
-    },
-  },
-  {
-    name: "Призраки vs Трекеры",
-    desc: "5 Specter  против  5 Tracker",
-    teams: {
-      Specters: { bot: Specter, count: 5 },
-      Trackers: { bot: Tracker, count: 5 },
-    },
-  },
-  {
-    name: "Все против всех",
-    desc: "2×Terminator + 2×Tracker + 2×Specter + 2×TeamHunter",
-    teams: null,
-    customClasses: [
-      Terminator,
-      Terminator,
-      Tracker,
-      Tracker,
-      Specter,
-      Specter,
-      TeamHunter,
-      TeamHunter,
-    ],
-  },
-
-  // ── Режим Штурм ──────────────────────────────────────
-  {
-    name: "⚔ Штурм: Терминаторы vs Охотники",
-    desc: "Режим Штурм. 6 Terminator против 6 TeamHunter",
-    teams: {
-      Terminators: { bot: Terminator, count: 6 },
-      Hunters: { bot: TeamHunter, count: 6 },
-    },
-  },
-  {
-    name: "⚔ Штурм: Диверсанты vs Защитники",
-    desc: "Режим Штурм. 4 Saboteur против 4 Guardian",
-    teams: {
-      Saboteurs: { bot: Saboteur, count: 4 },
-      Guardians: { bot: Guardian, count: 4 },
-    },
-  },
-  {
-    name: "⚔ Штурм: Шахеды vs Защитники",
-    desc: "Режим Штурм. 4 Scout против 4 Guardian",
-    teams: {
-      BoomBoxs: { bot: BoomBox, count: 4 },
-      Guardians: { bot: Guardian, count: 4 },
-    },
-  },
-  {
-    name: "⚔ Штурм: Полный хаос",
-    desc: "Режим Штурм. Термин.+Диверс.+Призрак vs Охотник+Защитник+Трекер",
-    teams: null,
-    customClasses: [
-      // Команда Alpha (botTeam будет назначен движком из static botTeam)
-      Terminator,
-      Terminator,
-      Saboteur,
-      Saboteur,
-      Specter,
-      // Команда Hunters
-      TeamHunter,
-      TeamHunter,
-      Guardian,
-      Guardian,
-      Tracker,
-    ],
-  },
-];
-
-if (typeof applyPreset === "function") {
-  try {
-    const saved = parseInt(localStorage.getItem("ltw_preset") || "1");
-    applyPreset(Math.min(saved, battleTeamsPresets.length - 1));
-  } catch (e) {
-    applyPreset(1);
+// Загружаем скрипты по одному (порядок важен — все наследуют Tank)
+function loadScripts(paths, onDone) {
+  if (paths.length === 0) {
+    onDone();
+    return;
   }
+  const [first, ...rest] = paths;
+  const script = document.createElement("script");
+  script.src = first;
+  script.onload = () => loadScripts(rest, onDone);
+  script.onerror = (e) => {
+    console.warn(`[index.js] Не удалось загрузить ${first}`, e);
+    loadScripts(rest, onDone); // продолжаем без этого бота
+  };
+  document.head.appendChild(script);
 }
+
+loadScripts(BOTS, () => {
+  // Все классы ботов загружены — инициализируем пресеты
+
+  // Все доступные боты для режима "Все боты" (без пресета)
+  botClasses = [Scanner];
+
+  battleTeamsPresets = [
+    {
+      name: "Все боты",
+      desc: "Все доступные боты без команд",
+      teams: null,
+    },
+    {
+      name: "Сканеры vs Охотники",
+      desc: "6 Scanner против 6 Scanner",
+      teams: {
+        Scanners: { bot: Scanner, count: 6 },
+        Scanners2: { bot: Scanner, count: 6 },
+      },
+    },
+  ];
+
+  // Применяем сохранённый пресет
+  if (typeof applyPreset === "function") {
+    try {
+      const saved = parseInt(localStorage.getItem("ltw_preset") || "1");
+      applyPreset(Math.min(saved, battleTeamsPresets.length - 1));
+    } catch (e) {
+      applyPreset(1);
+    }
+  }
+});

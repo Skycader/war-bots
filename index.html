@@ -1811,6 +1811,93 @@
       // ═══════════════════ UNIT — базовый класс для Tank и Base ═══════════════════
       // Содержит общее API: radio, команды, say, callbacks.
       // Tank и Base наследуют Unit и добавляют свою физику/логику.
+      // ═══════════════════ BOT SANDBOX ═══════════════════
+      // Белый список методов доступных боту через Proxy
+      const BOT_API_WHITELIST = new Set([
+        // Движение
+        "setSpeed",
+        "stop",
+        "setTankDirection",
+        "getTankDirection",
+        // Башня
+        "setGunDirection",
+        "getGunDirection",
+        "getRandomDegree",
+        "setGunDirectionAndFire",
+        // Лазер
+        "impulseScan",
+        "enableLaser",
+        "disableLaser",
+        // Оружие
+        "fire",
+        "fireSmoke",
+        "selfDestruct",
+        // Телеметрия
+        "getCurrentInfo",
+        "isIrradiated",
+        "getIrradiatedAngle",
+        "wasDamaged",
+        "getLaserData",
+        // Команды
+        "getTeam",
+        "isAlly",
+        "isEnemy",
+        // Радио / речь
+        "broadcast",
+        "say",
+        "log",
+        "logMsg",
+        // Задачи
+        "runTasks",
+        "await",
+        // Память
+        "setMemory",
+        "getMemory",
+        // Колбэки (переопределяются ботом)
+        "main",
+        "onLaserScan",
+        "onLaserDetection",
+        "onSound",
+        "onRadio",
+        "onDamage",
+      ]);
+
+      // Создать защищённый Proxy для бота
+      // Скрывает координаты, внутренние поля, весь прямой доступ к Tank
+      function makeBotProxy(bot) {
+        return new Proxy(bot, {
+          get(target, prop) {
+            // Разрешаем только белый список
+            if (BOT_API_WHITELIST.has(prop)) {
+              const val = target[prop];
+              if (typeof val === "function") {
+                // Оборачиваем каждый вызов в try/catch
+                return function (...args) {
+                  try {
+                    return val.apply(target, args);
+                  } catch (e) {
+                    console.warn(
+                      `[Bot ${target.label}] Ошибка в ${prop}():`,
+                      e.message,
+                    );
+                  }
+                };
+              }
+              return val;
+            }
+            // Всё остальное — undefined (координаты, hp, внутренние поля)
+            return undefined;
+          },
+          set(target, prop, value) {
+            // Запрещаем прямую запись в любые поля
+            console.warn(
+              `[Bot ${target.label}] Попытка записи в ${prop} — запрещено`,
+            );
+            return true; // silent fail
+          },
+        });
+      }
+
       class Unit {
         constructor(id, x, y, color, label) {
           this.id = id;
@@ -1851,6 +1938,18 @@
           });
           if (this._sayBubbles.length > 3) this._sayBubbles.shift();
           return this;
+        }
+
+        // Память бота — произвольный объект, сохраняется между тиками
+        setMemory(key, value) {
+          if (!this._memory) this._memory = {};
+          this._memory[key] = value;
+          return this;
+        }
+        getMemory(key, defaultValue = undefined) {
+          return this._memory && key in this._memory
+            ? this._memory[key]
+            : defaultValue;
         }
 
         // Журнал
@@ -1894,7 +1993,14 @@
                 fromTeam: isAlly,
               };
             });
-          if (radioMsgs.length > 0) this.onRadio(radioMsgs);
+          if (radioMsgs.length > 0) {
+            if (!this._botProxy) this._botProxy = createBotProxy(this);
+            try {
+              this.onRadio.call(this._botProxy, radioMsgs);
+            } catch (e) {
+              console.warn(`[Bot ${this.label}] onRadio:`, e.message);
+            }
+          }
         }
 
         // Callbacks — переопределяются в подклассах
@@ -2472,30 +2578,61 @@
             );
           else this._api_irradiatedAngle = null;
 
-          // Колбэки
-          if (this.irradiated && this.irradiatedBy)
-            this.onLaserDetection([
-              {
-                degree: normDeg(this._api_irradiatedAngle),
-                hostile: this.isEnemy(this.irradiatedBy),
-              },
-            ]);
-          if (this._api_sounds.length > 0) this.onSound(this._api_sounds);
+          // Колбэки — обёрнуты в try/catch защищают от ошибок в боте
+          try {
+            if (this.irradiated && this.irradiatedBy)
+              this.onLaserDetection([
+                {
+                  degree: normDeg(this._api_irradiatedAngle),
+                  hostile: this.isEnemy(this.irradiatedBy),
+                },
+              ]);
+          } catch (e) {
+            console.warn(`[Bot ${this.label}] onLaserDetection:`, e.message);
+          }
+
+          try {
+            if (this._api_sounds.length > 0) this.onSound(this._api_sounds);
+          } catch (e) {
+            console.warn(`[Bot ${this.label}] onSound:`, e.message);
+          }
 
           // Радио доставляется отдельным проходом после всех AI (см. deliverRadio)
-          if (this._api_damaged) {
-            this.onDamage();
+          try {
+            if (this._api_damaged) {
+              this.onDamage();
+              this._api_damaged = false;
+            }
+          } catch (e) {
+            console.warn(`[Bot ${this.label}] onDamage:`, e.message);
             this._api_damaged = false;
           }
 
           // Очередь задач runTasks
-          this._processTaskQueue(dt);
+          try {
+            this._processTaskQueue(dt);
+          } catch (e) {
+            console.warn(`[Bot ${this.label}] runTasks:`, e.message);
+            this._taskQueue = [];
+          }
 
           // main() каждые 100мс
           this._mainTimer -= dt;
           if (this._mainTimer <= 0) {
             this._mainTimer = 0.1;
-            this.main();
+            if (!this._broken) {
+              try {
+                this.main();
+              } catch (e) {
+                console.warn(`[Bot ${this.label}] main():`, e.message);
+                // После 3 ошибок подряд — отключаем бота
+                this._errCount = (this._errCount || 0) + 1;
+                if (this._errCount >= 3) {
+                  this._broken = true;
+                  console.error(`[Bot ${this.label}] отключён после 3 ошибок`);
+                }
+              }
+            }
           }
 
           this.aiUpdate(dt, game);
@@ -3266,14 +3403,42 @@
             }
             usedColors.add(color);
             const name = (BC.botName || BC.name) + "-" + id;
-            const bot = new BC(
-              id++,
-              pos.x,
-              pos.y,
-              rnd(0, Math.PI * 2),
-              color,
-              name,
-            );
+            let bot;
+            try {
+              bot = new BC(
+                id++,
+                pos.x,
+                pos.y,
+                rnd(0, Math.PI * 2),
+                color,
+                name,
+              );
+            } catch (e) {
+              console.error(
+                `[Loader] Ошибка конструктора ${BC.botName || BC.name}:`,
+                e.message,
+              );
+              id++;
+              continue; // пропускаем сломанного бота
+            }
+            // Sandbox: оборачиваем колбэки бота в Proxy — бот получает только белый список API
+            if (typeof makeBotProxy === "function") {
+              const proxy = makeBotProxy(bot);
+              // Перехватываем вызовы main/callbacks — внутри них this = proxy
+              for (const cb of [
+                "main",
+                "onLaserScan",
+                "onLaserDetection",
+                "onSound",
+                "onRadio",
+                "onDamage",
+              ]) {
+                const orig = bot[cb].bind(proxy);
+                bot[cb] = function (...args) {
+                  return orig(...args);
+                };
+              }
+            }
             if (team) bot.team = team;
             this.tanks.push(bot);
           }
@@ -5441,6 +5606,7 @@
       // Определяются в bots/index.js после загрузки всех классов ботов
       // Здесь только заглушка — реальное значение придёт позже
       let battleTeamsPresets = [];
+      let botClasses = []; // заполняется из index.js после загрузки ботов
 
       let activePresetIdx = 0; // текущий пресет
 
@@ -5867,20 +6033,6 @@
       }
     </script>
 
-    <script src="bots/Dummy.js"></script>
-    <script src="bots/Attacker.js"></script>
-    <script src="bots/Crazy.js"></script>
-    <script src="bots/Shy.js"></script>
-    <script src="bots/Coward.js"></script>
-    <script src="bots/Curious.js"></script>
-    <script src="bots/Scanner.js"></script>
-    <script src="bots/Terminator.js"></script>
-    <script src="bots/Tracker.js"></script>
-    <script src="bots/Specter.js"></script>
-    <script src="bots/TeamHunter.js"></script>
-    <script src="bots/Saboteur.js"></script>
-    <script src="bots/Patrol.js"></script>
-    <script src="bots/Guardian.js"></script>
     <script src="index.js"></script>
   </body>
 </html>

@@ -1,129 +1,122 @@
-// Scanner — пользовательский класс
 class Scanner extends Tank {
-  soundSource = 0;
-  soundDist = 0;
-  enemyIsSeen = false;
-  heading = 0;
-  distance = 0;
-  mode = "scan";
-  timer = 20;
-  constructor() {
-    super(...arguments);
-  }
   static get botName() {
     return "Scanner";
   }
-
   static get botTeam() {
     return "Scanners";
   }
 
+  constructor() {
+    super(...arguments);
+    this.setMemory("mode", "scan");
+    this.setMemory("timer", 20);
+    this.setMemory("heading", 0);
+    this.setMemory("distance", 0);
+    this.setMemory("soundSource", 0);
+    this.setMemory("soundDist", 0);
+    this.setMemory("enemyIsSeen", false);
+  }
+
   main() {
-    if (this.mode === "scan") {
-      this.setGunDegree(this.gunDegree() + 5);
+    const mode = this.getMemory("mode");
+    let timer = this.getMemory("timer");
+
+    if (mode === "scan") {
+      this.setGunDirection(this.getGunDirection() + 5);
       this.impulseScan();
-      if (Math.random() > 0.95 && this.mode === "scan") {
+      if (Math.random() > 0.95) {
         this.say("Двигаюсь к следующей точке");
-        this.mode = "move";
-        this.timer = 50;
+        this.setMemory("mode", "move");
+        this.setMemory("timer", 50);
       }
     }
 
-    if (this.mode === "move") {
-      this.timer -= 1;
-      if (this.timer % 15 === 0) this.impulseScan();
-      this.setGunDirection(this.heading);
-      if (this.distance > 5) {
+    if (mode === "move") {
+      timer -= 1;
+      this.setMemory("timer", timer);
+      if (timer % 15 === 0) this.impulseScan();
+      const heading = this.getMemory("heading");
+      this.setGunDirection(heading);
+      if (this.getMemory("distance") > 5) {
         this.say("Путь свободен!");
-        this.setDirection(this.heading);
-        this.setSpeed(3);
+        this.setTankDirection(heading).setSpeed(3);
       } else {
         this.stop();
         this.say("Впереди препятствие, меняю курс!");
-        this.heading += 10;
+        this.setMemory("heading", heading + 10);
       }
     }
 
-    if (this.mode === "flee" && this.timer > 0) {
-      this.setSpeed(5);
-      this.timer -= 1;
+    if (mode === "flee") {
+      if (timer > 0) {
+        this.setSpeed(5);
+        this.setMemory("timer", timer - 1);
+      }
     }
 
-    if (this.mode === "search") {
+    if (mode === "search") {
       if (!this.getCurrentInfo().pturReady) {
-        this.mode = "flee";
+        this.setMemory("mode", "flee");
       }
-      this.timer -= 1;
+      timer -= 1;
+      this.setMemory("timer", timer);
       this.impulseScan();
-      this.setDirection(this.soundSource);
-      if (this.soundDist > 3) this.setSpeed(2);
-      if (!this.enemyIsSeen) {
-        if (this.timer > 10) {
-          this.setGunDirection(this.soundSource - 1);
-        }
-        if (this.timer < 10) {
-          this.setGunDirection(this.soundSource + 1);
-        }
+      const src = this.getMemory("soundSource");
+      this.setTankDirection(src);
+      if (this.getMemory("soundDist") > 3) this.setSpeed(2);
+      if (!this.getMemory("enemyIsSeen")) {
+        this.setGunDirection(timer > 10 ? src - 1 : src + 1);
       }
     }
 
-    if (this.timer <= 0) {
-      this.disableConstantLaser();
+    if (timer <= 0) {
+      this.disableLaser();
       this.say("Перехожу в режим сканирования");
-      this.mode = "scan";
+      this.setMemory("mode", "scan");
+      this.setMemory("timer", 20);
       this.stop();
-      this.timer = 20;
     }
   }
 
   onLaserScan(info) {
-    this.distance = info.distance;
+    this.setMemory("distance", info.distance);
     if (info.target === "tank" && info.isHostile && info.distance > 3) {
       this.say("Обнаружен противник");
-      console.log(info.targetAngle);
-      this.enableContinuousLaser();
-      this.enemyIsSeen = true;
-      this.mode = "search";
-      this.timer = 40;
+      this.enableLaser();
+      this.setMemory("enemyIsSeen", true);
+      this.setMemory("mode", "search");
+      this.setMemory("timer", 40);
       this.fire();
     }
     if (info.target === "non-tank") {
-      if (this.enemyIsSeen) {
+      if (this.getMemory("enemyIsSeen")) {
         this.say("Противник потерян");
-        this.disableConstantLaser();
+        this.disableLaser();
       }
-      this.enemyIsSeen = false;
+      this.setMemory("enemyIsSeen", false);
     }
   }
 
-  onLaserDetection(info) {
-    if (info[0].hostile) {
+  onLaserDetection(sources) {
+    if (sources[0]?.hostile) {
       this.say("Обнаружено облучение лазером!");
-      this.setGunDegreeAndFire(info[0].degree);
+      this.setGunDirectionAndFire(sources[0].degree);
       this.fireSmoke();
-      this.disableConstantLaser();
-      if (this.mode !== "flee") {
-        this.mode = "flee";
-        this.enableConstntLaser();
+      this.disableLaser();
+      if (this.getMemory("mode") !== "flee") {
+        this.setMemory("mode", "flee");
+        this.enableLaser();
       }
     }
   }
 
-  onSound(info) {
-    if (info[0].dist > 0 && info[0].hostile) {
-      this.soundSource = info[0].angle;
-      this.soundDist = info[0].soundDist;
+  onSound(sounds) {
+    if (sounds[0]?.dist > 0 && sounds[0]?.hostile) {
+      this.setMemory("soundSource", sounds[0].angle);
+      this.setMemory("soundDist", sounds[0].dist);
       this.say("Слышу противника");
-      this.mode = "search";
-      this.timer = 20;
+      this.setMemory("mode", "search");
+      this.setMemory("timer", 20);
     }
   }
 }
-
-// class Spike extends Scanner {
-//   main() {
-//     this.say("");
-//   }
-
-//   onLaserScan(info) {}
-// }
