@@ -394,20 +394,14 @@
         color: #446644;
         letter-spacing: 2px;
       }
-      #timeBar {
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(0, 0, 0, 0.7);
-        border: 1px solid #1a3a1a;
-        padding: 4px 12px;
-        z-index: 100;
+
+      #timeScale {
+        font-size: 0.85em;
+        color: var(--amber);
+        min-width: 50px;
+        text-align: center;
       }
-      #timeBar button {
+      #timeBar button:not(.spd-btn) {
         background: #0a1a0a;
         border: 1px solid #1a4a1a;
         color: var(--green);
@@ -416,31 +410,31 @@
         padding: 2px 8px;
         cursor: pointer;
       }
-      #timeBar button:hover {
+      #timeBar button:not(.spd-btn):hover {
         background: #1a3a1a;
       }
-      #timeScale {
-        font-size: 0.85em;
-        color: var(--amber);
-        min-width: 50px;
-        text-align: center;
-      }
       .spd-btn {
-        font-size: 0.78em !important;
-        padding: 2px 6px !important;
-        border-right-width: 0 !important;
-        color: #446644 !important;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 0.78em;
+        background: #0a1a0a;
+        border: 1px solid #1a4a1a;
+        color: #446644;
+        padding: 2px 6px;
+        cursor: pointer;
+        margin: 0;
+        border-right-width: 0;
       }
       .spd-btn:last-child {
-        border-right-width: 1px !important;
+        border-right-width: 1px;
       }
       .spd-btn.active {
-        background: var(--green) !important;
-        color: #000 !important;
+        background: var(--green);
+        color: #000;
         font-weight: bold;
       }
       .spd-btn:hover:not(.active) {
-        color: var(--green) !important;
+        color: var(--green);
+        border-color: var(--green);
       }
       #hud {
         width: 222px;
@@ -460,6 +454,7 @@
       }
       .hud-section.scrollable {
         overflow-y: auto;
+        overflow-x: hidden;
         flex-shrink: 1;
         min-height: 50px;
         max-height: 130px;
@@ -714,6 +709,10 @@
             ><input type="checkbox" id="cfgWrecks" />
           </div>
           <div class="setting-row">
+            <label>Зона базы (радиус хила):</label
+            ><input type="checkbox" id="cfgBaseZone" />
+          </div>
+          <div class="setting-row">
             <label>Радиус шума танков:</label
             ><input type="checkbox" id="cfgNoiseRadius" />
           </div>
@@ -730,20 +729,18 @@
         <div style="display: flex; flex-direction: column; gap: 6px">
           <div class="setting-row">
             <label>Команда игрока:</label
-            ><input
-              type="text"
+            ><select
               id="cfgPlayerTeam"
-              placeholder="нет"
               style="
                 background: #0a1a0a;
                 border: 1px solid var(--green);
                 color: var(--green);
-                padding: 2px 6px;
                 font-family: &quot;Share Tech Mono&quot;, monospace;
-                font-size: 0.9em;
-                width: 80px;
+                font-size: 0.85em;
               "
-            />
+            >
+              <option value="">— нет —</option>
+            </select>
           </div>
           <div class="setting-row">
             <label>Лазер:</label>
@@ -787,6 +784,36 @@
               style="color: var(--green); font-size: 0.85em"
               >15%</span
             >
+          </div>
+          <div class="setting-row">
+            <label>Режим боя:</label>
+            <select id="cfgAssault">
+              <option value="0">Битва команд</option>
+              <option value="1">Режим Штурм</option>
+              <option value="2">👑 Королевская битва</option>
+            </select>
+          </div>
+          <div class="setting-row" id="baseHpRow" style="display: none">
+            <label>HP базы:</label>
+            <select id="cfgBaseHp">
+              <option value="500">500 HP</option>
+              <option value="1000">1000 HP</option>
+              <option value="2000">2000 HP</option>
+              <option value="5000" selected>5000 HP</option>
+              <option value="10000">10000 HP</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>Урон при таране (×скорость):</label>
+            <select id="cfgCollisionDmg">
+              <option value="0">0 HP (нет урона)</option>
+              <option value="5">5 HP</option>
+              <option value="10">10 HP</option>
+              <option value="15">15 HP</option>
+              <option value="25">25 HP</option>
+              <option value="50">50 HP</option>
+              <option value="100">100 HP</option>
+            </select>
           </div>
           <div class="setting-row">
             <label>Кд ПТУР:</label>
@@ -927,35 +954,7 @@
           <div class="sb-team" id="sbTeam1"></div>
           <div class="sb-hint">TAB — закрыть</div>
         </div>
-        <div id="timeBar">
-          <button id="btnPause">⏸</button>
-          <div style="display: flex; gap: 2px" id="speedBtns">
-            <button class="spd-btn" data-v="0.1">×0.1</button>
-            <button class="spd-btn" data-v="0.5">×0.5</button>
-            <button class="spd-btn active" data-v="1">×1</button>
-            <button class="spd-btn" data-v="2">×2</button>
-            <button class="spd-btn" data-v="5">×5</button>
-            <button class="spd-btn" data-v="10">×10</button>
-          </div>
-          <label
-            style="
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              font-size: 0.78em;
-              color: #88aa88;
-              cursor: pointer;
-              margin-left: 4px;
-            "
-          >
-            <input
-              type="checkbox"
-              id="chkFfShot"
-              style="accent-color: var(--green); cursor: pointer"
-            />
-            до выстрела
-          </label>
-        </div>
+
         <div id="deathScreen">
           <h2 id="deathTitle">УНИЧТОЖЕН</h2>
           <p id="deathMsg"></p>
@@ -1039,6 +1038,20 @@
               <div class="bar-fill ptur" id="barPtur" style="width: 100%"></div>
             </div>
           </div>
+          <div
+            id="hudAmmoRow"
+            style="
+              display: none;
+              gap: 3px;
+              align-items: center;
+              margin-top: 2px;
+            "
+          >
+            <span style="font-size: 0.7em; color: #88bbaa; margin-right: 2px"
+              >БК:</span
+            >
+            <div id="hudAmmoDots" style="display: flex; gap: 2px"></div>
+          </div>
           <div class="bar-wrap">
             <div class="bar-label">
               <span>ДЫМ</span><span id="hudSmoke">ГОТОВ</span>
@@ -1098,6 +1111,45 @@
           </div>
           <div id="enemyList"></div>
         </div>
+        <div class="hud-section" style="padding: 5px 7px">
+          <div
+            id="timeBar"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              flex-wrap: wrap;
+            "
+          >
+            <div style="display: flex; gap: 0" id="speedBtns">
+              <button class="spd-btn" data-v="0.1">×0.1</button>
+              <button class="spd-btn" data-v="0.5">×0.5</button>
+              <button class="spd-btn active" data-v="1">×1</button>
+              <button class="spd-btn" data-v="2">×2</button>
+              <button class="spd-btn" data-v="5">×5</button>
+              <button class="spd-btn" data-v="10">×10</button>
+            </div>
+            <div style="display: flex; gap: 0">
+              <button id="btnPause" style="border-right-width: 0">⏸</button
+              ><button
+                id="chkFfShot"
+                style="
+                  font-family: &quot;Share Tech Mono&quot;, monospace;
+                  font-size: 0.75em;
+                  background: #0a1a0a;
+                  border: 1px solid #1a4a1a;
+                  color: #446644;
+                  padding: 2px 8px;
+                  cursor: pointer;
+                  letter-spacing: 1px;
+                "
+                title="Замедлить до выстрела"
+              >
+                ⏵ до выстрела
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1115,9 +1167,12 @@
         cfgTeamKill: true, // Огонь по своим — ПТУР бьёт союзников (true/false)
         cfgSelfDmg: true, // Урон себе от своего ПТУР (true/false)
         cfgTeamSpawn: true, // Командный спавн — команды в разных зонах карты (true/false)
+        cfgAssault: "0", // Режим боя — '0'=Битва команд, '1'=Режим Штурм, '2'=Королевская битва
+        cfgBaseHp: "5000", // HP базы в режиме Штурм — '500','1000','2000','5000','10000'
         cfgPturVsPtur: true, // ПРО — ПТУР может сбить вражеский ПТУР (true/false)
         cfgSmartPtur: true, // Умный ПТУР — взрыв в точке сближения, игнорирует стены (true/false)
         cfgWrecks: true, // Трупы — остовы остаются на карте и блокируют проезд (true/false)
+        cfgBaseZone: true, // Рисовать зону хила/пополнения у базы (true/false)
         cfgSmartLaser: "2", // Лазер — '0'=обычный, '1'=умный (скорость/угол), '2'=умный+стоячие
         cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
         cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
@@ -1125,6 +1180,7 @@
         cfgSymmetric: false, // Симметричная карта — нижняя половина = зеркало верхней (true/false)
         cfgMapSize: "40", // Размер карты — '30', '40', '50' (клетки)
         cfgObstacles: "0.15", // Плотность препятствий — 0.0..0.9 (0%..90%)
+        cfgCollisionDmg: "15", // Урон от тарана за 1 м/с — 0,5,10,15,25,50,100 HP
         cfgPturCD: "10", // Кулдаун ПТУР — '5', '10', '15' (секунды)
         cfgPturSpeed: "15", // Скорость ПТУР — '3','6','10','15','20' (клетки/сек)
         cfgPturDmg: "200", // Урон ПТУР — '25','50','100','150','200' (HP прямого попадания)
@@ -1407,6 +1463,35 @@
         }
       }
 
+      // ═══════════════════ БАЗА (РЕЖИМ ШТУРМ) ═══════════════════
+      // Наследует Tank — получает broadcast(), onRadio(), onLaserDetection(), onDamage().
+      // Стоит неподвижно по центру своей стены, встроена в границу карты.
+      // Частицы от удара о стену: осколки (долгие) и искры (короткие)
+      class WallParticle {
+        constructor(x, y, vx, vy, type) {
+          this.x = x;
+          this.y = y;
+          this.vx = vx;
+          this.vy = vy;
+          this.type = type; // 'debris' | 'spark'
+          this.life =
+            type === "spark"
+              ? 0.3 + Math.random() * 0.2
+              : 6 + Math.random() * 4;
+          this.maxLife = this.life;
+        }
+        update(dt) {
+          this.x += this.vx * dt;
+          this.y += this.vy * dt;
+          this.vx *= Math.pow(type === "spark" ? 0.6 : 0.2, dt);
+          this.vy *= Math.pow(this.type === "spark" ? 0.6 : 0.2, dt);
+          this.life -= dt;
+        }
+        alive() {
+          return this.life > 0;
+        }
+      }
+
       class Explosion {
         constructor(x, y) {
           this.x = x;
@@ -1472,9 +1557,16 @@
           playExplosion(calcPanForPlayer(this.x, this.y, game));
           for (const tank of game.tanks) {
             if (!tank.alive) continue;
-            if (tank === this.owner && !cfg.selfDmg) continue; // урон себе
-            if (!cfg.teamKill && this.owner && this.owner.isAlly(tank))
-              continue; // не бьём союзников (если teamKill выкл)
+            if (tank === this.owner && !cfg.selfDmg) continue;
+            if (tank.isBaseObj && this.owner && this.owner.isAlly(tank))
+              continue; // своя база не страдает
+            if (
+              !cfg.teamKill &&
+              this.owner &&
+              this.owner.isAlly(tank) &&
+              !tank.isBaseObj
+            )
+              continue;
             const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
             const dmg = PTUR.blastDamage(d);
             if (dmg > 0) tank.takeHPDamage(dmg, game, this.owner);
@@ -1517,13 +1609,29 @@
 
             const cx = Math.floor(this.x),
               cy = Math.floor(this.y);
-            if (
-              cx < 0 ||
-              cy < 0 ||
-              cx >= game.mapW ||
-              cy >= game.mapH ||
-              game.map[cy][cx] === 1
-            ) {
+            if (cx < 0 || cy < 0 || cx >= game.mapW || cy >= game.mapH) {
+              this.explode(game);
+              return;
+            }
+            if (game.map[cy][cx] === 1) {
+              // Проверяем не попали ли в базу (ворота в стене)
+              let hitBase = false;
+              if (cfg.assault && game.bases) {
+                for (const base of game.bases) {
+                  if (!base.alive) continue;
+                  // Попадание в клетку ворот (плоский объект в стене)
+                  const gateY = base.y < 2 ? 0 : game.mapH - 1;
+                  const gsX = Math.round(base.x - 1.5);
+                  const hitRow = Math.floor(this.y) === gateY;
+                  const hitCol =
+                    Math.floor(this.x) >= gsX && Math.floor(this.x) <= gsX + 3;
+                  if (hitRow && hitCol) {
+                    base.takeHPDamage(PTUR.blastDamage(0), game, this.owner);
+                    hitBase = true;
+                    break;
+                  }
+                }
+              }
               this.explode(game);
               return;
             }
@@ -1653,21 +1761,111 @@
       }
 
       // ═══════════════════ БАЗОВЫЙ КЛАСС ТАНКА ═══════════════════
-      class Tank {
-        constructor(id, x, y, angle, color, label) {
+      // ═══════════════════ UNIT — базовый класс для Tank и Base ═══════════════════
+      // Содержит общее API: radio, команды, say, callbacks.
+      // Tank и Base наследуют Unit и добавляют свою физику/логику.
+      class Unit {
+        constructor(id, x, y, color, label) {
           this.id = id;
           this.x = x;
           this.y = y;
+          this.color = color;
+          this.label = label;
+          this.team = null;
+          this.alive = true;
+          this._game = null;
+          this._sayBubbles = [];
+        }
+
+        isPlayer() {
+          return false;
+        }
+        isBase() {
+          return false;
+        }
+
+        // Команды
+        getTeam() {
+          return this.team;
+        }
+        isAlly(other) {
+          return this.team !== null && other && this.team === other.team;
+        }
+        isEnemy(other) {
+          return !this.isAlly(other) && other !== this;
+        }
+
+        // Речевое облачко
+        say(text) {
+          this._sayBubbles.push({
+            text: String(text),
+            life: 3.0,
+            maxLife: 3.0,
+          });
+          if (this._sayBubbles.length > 3) this._sayBubbles.shift();
+        }
+
+        // Журнал
+        log(msg) {
+          if (this._game) this._game.log(`[${this.label}] ${msg}`, "");
+        }
+
+        // Радио
+        broadcast(message) {
+          const game = this._game;
+          if (!game) return;
+          if (!cfg.radioEnabled) return;
+          if (!game._radioMsgCount) game._radioMsgCount = 0;
+          if (game._radioMsgCount >= 15) return;
+          game._radioMsgCount++;
+          game.radioMessages.push({
+            sender: this,
+            message: String(message),
+            team: this.team || null,
+          });
+          if (cfg.radioWaves)
+            game.radioWaves.push({ x: this.x, y: this.y, r: 0, life: 1.0 });
+          this.say("📡 " + String(message).slice(0, 20));
+        }
+
+        // Доставка радио (вызывается движком после всех AI)
+        deliverRadio(game) {
+          const radioMsgs = game.radioMessages
+            .filter((m) => m.sender !== this)
+            .map((m) => {
+              const dx = m.sender.x - this.x,
+                dy = m.sender.y - this.y;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              const angle = normDeg(Math.atan2(dy, dx));
+              const isAlly = this.team && m.team && this.team === m.team;
+              return {
+                angle,
+                dist: isAlly ? d : null,
+                message: isAlly ? m.message : null,
+                fromTeam: isAlly,
+              };
+            });
+          if (radioMsgs.length > 0) this.onRadio(radioMsgs);
+        }
+
+        // Callbacks — переопределяются в подклассах
+        onLaserScan(info) {}
+        onLaserDetection(info) {}
+        onSound(info) {}
+        onRadio(info) {}
+        onDamage() {}
+        main() {}
+      }
+
+      class Tank extends Unit {
+        constructor(id, x, y, angle, color, label) {
+          super(id, x, y, color, label);
           this.angle = angle;
           this.turretAngle = angle;
           this.turretTargetAngle = angle;
           this.speed = 0;
-          this.energy = 100; // регенерируется — тратится на движение и лазер
-          this.hp = 100; // здоровье — не регенерируется, снимается ПТУРом/стеной/лазером
-          this.alive = true;
-          this.color = color;
-          this.label = label;
-          this.team = null; // команда: null = нет команды, строка = название команды
+          this.energy = 100;
+          this.hp = 100;
           this.pturCD = 0;
           this.smokeCD = 0;
           this.smokeCount = 3;
@@ -1751,6 +1949,26 @@
             smokeReady: this.smokeCD <= 0 && this.smokeCount > 0,
             smokeCooldown: Math.max(0, this.smokeCD),
             smokeCount: this.smokeCount,
+            pturAmmo:
+              this.pturAmmo !== undefined
+                ? this.pturAmmo
+                : cfg.assault
+                  ? cfg.pturAmmo
+                  : 999,
+            // Порядковый номер среди живых союзников (сортировка по id, начиная с 0)
+            // Стабилен пока живёт — при гибели союзника номера не пересчитываются
+            teamIndex: this._game
+              ? [...this._game.tanks]
+                  .filter(
+                    (t) =>
+                      t.alive &&
+                      !t.isBaseObj &&
+                      t.team === this.team &&
+                      t.team !== null,
+                  )
+                  .sort((a, b) => a.id - b.id)
+                  .indexOf(this)
+              : 0,
           };
         }
         getLaserData() {
@@ -1769,17 +1987,6 @@
         }
         wasDamaged() {
           return this._api_damaged;
-        }
-
-        // Команды
-        getTeam() {
-          return this.team;
-        }
-        isAlly(other) {
-          return this.team !== null && other && this.team === other.team;
-        }
-        isEnemy(other) {
-          return !this.isAlly(other) && other !== this;
         }
 
         // Оружие
@@ -1830,16 +2037,6 @@
           this.log(msg);
         }
 
-        // Речевое облачко над танком
-        say(text) {
-          this._sayBubbles.push({
-            text: String(text),
-            life: 3.0,
-            maxLife: 3.0,
-          });
-          if (this._sayBubbles.length > 3) this._sayBubbles.shift();
-        }
-
         // Навести башню на угол и выстрелить как только наведётся
         setGunDegreeAndFire(deg) {
           this._gunAndFireTarget = degToRad(deg);
@@ -1875,34 +2072,7 @@
           return { _awaitMs: ms };
         }
 
-        // Callbacks — переопределяются ботами
-        onLaserScan(info) {}
-        onLaserDetection(info) {}
-        onSound(info) {}
-        onRadio(info) {} // info: {angle, dist|null, message, fromTeam}
-        onDamage() {}
-        main() {}
-
-        // Отправить радиосообщение всем в игре.
-        // Бот передаёт только текст — он не знает своих координат.
-        // Движок сам вычисляет геометрию для каждого получателя:
-        //   angle  — угол откуда пришло (всегда, даже врагу)
-        //   dist   — расстояние до отправителя (только союзникам)
-        //   message — текст (только союзникам, враги получают null)
-        broadcast(message) {
-          const game = this._game;
-          if (!game) return;
-          if (!cfg.radioEnabled) return; // радиосвязь отключена в настройках
-          game.radioMessages.push({
-            sender: this,
-            message: String(message),
-            team: this.team || null,
-          });
-          // Визуальная волна
-          if (cfg.radioWaves)
-            game.radioWaves.push({ x: this.x, y: this.y, r: 0, life: 1.0 });
-          this.say("📡 " + String(message).slice(0, 20));
-        }
+        // broadcast() и callbacks теперь в Unit
 
         // ══════════════════════════════════════════════════
         // ДВИЖОК — внутренняя физика
@@ -1953,29 +2123,115 @@
 
           // Движение + коллизия
           if (Math.abs(this.speed) > 0.01) {
-            const spd = this.speed;
+            const spd = this.speed; // скорость ДО движения
+            const absSpd = Math.abs(spd);
+            const dmgPerSpd = cfg.collisionDmg || 15;
             const nx = this.x + Math.cos(this.angle) * spd * dt;
             const ny = this.y + Math.sin(this.angle) * spd * dt;
             if (!game.isTankBlocked(nx, ny, this)) {
               this.x = nx;
               this.y = ny;
+              this._againstWall = false;
             } else {
               const canX = !game.isTankBlocked(nx, this.y, this);
               const canY = !game.isTankBlocked(this.x, ny, this);
+
+              if (this._sparkTick > 0) this._sparkTick--;
+
+              // Вектор скорости
+              const vx = Math.cos(this.angle) * spd;
+              const vy = Math.sin(this.angle) * spd;
+
+              // Перпендикулярная к стене составляющая скорости
+              // canX=true → двигаемся по X, стена блокирует Y → перп = |vy|
+              // canY=true → двигаемся по Y, стена блокирует X → перп = |vx|
+              // ни то ни другое → угол ~45°, перп = absSpd
+              let perpSpd;
+              let wallNorm; // направление от стены (для разлёта осколков)
+              if (!canX && !canY) {
+                perpSpd = absSpd;
+                wallNorm = this.angle + Math.PI;
+              } else if (canX && !canY) {
+                // Скользим по X, блокирован Y → перп = |vy|
+                perpSpd = Math.abs(vy);
+                wallNorm = vy > 0 ? -Math.PI / 2 : Math.PI / 2; // от стены вниз или вверх
+              } else {
+                // Скользим по Y, блокирован X → перп = |vx|
+                perpSpd = Math.abs(vx);
+                wallNorm = vx > 0 ? Math.PI : 0;
+              }
+
+              // Движение
               if (canX) this.x = nx;
               else if (canY) this.y = ny;
-              else {
-                if (cfg.wallDmg && Math.abs(spd) >= 3)
-                  this.takeHPDamage((Math.abs(spd) - 2) * 15 * dt, game, null);
-                if (Math.abs(spd) >= 3 && !this._wallHitCD) {
-                  ensureAudio();
-                  playWallHit(calcPanForPlayer(this.x, this.y, game));
-                  this._wallHitCD = true;
-                  setTimeout(() => {
-                    this._wallHitCD = false;
-                  }, 200);
+              else this.speed = 0; // оба заблокированы — стоп
+
+              // Угол удара: острый если перп > 50% скорости
+              const isHardHit = perpSpd >= absSpd * 0.5;
+
+              // ── УДАР (только при смене состояния wall-контакта) ─────────────
+              // Фиксируем момент первого касания
+              const wasAgainstWall = this._againstWall || false;
+              this._againstWall = true;
+              const firstContact = !wasAgainstWall;
+
+              if (isHardHit && firstContact && perpSpd >= 1) {
+                // Звук
+                ensureAudio();
+                playWallHit(calcPanForPlayer(this.x, this.y, game));
+                // Урон мгновенно при ударе
+                if (cfg.wallDmg && cfg.collisionDmg > 0)
+                  this.takeHPDamage(perpSpd * cfg.collisionDmg, game, null);
+                // Осколки стены
+                const n = Math.max(3, Math.floor(perpSpd * 3));
+                for (let i = 0; i < n; i++) {
+                  const a = wallNorm + rnd(-1.0, 1.0);
+                  game.wallParticles.push({
+                    x: this.x,
+                    y: this.y,
+                    vx: Math.cos(a) * rnd(2, 5 + perpSpd),
+                    vy: Math.sin(a) * rnd(2, 5 + perpSpd),
+                    type: "debris",
+                    life: 4 + Math.random() * 6,
+                    maxLife: 10,
+                    color: "#2a5a2a",
+                  });
                 }
-                this.speed = 0;
+                // Осколки краски танка
+                for (let i = 0; i < Math.floor(perpSpd * 2); i++) {
+                  const a = wallNorm + rnd(-0.7, 0.7);
+                  game.wallParticles.push({
+                    x: this.x,
+                    y: this.y,
+                    vx: Math.cos(a) * rnd(1, 4 + perpSpd),
+                    vy: Math.sin(a) * rnd(1, 4 + perpSpd),
+                    type: "debris",
+                    life: 1 + Math.random() * 2,
+                    maxLife: 3,
+                    color: this.color || "#888",
+                  });
+                }
+                this.speed *= 0.2; // гасим скорость при ударе
+              }
+
+              // ── ИСКРЫ при скольжении ─────────────────────────────────────────
+              if (!isHardHit && absSpd >= 1 && !this._sparkTick) {
+                this._sparkTick = 2;
+                const sx = canX ? nx : this.x,
+                  sy = canX ? this.y : ny;
+                for (let i = 0; i < 3; i++) {
+                  const a = wallNorm + rnd(-0.4, 0.4);
+                  game.wallParticles.push({
+                    x: sx,
+                    y: sy,
+                    vx: Math.cos(a) * rnd(3, 7),
+                    vy: Math.sin(a) * rnd(3, 7),
+                    type: "spark",
+                    life: 0.3 + Math.random() * 0.2,
+                    maxLife: 0.5,
+                    color: "#ffcc44",
+                  });
+                }
               }
             }
             // Стоимость движения по энергии
@@ -2183,25 +2439,7 @@
           this.updateAI(dt, game);
         }
 
-        // Вызывается после того как ВСЕ боты отработали AI на этом тике
-        deliverRadio(game) {
-          const radioMsgs = game.radioMessages
-            .filter((m) => m.sender !== this)
-            .map((m) => {
-              const dx = m.sender.x - this.x,
-                dy = m.sender.y - this.y;
-              const d = Math.sqrt(dx * dx + dy * dy);
-              const angle = normDeg(Math.atan2(dy, dx));
-              const isAlly = this.team && m.team && this.team === m.team;
-              return {
-                angle,
-                dist: isAlly ? d : null,
-                message: isAlly ? m.message : null,
-                fromTeam: isAlly,
-              };
-            });
-          if (radioMsgs.length > 0) this.onRadio(radioMsgs);
-        }
+        // deliverRadio теперь в Unit
 
         shootLaserPulse(game) {
           if (this.energy < LASER_DRAIN_PULSE) return null;
@@ -2228,6 +2466,16 @@
             (this.activePTUR && this.activePTUR.alive)
           )
             return false;
+          // Боезапас в режиме Штурм
+          if (cfg.assault && !this.isBaseObj) {
+            if (this.pturAmmo === undefined) this.pturAmmo = cfg.pturAmmo;
+            if (this.pturAmmo <= 0) {
+              if (this.isPlayer && this.isPlayer())
+                this.say("Нет боеприпасов!");
+              return false;
+            }
+            this.pturAmmo--;
+          }
           this.pturCD = cfg.pturCD;
           // Смещаем стартовую позицию вперёд на TANK_RADIUS+небольшой зазор
           // чтобы радиовзрыватель не сработал немедленно на стрелке
@@ -2341,6 +2589,181 @@
       }
 
       // ═══════════════════ ИГРОК ═══════════════════
+
+      class Base extends Unit {
+        constructor(id, x, y, team, color, label) {
+          super(id, x, y, color, label);
+          this.team = team;
+          this.hp = cfg.baseHp || 500;
+          this.maxHp = cfg.baseHp || 500;
+          this.energy = 100;
+          this.angle = Math.PI / 2;
+          this.turretAngle = Math.PI / 2;
+          this.isBaseObj = true;
+          this.isWreck = false;
+          this.speed = 0;
+          this.irradiated = false;
+          this.irradiatedBy = null;
+          this._api_damaged = false;
+          this._healTimer = 0;
+          this._lastAttackAngle = null;
+          this._warnTimer = 0;
+        }
+
+        isPlayer() {
+          return false;
+        }
+        isBase() {
+          return true;
+        }
+
+        // Заглушки для совместимости с игровым циклом
+        updatePhysicsAndLaser(dt, game) {
+          /* База неподвижна — физики нет */
+        }
+        updateAI(dt, game) {
+          this.update(dt, game);
+          // Обработка колбэков (облучение)
+          if (this.irradiated && this.irradiatedBy)
+            this.onLaserDetection([
+              {
+                degree: normDeg(
+                  Math.atan2(
+                    this.irradiatedBy.y - this.y,
+                    this.irradiatedBy.x - this.x,
+                  ),
+                ),
+                hostile: true,
+              },
+            ]);
+          if (this._api_damaged) {
+            this.onDamage();
+            this._api_damaged = false;
+          }
+          this._game = game;
+        }
+
+        // Радиус зоны лечения и пополнения боезапаса
+        static get HEAL_RADIUS() {
+          return 3;
+        }
+        static get HEAL_RATE() {
+          return 15;
+        } // HP/сек
+        static get AMMO_RESUPPLY() {
+          return 5;
+        } // ПТУР при доке
+
+        update(dt, game) {
+          if (!this.alive) return;
+          // Лечим союзников в радиусе
+          this._healTimer -= dt;
+          if (this._healTimer <= 0) {
+            this._healTimer = 0.5;
+            for (const t of game.tanks) {
+              if (!t.alive || t.isBaseObj) continue;
+              // Союзник = та же команда ИЛИ игрок с той же командой
+              const allied =
+                this.team &&
+                (t.team === this.team ||
+                  (t.isPlayer && t.isPlayer() && t.team === this.team));
+              if (!allied) continue;
+              const d = dist({ x: this.x, y: this.y }, { x: t.x, y: t.y });
+              if (d > Base.HEAL_RADIUS) continue;
+              // Лечение HP — медленное (15 HP каждые 0.5 сек = 30 HP/сек)
+              if (t.hp < 100) t.hp = Math.min(100, t.hp + Base.HEAL_RATE * 0.1); // замедлено в 5 раз
+              // Пополняем ПТУР — 1 ракета каждые 2 сек
+              if (cfg.assault) {
+                if (t.pturAmmo === undefined) t.pturAmmo = cfg.pturAmmo;
+                if (t.pturAmmo < cfg.pturAmmo) {
+                  if (!t._ammoReloadTimer) t._ammoReloadTimer = 0;
+                  t._ammoReloadTimer -= 0.5;
+                  if (t._ammoReloadTimer <= 0) {
+                    t.pturAmmo++;
+                    t._ammoReloadTimer = 10.0;
+                  } // 1 ракета каждые 10 сек
+                } else {
+                  t._ammoReloadTimer = 0;
+                }
+              }
+              // Пополняем дымовые гранаты — 1 граната каждые 5 сек
+              if (t.smokeCount !== undefined && t.smokeCount < 3) {
+                if (!t._smokeReloadTimer) t._smokeReloadTimer = 0;
+                t._smokeReloadTimer -= 0.5;
+                if (t._smokeReloadTimer <= 0) {
+                  t.smokeCount++;
+                  t._smokeReloadTimer = 25.0;
+                } // 1 граната каждые 25 сек
+              } else {
+                t._smokeReloadTimer = 0;
+              }
+            }
+          }
+          // Крик об атаке
+          if (this._warnTimer > 0) this._warnTimer -= dt;
+          if (this._hereTimer > 0) this._hereTimer -= dt;
+
+          if (this._sayBubbles)
+            this._sayBubbles = this._sayBubbles.filter((b) => {
+              b.life -= dt;
+              return b.life > 0;
+            });
+        }
+
+        onLaserDetection(info) {
+          const src = info.find((s) => s.hostile);
+          if (!src) return;
+          this._lastAttackAngle = src.degree;
+          // Кричим не чаще раза в 3 сек
+          if (this._warnTimer <= 0) {
+            this._warnTimer = 3;
+            this.broadcast(`BASE_ATTACK:${Math.round(src.degree)}`);
+            this.say("⚠ АТАКА! " + Math.round(src.degree) + "°");
+          }
+        }
+
+        onDamage() {
+          if (this._warnTimer <= 0) {
+            this._warnTimer = 2;
+            const ang =
+              this._lastAttackAngle !== null
+                ? Math.round(this._lastAttackAngle)
+                : "?";
+            this.broadcast(`BASE_ATTACK:${ang}`);
+            this.say("⚠ УРОН! " + ang + "°");
+          }
+          // Критическое HP
+          if (this.hp < 100) this.broadcast("BASE_LOW_HP");
+        }
+
+        onRadio(messages) {
+          for (const msg of messages) {
+            if (!msg.fromTeam || !msg.message) continue;
+            if (msg.message === "BASE_WHERE") {
+              // Отвечаем не чаще раза в 5 сек чтобы не спамить
+              if (!this._hereTimer || this._hereTimer <= 0) {
+                this._hereTimer = 50; // ~5 сек
+                this.broadcast("BASE_HERE");
+              }
+            }
+          }
+        }
+
+        takeHPDamage(amount, game, killer) {
+          this.hp = Math.max(0, this.hp - amount);
+          this._api_damaged = true;
+          if (this.hp <= 0) this.destroy(game, killer);
+        }
+
+        destroy(game, killer) {
+          this.alive = false;
+          this.isWreck = true;
+          game.log(`База "${this.team}" УНИЧТОЖЕНА!`, "kill");
+          this.broadcast("BASE_DESTROYED");
+          game.checkWin();
+        }
+      }
+
       class Player extends Tank {
         constructor(id, x, y) {
           super(id, x, y, 0, "#00ff88", "PLAYER");
@@ -2449,6 +2872,8 @@
           this.wreckFires = [];
           this.radioMessages = [];
           this.radioWaves = [];
+          this.wallParticles = [];
+          this.bases = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -2456,6 +2881,7 @@
           this.player = null;
           this.genMap(config.obstacleDensity);
           this.spawnTanks(config);
+          if (cfg.assault) this.spawnBases();
         }
 
         genMap(density) {
@@ -2482,10 +2908,101 @@
               for (let x = 2; x < W - 2; x++)
                 if (Math.random() < density) this.map[y][x] = 1;
           }
+          // Режим Штурм: стены y=0 и y=H-1 НЕ очищаем — лазер/танки не проходят
+          // Только очищаем пространство ПЕРЕД воротами (dy=1..3)
+          if (cfg.assault) {
+            const gs = Math.floor(W / 2) - 2; // ворота: gs, gs+1, gs+2, gs+3
+            this._gateStart = gs;
+            for (let dy = 1; dy <= 3; dy++)
+              for (let dx = 0; dx <= 3; dx++) {
+                this.map[dy][gs + dx] = 0;
+                this.map[H - 1 - dy][gs + dx] = 0;
+              }
+          }
+        }
+
+        spawnBases() {
+          const W = this.mapW,
+            H = this.mapH;
+          const gs =
+            this._gateStart !== undefined
+              ? this._gateStart
+              : Math.floor(W / 2) - 2;
+          const cx = gs + 1.5; // центр 4 ворот
+          // Собираем уникальные команды из танков
+          const teams = [
+            ...new Set(this.tanks.map((t) => t.team).filter(Boolean)),
+          ];
+          if (teams.length < 2) return;
+
+          // Команда 0 — верхняя база (y=3, смотрит вниз)
+          // Команда 1 — нижняя база (y=H-4, смотрит вверх)
+          const basePositions = [
+            { x: cx, y: 0.5, angle: Math.PI / 2 }, // в верхней стене, смотрит вниз
+            { x: cx, y: H - 0.5, angle: -Math.PI / 2 }, // в нижней стене, смотрит вверх
+          ];
+
+          let id = 9000;
+          teams.slice(0, 2).forEach((team, i) => {
+            const pos = basePositions[i];
+            const color = teamColor(team);
+            const base = new Base(
+              id++,
+              pos.x,
+              pos.y,
+              team,
+              color,
+              "База-" + team,
+            );
+            base.turretAngle = pos.angle;
+            base.turretTargetAngle = pos.angle;
+            base._game = this;
+            this.bases.push(base);
+            this.tanks.push(base); // база участвует как танк (радио, лазер, урон)
+          });
         }
 
         freeCell(excl = 3) {
           return this.freeCellZone(0, this.mapH, excl);
+        }
+
+        // Для королевской битвы — спавн вдоль краёв карты (полоса 5 клеток от стены)
+        _freeCellEdge(excl = 3) {
+          const W = this.mapW,
+            H = this.mapH,
+            EDGE = 6;
+          let att = 200;
+          while (att-- > 0) {
+            // Случайно выбираем одну из 4 полос
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) {
+              x = rndInt(1, W - 2) + 0.5;
+              y = rndInt(1, EDGE) + 0.5;
+            } // верх
+            else if (side === 1) {
+              x = rndInt(1, W - 2) + 0.5;
+              y = rndInt(H - EDGE, H - 2) + 0.5;
+            } // низ
+            else if (side === 2) {
+              x = rndInt(1, EDGE) + 0.5;
+              y = rndInt(1, H - 2) + 0.5;
+            } // лево
+            else {
+              x = rndInt(W - EDGE, W - 2) + 0.5;
+              y = rndInt(1, H - 2) + 0.5;
+            } // право
+            if (!this.isBlocked(x, y)) {
+              let ok = true;
+              for (const t of this.tanks)
+                if (dist({ x, y }, t) < excl) {
+                  ok = false;
+                  break;
+                }
+              if (ok) return { x, y };
+            }
+          }
+          return this.freeCell(excl);
         }
 
         // zone: yMin..yMax (в клетках) — для командного спавна
@@ -2532,7 +3049,7 @@
 
           // Командный спавн: собираем уникальные команды, делим карту
           const teamZones = {};
-          if (config.teamSpawn) {
+          if (config.teamSpawn || config.assault) {
             const allTeams = new Set();
             for (const BC of activeBots) {
               const team = presetTeamMap[BC.name] || BC.botTeam;
@@ -2541,26 +3058,33 @@
             if (config.playerTeam) allTeams.add(config.playerTeam);
             const teams = [...allTeams];
             if (teams.length >= 2) {
-              // Узкая полоса у стены — 4 клетки от края
-              // Команда 0 — у верхней стены (y=1..4), команда 1 — у нижней (y=H-5..H-2)
-              // Три и более команд: первая сверху, последняя снизу, остальные равномерно
-              const H = this.mapH,
-                STRIP = 4;
-              teams.forEach((t, i) => {
-                if (i === 0) {
-                  teamZones[t] = { yMin: 1, yMax: 1 + STRIP };
-                } else if (i === teams.length - 1) {
-                  teamZones[t] = { yMin: H - 1 - STRIP, yMax: H - 2 };
-                } else {
-                  // Промежуточные команды — равномерно в середине
-                  const mid = Math.floor(H / 2);
-                  const spread = Math.floor(H / (teams.length + 1)) * i;
-                  teamZones[t] = {
-                    yMin: STRIP + spread,
-                    yMax: STRIP + spread + STRIP,
-                  };
-                }
-              });
+              const H = this.mapH;
+              if (config.assault) {
+                // Режим Штурм: спавн не далее 3 клеток от ворот
+                const ASSAULT_STRIP = 3;
+                teams.forEach((t, i) => {
+                  if (i === 0)
+                    teamZones[t] = { yMin: 1, yMax: 1 + ASSAULT_STRIP };
+                  else
+                    teamZones[t] = { yMin: H - 1 - ASSAULT_STRIP, yMax: H - 2 };
+                });
+              } else {
+                // Обычный командный спавн — полоса 4 клетки у стены
+                const STRIP = 4;
+                teams.forEach((t, i) => {
+                  if (i === 0) {
+                    teamZones[t] = { yMin: 1, yMax: 1 + STRIP };
+                  } else if (i === teams.length - 1) {
+                    teamZones[t] = { yMin: H - 1 - STRIP, yMax: H - 2 };
+                  } else {
+                    const spread = Math.floor(H / (teams.length + 1)) * i;
+                    teamZones[t] = {
+                      yMin: STRIP + spread,
+                      yMax: STRIP + spread + STRIP,
+                    };
+                  }
+                });
+              }
             }
           }
 
@@ -2573,9 +3097,12 @@
             return this.freeCell();
           };
 
+          let _rbIdx = 0; // royal battle unique team index
           for (const BC of activeBots) {
-            const team = presetTeamMap[BC.name] || BC.botTeam || null;
-            const pos = getPos(team);
+            let team = presetTeamMap[BC.name] || BC.botTeam || null;
+            // Королевская битва: каждый бот — отдельная команда
+            if (isRoyalBattle()) team = "rb_" + _rbIdx++;
+            const pos = isRoyalBattle() ? this._freeCellEdge() : getPos(team);
             let color = BOT_COLORS[id % BOT_COLORS.length];
             for (const col of BOT_COLORS) {
               if (!usedColors.has(col)) {
@@ -2693,6 +3220,33 @@
             const cx = Math.floor(rx),
               cy = Math.floor(ry);
             if (cx < 0 || cy < 0 || cx >= this.mapW || cy >= this.mapH) break;
+            // Проверяем базы ДО проверки стены — только клетки ворот (плоский объект)
+            if (cfg.assault && this.bases) {
+              for (const base of this.bases) {
+                if (!base.alive || base === fromTank) continue;
+                // Ворота занимают строку y=0 (или y=H-1) и 4 клетки по x
+                const gateY = base.y < 2 ? 0 : this.mapH - 1;
+                const gsX = Math.round(base.x - 1.5); // первая клетка ворот
+                const hitGateRow = Math.floor(ry) === gateY;
+                const hitGateCol =
+                  Math.floor(rx) >= gsX && Math.floor(rx) <= gsX + 3;
+                if (hitGateRow && hitGateCol) {
+                  base.irradiated = true;
+                  base.irradiatedBy = fromTank;
+                  const hostile = fromTank.isEnemy(base);
+                  return {
+                    dist: d,
+                    isEnemy: hostile,
+                    hitX: rx,
+                    hitY: ry,
+                    inSmoke: false,
+                    target: base,
+                    isDead: false,
+                    isBase: true,
+                  };
+                }
+              }
+            }
             if (this.map[cy][cx] === 1)
               return {
                 dist: d,
@@ -2769,6 +3323,7 @@
           if (!this.running) return;
           this.sounds = [];
           this.radioMessages = [];
+          this._radioMsgCount = 0; // счётчик broadcast за тик
           this.radioWaves = this.radioWaves.filter((w) => {
             w.r += SOUND_RANGE * 1.5 * 0.1;
             w.life -= 0.1;
@@ -2779,9 +3334,18 @@
             return s.alive();
           });
           for (const d of this.debris) d.update(dt);
+          for (const b of this.bases) if (b.alive) b.update(dt, this);
           this.wreckFires = this.wreckFires.filter((f) => {
             f.update(dt);
             return f.alive();
+          });
+          this.wallParticles = this.wallParticles.filter((p) => {
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= Math.pow(p.type === "spark" ? 0.3 : 0.15, dt);
+            p.vy *= Math.pow(p.type === "spark" ? 0.3 : 0.15, dt);
+            p.life -= dt;
+            return p.life > 0;
           });
           this.pturs = this.pturs.filter((p) => {
             p.update(dt, this);
@@ -2796,6 +3360,10 @@
             t.irradiated = false;
             t.irradiatedBy = null;
           }
+          for (const b of this.bases) {
+            b.irradiated = false;
+            b.irradiatedBy = null;
+          }
           // Проход 1: физика + лазеры (irradiated устанавливается)
           for (const t of this.tanks) t.updatePhysicsAndLaser(dt, this);
           // Проход 2: AI (видит irradiated, вызывает колбэки, может вызвать broadcast)
@@ -2804,6 +3372,25 @@
           // Так broadcast одного бота гарантированно дойдёт до всех союзников
           if (this.radioMessages.length > 0)
             for (const t of this.tanks) if (t.alive) t.deliverRadio(this);
+        }
+
+        _showAssaultResult() {
+          const ds = document.getElementById("deathScreen");
+          if (!ds) return;
+          const title = document.getElementById("deathTitle");
+          const msg = document.getElementById("deathMsg");
+          const hasPlayer = !!this.player;
+          const playerTeam = this.player && this.player.team;
+          const won = playerTeam === this._assaultWinner;
+          if (hasPlayer) {
+            title.textContent = won ? "ПОБЕДА!" : "ПОРАЖЕНИЕ";
+            title.style.color = won ? "#00ff88" : "#ff2244";
+          } else {
+            title.textContent = "ПОБЕДА КОМАНДЫ";
+            title.style.color = "#ffaa00";
+          }
+          msg.textContent = `Команда "${this._assaultWinner}" победила! Причина: уничтожена ${this._assaultReason} команды "${this._assaultLoser}".`;
+          ds.style.display = "flex";
         }
 
         log(msg, type = "") {
@@ -2819,13 +3406,44 @@
         }
 
         checkWin() {
-          const alive = this.tanks.filter((t) => t.alive);
+          const alive = this.tanks.filter((t) => t.alive && !t.isBaseObj);
 
-          // Проверка командной победы: все выжившие из одной команды
+          // Режим Штурм: победа если база врага уничтожена ИЛИ все танки врага мертвы
+          if (cfg.assault && this.bases.length >= 2) {
+            const teamGroups = {};
+            for (const t of this.tanks)
+              if (t.team && !t.isBaseObj) {
+                if (!teamGroups[t.team])
+                  teamGroups[t.team] = { tanks: [], base: null };
+                teamGroups[t.team].tanks.push(t);
+              }
+            for (const b of this.bases)
+              if (b.team && teamGroups[b.team]) teamGroups[b.team].base = b;
+            for (const [team, g] of Object.entries(teamGroups)) {
+              const enemyTeams = Object.keys(teamGroups).filter(
+                (t) => t !== team,
+              );
+              for (const et of enemyTeams) {
+                const eg = teamGroups[et];
+                const baseDestroyed = eg.base !== null && !eg.base.alive; // null = нет базы (не считается уничтоженной)
+                const allDead = eg.tanks.every((t) => !t.alive);
+                if (baseDestroyed || allDead) {
+                  this.running = false;
+                  this._assaultWinner = team;
+                  this._assaultLoser = et;
+                  this._assaultReason = baseDestroyed ? "база" : "все танки";
+                  setTimeout(() => this._showAssaultResult(), 800);
+                  return;
+                }
+              }
+            }
+            return; // В штурме обычная победа не применяется
+          }
+
+          // Обычный режим: все выжившие из одной команды
           let teamWin = null;
           if (alive.length > 0) {
             const teams = new Set(alive.map((t) => t.team));
-            // Одна команда осталась (null не считается — это бесхозные)
             const realTeams = [...teams].filter((t) => t !== null);
             if (
               realTeams.length === 1 &&
@@ -2924,6 +3542,16 @@
           ctx.fillStyle = "#050805";
           ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+          // Предвычисляем позиции ворот (нужно и внутри и снаружи visMode блока)
+          const gateSet = new Set();
+          if (cfg.assault && g._gateStart !== undefined) {
+            const gs = g._gateStart;
+            for (let dx = 0; dx <= 3; dx++) {
+              gateSet.add(0 + "," + (gs + dx));
+              gateSet.add(g.mapH - 1 + "," + (gs + dx));
+            }
+          }
+
           // Карта
           if (cfg.visMode === "map" || cfg.visMode === "all") {
             ctx.strokeStyle = "rgba(0,80,20,0.2)";
@@ -2940,19 +3568,139 @@
               ctx.lineTo(g.mapW * C, y * C);
               ctx.stroke();
             }
+
             for (let y = 0; y < g.mapH; y++)
               for (let x = 0; x < g.mapW; x++)
                 if (g.map[y][x] === 1) {
-                  ctx.fillStyle = "#1a3a1a";
-                  ctx.fillRect(x * C, y * C, C, C);
-                  ctx.strokeStyle = "#2a5a2a";
-                  ctx.lineWidth = 1;
-                  ctx.strokeRect(x * C + 0.5, y * C + 0.5, C - 1, C - 1);
+                  const gateKey = y + "," + x;
+                  if (gateSet.has(gateKey)) {
+                    // Пропускаем — ворота рисуются отдельно ниже
+                  } else {
+                    ctx.fillStyle = "#1a3a1a";
+                    ctx.fillRect(x * C, y * C, C, C);
+                    ctx.strokeStyle = "#2a5a2a";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x * C + 0.5, y * C + 0.5, C - 1, C - 1);
+                  }
                 }
           }
 
+          // Ворота баз — рисуются всегда (независимо от visMode)
+          for (const base of g.bases || []) {
+            const gs =
+              g._gateStart !== undefined
+                ? g._gateStart
+                : Math.round(base.x) - 1;
+            const by = base.y < 2 ? 0 : g.mapH - 1;
+            const col = base.alive ? base.color : "#444";
+            const hp = base.hp / base.maxHp;
+            // 4 клетки ворот — жёлтый цвет
+            const wy = by * C;
+            for (let dx = 0; dx <= 3; dx++) {
+              const wx = (gs + dx) * C;
+              ctx.fillStyle = base.alive
+                ? "rgba(40,30,0,0.95)"
+                : "rgba(20,20,20,0.9)";
+              ctx.fillRect(wx, wy, C, C);
+              ctx.strokeStyle = base.alive ? "#ffcc00" : "#555";
+              ctx.lineWidth = 2;
+              ctx.globalAlpha = base.alive ? 1 : 0.35;
+              ctx.strokeRect(wx + 1, wy + 1, C - 2, C - 2);
+              ctx.globalAlpha = 1;
+            }
+            ctx.strokeStyle = base.alive ? "#ffcc00" : col;
+            ctx.globalAlpha = base.alive ? 0.5 : 0.15;
+            ctx.lineWidth = 1.5;
+            const x0 = gs * C,
+              x1 = (gs + 4) * C,
+              wy2 = by * C;
+            for (let i = 1; i <= 3; i++) {
+              const ly = wy2 + (C * i) / 4;
+              ctx.beginPath();
+              ctx.moveTo(x0 + 2, ly);
+              ctx.lineTo(x1 - 2, ly);
+              ctx.stroke();
+            }
+            // Вертикальные столбы по краям
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x0, wy2);
+            ctx.lineTo(x0, wy2 + C);
+            ctx.moveTo(x1, wy2);
+            ctx.lineTo(x1, wy2 + C);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // HP бар — прямо под/над воротами (в сторону поля)
+            if (base.alive) {
+              const barY = by === 0 ? wy2 + C + 2 : wy2 - 8;
+              ctx.fillStyle = "#0a1a0a";
+              ctx.fillRect(x0, barY, C * 3, 5);
+              ctx.fillStyle =
+                hp > 0.5 ? "#00cc44" : hp > 0.25 ? "#ffaa00" : "#ff2222";
+              ctx.fillRect(x0, barY, C * 3 * hp, 5);
+              // Название
+              ctx.fillStyle = col;
+              ctx.font = "bold 7px Share Tech Mono";
+              ctx.textAlign = "center";
+              ctx.fillText(
+                "База " + base.team,
+                (gs + 2) * C,
+                by === 0 ? wy + C + 16 : wy - 10,
+              );
+              ctx.textAlign = "left";
+            }
+
+            // Полукруг зоны хила/пополнения
+            if (base.alive && cfg.baseZone) {
+              ctx.globalAlpha = 0.15;
+              ctx.strokeStyle = "#00ff88";
+              ctx.lineWidth = 1;
+              ctx.setLineDash([3, 6]);
+              ctx.beginPath();
+              const hcx = (gs + 2) * C,
+                hcy = by === 0 ? wy2 + C : wy2;
+              ctx.arc(
+                hcx,
+                hcy,
+                Base.HEAL_RADIUS * C,
+                by === 0 ? 0 : Math.PI,
+                by === 0 ? Math.PI : Math.PI * 2,
+              );
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // Заливка зоны
+              ctx.globalAlpha = 0.04;
+              ctx.fillStyle = "#00ff88";
+              ctx.beginPath();
+              ctx.arc(
+                hcx,
+                hcy,
+                Base.HEAL_RADIUS * C,
+                by === 0 ? 0 : Math.PI,
+                by === 0 ? Math.PI : Math.PI * 2,
+              );
+              ctx.fill();
+              ctx.globalAlpha = 1;
+              // Иконки что восполняется
+              ctx.fillStyle = "#00ff88";
+              ctx.font = "7px Share Tech Mono";
+              ctx.globalAlpha = 0.7;
+              ctx.textAlign = "center";
+              ctx.fillText(
+                "HP ♦ БК ♦ ДЫМ",
+                hcx,
+                by === 0
+                  ? hcy + Base.HEAL_RADIUS * C + 10
+                  : hcy - Base.HEAL_RADIUS * C - 3,
+              );
+              ctx.textAlign = "left";
+              ctx.globalAlpha = 1;
+            }
+          }
+
           // Лазерные метки
-          if (g.player)
+          if (g.player) {
             for (const dot of g.player.dots) {
               const alpha = Math.min(1, dot.life / dot.maxLife);
               ctx.fillStyle = dot.inSmoke
@@ -2971,6 +3719,7 @@
               ctx.lineWidth = 1;
               ctx.stroke();
             }
+          }
 
           // Дым
           for (const s of g.smokes) {
@@ -3186,6 +3935,28 @@
             }
           }
 
+          // Частицы ударов о стену (осколки и искры)
+          if (g.wallParticles) {
+            for (const p of g.wallParticles) {
+              const fr = Math.max(0, p.life / p.maxLife);
+              ctx.save();
+              ctx.globalAlpha = p.type === "spark" ? fr * 0.95 : fr * 0.7;
+              if (p.type === "spark") {
+                ctx.fillStyle = `hsl(${40 + fr * 20},100%,${60 + fr * 30}%)`;
+                ctx.shadowColor = "#ffaa00";
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                ctx.arc(p.x * C, p.y * C, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+              } else {
+                ctx.fillStyle = p.color || "#2a4a2a";
+                ctx.fillRect(p.x * C - 1.5, p.y * C - 1.5, 3, 3);
+              }
+              ctx.shadowBlur = 0;
+              ctx.restore();
+            }
+          }
+
           // Горение остовов — дым и огонь
           for (const fire of g.wreckFires) {
             for (const p of fire.particles) {
@@ -3302,6 +4073,7 @@
           // Танки
           for (const tank of g.tanks) {
             if (!tank.alive) continue;
+            if (tank.isBaseObj) continue; // базы рисуются отдельно
             if (cfg.visMode !== "all" && !tank.isPlayer()) continue;
             const px = tank.x * C,
               py = tank.y * C,
@@ -3386,6 +4158,25 @@
                     : "#005588";
                 ctx.fillRect(px - bw / 2, py + sz * 0.5 + 7, bw * pturFill, 2);
                 // Мигающий пиксель-маркер «ГОТОВ»
+                // Кружки боезапаса в режиме Штурм
+                if (cfg.assault) {
+                  const ammo =
+                    tank.pturAmmo !== undefined ? tank.pturAmmo : cfg.pturAmmo;
+                  const maxAmmo = cfg.pturAmmo || 5;
+                  const dotSpacing = 4;
+                  const dotsW = (maxAmmo - 1) * dotSpacing;
+                  for (let ai = 0; ai < maxAmmo; ai++) {
+                    const ddx = px - dotsW / 2 + ai * dotSpacing;
+                    const ddy = py + sz * 0.5 + 11;
+                    ctx.beginPath();
+                    ctx.arc(ddx, ddy, 1.5, 0, Math.PI * 2);
+                    ctx.fillStyle = ai < ammo ? "#00aaff" : "#0a1a2a";
+                    ctx.fill();
+                    ctx.strokeStyle = ai < ammo ? "#0066cc" : "#1a3a4a";
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                  }
+                }
                 if (
                   pturFill >= 1 &&
                   !hasActivePtur &&
@@ -3541,6 +4332,22 @@
         const pp = p.pturCD > 0 ? (1 - p.pturCD / cfg.pturCD) * 100 : 100;
         document.getElementById("hudPtur").textContent =
           p.pturCD > 0 ? p.pturCD.toFixed(1) + "с" : "ГОТОВ";
+        // Боезапас — точки в режиме Штурм
+        const ammoRow = document.getElementById("hudAmmoRow");
+        const ammoDots = document.getElementById("hudAmmoDots");
+        if (cfg.assault && ammoRow && ammoDots) {
+          ammoRow.style.display = "flex";
+          const ammo = p.pturAmmo !== undefined ? p.pturAmmo : cfg.pturAmmo;
+          const max = cfg.pturAmmo || 5;
+          let dotsHtml = "";
+          for (let i = 0; i < max; i++) {
+            const filled = i < ammo;
+            dotsHtml += `<div style="width:8px;height:8px;border-radius:50%;background:${filled ? "#00aaff" : "#0a1a2a"};border:1px solid ${filled ? "#0066cc" : "#1a3a4a"}"></div>`;
+          }
+          ammoDots.innerHTML = dotsHtml;
+        } else if (ammoRow) {
+          ammoRow.style.display = "none";
+        }
         document.getElementById("barPtur").style.width = pp + "%";
 
         const sp2 = p.smokeCD > 0 ? (1 - p.smokeCD / cfg.smokeCD) * 100 : 100;
@@ -4203,9 +5010,12 @@
         document.getElementById("btnPause").textContent = paused ? "▶" : "⏸";
       };
 
-      // Перемотка до выстрела — просто флаг, скорость не меняем при включении
-      document.getElementById("chkFfShot").onchange = function () {
-        ffShotActive = this.checked;
+      // Перемотка до выстрела — кнопка-переключатель
+      document.getElementById("chkFfShot").onclick = function () {
+        ffShotActive = !ffShotActive;
+        this.style.background = ffShotActive ? "var(--green)" : "#0a1a0a";
+        this.style.color = ffShotActive ? "#000" : "#446644";
+        this.style.borderColor = ffShotActive ? "var(--green)" : "#1a4a1a";
       };
 
       // Вызывается из gameLoop при любом выстреле ПТУР
@@ -4255,9 +5065,12 @@
           "cfgTeamKill",
           "cfgSelfDmg",
           "cfgTeamSpawn",
+          "cfgAssault",
+          "cfgBaseHp",
           "cfgPturVsPtur",
           "cfgSmartPtur",
           "cfgWrecks",
+          "cfgBaseZone",
           "cfgSmartLaser",
           "cfgNoiseRadius",
           "cfgRadioEnabled",
@@ -4265,6 +5078,7 @@
           "cfgSymmetric",
           "cfgMapSize",
           "cfgObstacles",
+          "cfgCollisionDmg",
           "cfgPturCD",
           "cfgPturSpeed",
           "cfgPturDmg",
@@ -4336,9 +5150,12 @@
           "cfgTeamKill",
           "cfgSelfDmg",
           "cfgTeamSpawn",
+          "cfgAssault",
+          "cfgBaseHp",
           "cfgPturVsPtur",
           "cfgSmartPtur",
           "cfgWrecks",
+          "cfgBaseZone",
           "cfgSmartLaser",
           "cfgNoiseRadius",
           "cfgRadioEnabled",
@@ -4346,6 +5163,7 @@
           "cfgSymmetric",
           "cfgMapSize",
           "cfgObstacles",
+          "cfgCollisionDmg",
           "cfgPturCD",
           "cfgPturSpeed",
           "cfgPturDmg",
@@ -4359,7 +5177,7 @@
         }
         document
           .getElementById("cfgPlayerTeam")
-          .addEventListener("input", saveSettings);
+          .addEventListener("change", saveSettings);
       })();
 
       // ═══════════════════ МЕНЮ vis-btn ═══════════════════
@@ -4383,16 +5201,46 @@
 
       let activePresetIdx = 0; // текущий пресет
 
+      function updatePlayerTeamSelect() {
+        const sel = document.getElementById("cfgPlayerTeam");
+        if (!sel) return;
+        const cur = sel.value;
+        const preset = battleTeamsPresets[activePresetIdx];
+        const teams = [];
+        if (preset && preset.teams) {
+          for (const t of Object.keys(preset.teams)) teams.push(t);
+        } else if (preset && preset.customClasses) {
+          const seen = new Set();
+          for (const BC of preset.customClasses)
+            if (BC.botTeam && !seen.has(BC.botTeam)) {
+              seen.add(BC.botTeam);
+              teams.push(BC.botTeam);
+            }
+        }
+        sel.innerHTML = '<option value="">— нет (враг для всех) —</option>';
+        for (const t of teams) {
+          const opt = document.createElement("option");
+          opt.value = t;
+          opt.textContent = t;
+          sel.appendChild(opt);
+        }
+        // По умолчанию — первая команда; если уже был выбор — восстановить
+        if (teams.includes(cur)) sel.value = cur;
+        else if (teams.length > 0 && !cur) sel.value = teams[0];
+      }
+
       function applyPreset(idx) {
         activePresetIdx = idx;
         const preset = battleTeamsPresets[idx];
         // Обновляем строку под заголовком
         const text = presetLineText(preset);
         document.getElementById("presetLineText").textContent = text;
-        // Сохраняем выбор
         try {
           localStorage.setItem("ltw_preset", idx);
         } catch (e) {}
+        // Обновляем список команд игрока
+        if (typeof updatePlayerTeamSelect === "function")
+          updatePlayerTeamSelect();
       }
 
       function presetLineText(preset) {
@@ -4436,8 +5284,7 @@
       function getActiveBotClasses() {
         const preset = battleTeamsPresets[activePresetIdx];
         if (preset.customClasses) return preset.customClasses;
-        if (!preset.teams) return botClasses; // index.js
-        // Из teams: разворачиваем count экземпляров каждого класса
+        if (!preset.teams) return botClasses;
         const classes = [];
         for (const [, t] of Object.entries(preset.teams)) {
           for (let i = 0; i < t.count; i++) classes.push(t.bot);
@@ -4445,7 +5292,31 @@
         return classes;
       }
 
+      function isRoyalBattle() {
+        if (cfg.royalBattle) return true;
+        const preset = battleTeamsPresets[activePresetIdx];
+        return preset && preset.royalBattle === true;
+      }
+
       // Пресет загружается из bots/index.js после инициализации всех классов
+      // Показываем HP базы только в режиме Штурм
+      document
+        .getElementById("cfgAssault")
+        .addEventListener("change", function () {
+          document.getElementById("baseHpRow").style.display =
+            this.value === "1" ? "flex" : "none";
+        });
+      if (document.getElementById("cfgAssault").value === "1")
+        document.getElementById("baseHpRow").style.display = "flex";
+      // Королевская битва: принудительно убираем командный спавн
+      document
+        .getElementById("cfgAssault")
+        .addEventListener("change", function () {
+          if (this.value === "2") {
+            document.getElementById("cfgTeamSpawn").checked = false;
+          }
+        });
+
       // Вставляем .dots между label и контролом в каждом setting-row
       (function () {
         document.querySelectorAll(".setting-row").forEach((row) => {
@@ -4552,9 +5423,17 @@
           teamKill: document.getElementById("cfgTeamKill").checked,
           selfDmg: document.getElementById("cfgSelfDmg").checked,
           teamSpawn: document.getElementById("cfgTeamSpawn").checked,
+          assault: ["1", "2"].includes(
+            document.getElementById("cfgAssault").value,
+          ),
+          royalBattle: document.getElementById("cfgAssault").value === "2",
+          baseHp: parseInt(
+            document.getElementById("cfgBaseHp")?.value || "5000",
+          ),
           pturVsPtur: document.getElementById("cfgPturVsPtur").checked,
           smartPtur: document.getElementById("cfgSmartPtur").checked,
           wrecks: document.getElementById("cfgWrecks").checked,
+          baseZone: document.getElementById("cfgBaseZone")?.checked !== false,
           smartLaser:
             parseInt(document.getElementById("cfgSmartLaser").value) >= 1,
           smartLaserStill:
@@ -4570,6 +5449,10 @@
             document.getElementById("cfgObstacles").value,
           ),
           pturCD: parseInt(document.getElementById("cfgPturCD").value),
+          pturAmmo: 5, // фиксировано в режиме Штурм
+          collisionDmg: parseInt(
+            document.getElementById("cfgCollisionDmg")?.value || "15",
+          ),
           pturSpeed: parseInt(document.getElementById("cfgPturSpeed").value),
           pturDmg: parseFloat(document.getElementById("cfgPturDmg").value),
           smokeCD: parseInt(document.getElementById("cfgSmokeCD").value),
@@ -4745,6 +5628,8 @@
     <script src="bots/Tracker.js"></script>
     <script src="bots/Specter.js"></script>
     <script src="bots/TeamHunter.js"></script>
+    <script src="bots/Saboteur.js"></script>
+    <script src="bots/Guardian.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>

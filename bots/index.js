@@ -1,28 +1,31 @@
-// bots/index.js — список всех ботов для игры
-// Добавь сюда свой класс чтобы он появился в игре
+// bots/index.js — список ботов и пресеты команд
+// Загружается ПОСЛЕ всех классов — все ссылки на классы безопасны
 
-// Порядок = порядок спавна
-const botClasses = [];
+const botClasses = [
+  Dummy,
+  Attacker,
+  Crazy,
+  Shy,
+  Coward,
+  Curious,
+  Scanner,
+  Terminator,
+  Tracker,
+  Specter,
+  TeamHunter,
+  Saboteur,
+  Guardian,
+];
 
 // ═══════════════════ ПРЕСЕТЫ КОМАНД ═══════════════════
-// Добавляй свои пресеты сюда.
-// teams: { "НазваниеКоманды": { bot: КлассБота, count: количество } }
-// teams: null → использовать botClasses выше
-// customClasses: [...] → произвольный массив классов (для FFA)
 battleTeamsPresets = [
   {
-    name: "Без пресета",
-    desc: "Боты из botClasses, команды не назначены",
+    name: "Все боты",
+    desc: "Все доступные боты без команд",
     teams: null,
   },
-  {
-    name: "Сканеры vs Охотники",
-    desc: "12 Scanner  против  12 TeamHunter",
-    teams: {
-      Scanners: { bot: Scanner, count: 12 },
-      Hunters: { bot: TeamHunter, count: 12 },
-    },
-  },
+
+  // ── Классические ─────────────────────────────────────
   {
     name: "Сканеры vs Охотники",
     desc: "6 Scanner  против  6 TeamHunter",
@@ -62,9 +65,45 @@ battleTeamsPresets = [
       TeamHunter,
     ],
   },
+
+  // ── Режим Штурм ──────────────────────────────────────
+  {
+    name: "⚔ Штурм: Терминаторы vs Охотники",
+    desc: "Режим Штурм. 6 Terminator против 6 TeamHunter",
+    teams: {
+      Terminators: { bot: Terminator, count: 6 },
+      Hunters: { bot: TeamHunter, count: 6 },
+    },
+  },
+  {
+    name: "⚔ Штурм: Диверсанты vs Защитники",
+    desc: "Режим Штурм. 4 Saboteur против 4 Guardian",
+    teams: {
+      Saboteurs: { bot: Saboteur, count: 4 },
+      Defenders: { bot: Guardian, count: 4 },
+    },
+  },
+  {
+    name: "⚔ Штурм: Полный хаос",
+    desc: "Режим Штурм. Термин.+Диверс.+Призрак vs Охотник+Защитник+Трекер",
+    teams: null,
+    customClasses: [
+      // Команда Alpha (botTeam будет назначен движком из static botTeam)
+      Terminator,
+      Terminator,
+      Saboteur,
+      Saboteur,
+      Specter,
+      // Команда Hunters
+      TeamHunter,
+      TeamHunter,
+      Guardian,
+      Guardian,
+      Tracker,
+    ],
+  },
 ];
 
-// Применяем сохранённый пресет после загрузки
 if (typeof applyPreset === "function") {
   try {
     const saved = parseInt(localStorage.getItem("ltw_preset") || "1");
