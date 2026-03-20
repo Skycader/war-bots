@@ -1,19 +1,10 @@
 /**
  * Scout — Лазутчик / Шахед.
  *
- * Определяет сторону вражеской базы через сканирование:
- * - Сканирует на север (270°) и на юг (90°)
- * - Своя база → isHostile=false, чужая → isHostile=true
- * - Нашёл вражескую базу → запоминает направление
- *
- * Маршрут (если враг на юге):
- *   1. Едет к северной стене
- *   2. Едет вдоль северной стены на запад до упора
- *   3. Поворачивает на юг, едет к южной стене
- *   4. Поворачивает на восток, медленно едет, башня на юг — сканирует
- *   5. База врага в зоне поражения → selfDestruct()
- *
- * Если враг на севере — зеркально.
+ * Не знает размер карты и расположение базы заранее.
+ * Маршрут: едет на юг → вдоль южной стены на запад → на север → на восток сканируя.
+ * Параллельно при движении сканирует на север и юг — кто первый ответит isBase+isHostile.
+ * Найдя врага → selfDestruct() если в зоне.
  */
 class Scout extends Tank {
   static get botName() {
@@ -23,99 +14,77 @@ class Scout extends Tank {
     return "Scouts";
   }
 
-  mode = "probe"; // probe|to_near_wall|hug_side|to_far_wall|scan
-  _enemyDir = null; // 90=юг или 270=север (направление к врагу)
-  _probeTimer = 30; // тиков на зондирование
+  mode = "to_south"; // to_south|hug_west|to_north|scan_east
   _navEvade = null;
   _navTimer = 0;
+  _scanDir = 270; // куда смотрит башня при сканировании
 
   main() {
+    // Всегда параллельно сканируем на север и юг — ищем isBase+isHostile
+    this._parallelScan();
+
     switch (this.mode) {
-      case "probe":
-        this._doProbe();
+      case "to_south":
+        this._goTo(90, 3, "hug_west");
         break;
-      case "to_near_wall":
-        this._goTo(this._nearWallDir(), 3, "hug_side");
+      case "hug_west":
+        this._goTo(180, 2.5, "to_north");
         break;
-      case "hug_side":
-        this._goTo(this._sideDir(), 2.5, "to_far_wall");
+      case "to_north":
+        this._goTo(270, 3, "scan_east");
         break;
-      case "to_far_wall":
-        this._goTo(this._enemyDir, 3, "scan");
-        break;
-      case "scan":
-        this._doScan();
+      case "scan_east":
+        this._doScanEast();
         break;
     }
   }
 
-  // ── Зондирование: сканируем север и юг ──────────────────────────────
-  _doProbe() {
-    this.stop();
-    this._probeTimer--;
-
-    // Чередуем: чётные тики — север, нечётные — юг
-    const dir = this._probeTimer % 2 === 0 ? 270 : 90;
-    this.setGunDegree(dir);
+  // Сканируем попеременно север/юг без смены режима
+  _parallelScan() {
+    this._scanDir = this._scanDir === 270 ? 90 : 270;
+    this.setGunDegree(this._scanDir);
     const sc = this.impulseScan();
-
-    if (sc && sc.isHostile && !sc.isDead && sc.target === "non-tank") {
-      // Нашли вражескую базу!
-      this._enemyDir = dir;
-      this.say(dir === 90 ? "Враг на юге!" : "Враг на севере!");
-      this.mode = "to_near_wall";
-      return;
-    }
-
-    if (this._probeTimer <= 0) {
-      // Не нашли — пробуем ещё раз подольше
-      this._probeTimer = 40;
-    }
-  }
-
-  // Направление к "своей" стене (противоположной от врага)
-  _nearWallDir() {
-    return this._enemyDir === 90 ? 270 : 90;
-  }
-
-  // Направление вдоль стены (всегда на запад для простоты, можно рандомизировать)
-  _sideDir() {
-    return 180;
-  }
-
-  // ── Едем в направлении пока не стена, потом nextMode ────────────────
-  _goTo(targetAngle, speed, nextMode) {
-    this._nav(targetAngle, speed);
-    this.setGunDegree(targetAngle);
-    const sc = this.impulseScan();
-    if (sc && sc.target === "non-tank" && sc.distance < 1.5) {
-      this.mode = nextMode;
-      this._navEvade = null;
-      this._navTimer = 0;
-    }
-  }
-
-  // ── Медленно поперёк карты, сканируем в сторону врага ───────────────
-  _doScan() {
-    const moveDir = this._enemyDir === 90 ? 0 : 180; // восток или запад
-    this._nav(moveDir, 0.8);
-    this.setGunDegree(this._enemyDir);
-    const sc = this.impulseScan();
-
-    if (sc && sc.isHostile && !sc.isDead && sc.target === "non-tank") {
-      this.say("База! Д=" + Math.round(sc.distance));
+    if (sc && sc.isBase && sc.isHostile) {
+      this.say("База врага найдена! " + Math.round(sc.distance) + " кл");
       if (sc.distance <= SD_RADIUS_EDGE * 0.85) {
         this.say("💥 САМОПОДРЫВ!");
         this.selfDestruct();
       }
     }
+  }
 
-    // Дошли до края карты — разворот
-    this.setGunDegree(moveDir);
+  // Едем в targetAngle до стены, потом nextMode
+  _goTo(targetAngle, speed, nextMode) {
+    this._nav(targetAngle, speed);
+    this.setGunDegree(targetAngle);
+    const sc = this.impulseScan();
+    if (sc && sc.target === "non-tank" && !sc.isBase && sc.distance < 1.5) {
+      this.mode = nextMode;
+      this._navEvade = null;
+      this._navTimer = 0;
+      this.say("Стена. → " + nextMode);
+    }
+  }
+
+  // Финальная фаза: едем на восток, башня смотрит на юг
+  _doScanEast() {
+    this._nav(0, 0.8);
+    this.setGunDegree(90); // юг — где враг (если шли к северу)
+    const sc = this.impulseScan();
+    if (sc && sc.isBase && sc.isHostile) {
+      this.say("База! Д=" + Math.round(sc.distance));
+      if (sc.distance <= SD_RADIUS_EDGE * 0.85) {
+        this.say("💥 САМОПОДРЫВ!");
+        this.selfDestruct();
+        return;
+      }
+    }
+    // Дошли до края — разворот и едем обратно
+    this.setGunDegree(0);
     const fwd = this.impulseScan();
-    if (fwd && fwd.target === "non-tank" && fwd.distance < 1.5) {
-      this._navEvade = (moveDir + 180) % 360;
-      this._navTimer = 5;
+    if (fwd && fwd.target === "non-tank" && !fwd.isBase && fwd.distance < 1.5) {
+      this._navEvade = 180;
+      this._navTimer = 20;
     }
   }
 
@@ -125,14 +94,19 @@ class Scout extends Tank {
     const work = this._navEvade ?? targetAngle;
     this.setGunDegree(work);
     const sc = this.impulseScan();
-    if (sc && sc.target === "non-tank" && sc.distance < 1.8) {
+    if (sc && sc.target === "non-tank" && !sc.isBase && sc.distance < 1.8) {
       let found = null;
       for (let d = 30; d <= 150 && !found; d += 30)
         for (const s of [-1, 1]) {
           const a = (((targetAngle + s * d) % 360) + 360) % 360;
           this.setGunDegree(a);
           const s2 = this.impulseScan();
-          if (!s2 || s2.target !== "non-tank" || s2.distance >= 1.8) {
+          if (
+            !s2 ||
+            s2.isBase ||
+            s2.target !== "non-tank" ||
+            s2.distance >= 1.8
+          ) {
             found = a;
             break;
           }

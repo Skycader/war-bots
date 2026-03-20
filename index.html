@@ -1995,6 +1995,7 @@
                 : cfg.assault
                   ? cfg.pturAmmo
                   : 999,
+
             // Порядковый номер среди живых союзников (сортировка по id, начиная с 0)
             // Стабилен пока живёт — при гибели союзника номера не пересчитываются
             teamIndex: this._game
@@ -2052,6 +2053,7 @@
                 isHostile: res.isEnemy,
                 isDead: res.isDead || false,
                 inSmoke: res.inSmoke,
+                isBase: res.isBase || false,
                 targetSpeed: res.smart?.targetSpeed ?? null,
                 targetAngle: res.smart?.targetAngle ?? null,
               }
@@ -2747,7 +2749,8 @@
         updateAI(dt, game) {
           this.update(dt, game);
           // Обработка колбэков (облучение)
-          if (this.irradiated && this.irradiatedBy)
+          if (this.irradiated && this.irradiatedBy) {
+            const _hostile = this.isEnemy(this.irradiatedBy);
             this.onLaserDetection([
               {
                 degree: normDeg(
@@ -2756,9 +2759,10 @@
                     this.irradiatedBy.x - this.x,
                   ),
                 ),
-                hostile: true,
+                hostile: _hostile,
               },
             ]);
+          }
           if (this._api_damaged) {
             this.onDamage();
             this._api_damaged = false;
@@ -3999,6 +4003,67 @@
               ctx.fill();
             }
             ctx.setLineDash([]);
+            ctx.restore();
+          }
+
+          // СПО-индикаторы облучения вокруг танка игрока
+          if (
+            g.player &&
+            g.player.alive &&
+            g.player.irradiated &&
+            g.player.irradiatedBy
+          ) {
+            const p = g.player;
+            const px = p.x * CELL,
+              py = p.y * CELL;
+            const src = p.irradiatedBy;
+            const angle = Math.atan2(src.y - p.y, src.x - p.x);
+            const R = CELL * 1.6; // радиус кольца вокруг танка
+            const arrowX = px + Math.cos(angle) * R;
+            const arrowY = py + Math.sin(angle) * R;
+            const blink = Math.floor(Date.now() / 180) % 2 === 0;
+
+            ctx.save();
+            // Пульсирующее кольцо
+            ctx.globalAlpha = blink ? 0.85 : 0.45;
+            ctx.strokeStyle = "#ff2222";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(px, py, R, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Стрелка-указатель в направлении источника
+            ctx.globalAlpha = blink ? 0.95 : 0.6;
+            ctx.fillStyle = "#ff2222";
+            ctx.shadowColor = "#ff0000";
+            ctx.shadowBlur = 8;
+            ctx.save();
+            ctx.translate(arrowX, arrowY);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(8, 0);
+            ctx.lineTo(-5, -5);
+            ctx.lineTo(-5, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // Дистанция до источника
+            const dToSrc = Math.sqrt((src.x - p.x) ** 2 + (src.y - p.y) ** 2);
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = "#ff4444";
+            ctx.font = "bold 8px Share Tech Mono";
+            ctx.textAlign = "center";
+            ctx.shadowBlur = 4;
+            ctx.fillText(
+              "⚠ " + Math.round(normDeg((angle * 180) / Math.PI)) + "°",
+              arrowX,
+              arrowY - (blink ? 12 : 10),
+            );
+            ctx.textAlign = "left";
+            ctx.shadowBlur = 0;
             ctx.restore();
           }
 
@@ -5792,7 +5857,6 @@
     <script src="bots/Saboteur.js"></script>
     <script src="bots/Scout.js"></script>
     <script src="bots/Guardian.js"></script>
-    <script src="bots/Scout.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>
