@@ -1294,6 +1294,16 @@
       // Увеличь до 3-4 для более разрушительных взрывов.
       const PTUR_SPLASH_EDGE = 2.2;
 
+      // ── Самоподрыв танка ────────────────────────────────────────────────────
+      // Урон = PTUR урон × SELF_DESTRUCT_DMG_MULT (в центре взрыва)
+      const SELF_DESTRUCT_DMG_MULT = 10;
+      // Радиус полного урона = PTUR_SPLASH_FULL × SELF_DESTRUCT_RADIUS_MULT
+      const SELF_DESTRUCT_RADIUS_MULT = 3;
+      // Итого: радиусы зон (в клетках)
+      const SD_RADIUS_FULL = PTUR_SPLASH_FULL * SELF_DESTRUCT_RADIUS_MULT; // 1.5 кл
+      const SD_RADIUS_HALF = PTUR_SPLASH_HALF * SELF_DESTRUCT_RADIUS_MULT; // 3.6 кл
+      const SD_RADIUS_EDGE = PTUR_SPLASH_EDGE * SELF_DESTRUCT_RADIUS_MULT; // 6.6 кл
+
       // Нормализация угла: радианы → градусы 0..360
       // Система координат canvas: 0=вправо, 90=вниз, 180=влево, 270=вверх
       // Именно эти значения и отдаём в Bot API — без инверсии, round-trip безопасно
@@ -2026,6 +2036,9 @@
         fireSmoke() {
           return this.throwSmoke(this._game);
         }
+        selfDestruct() {
+          return this._doSelfDestruct(this._game);
+        }
 
         // Лазер
         impulseScan() {
@@ -2520,6 +2533,53 @@
           }
 
           return res;
+        }
+
+        _doSelfDestruct(game) {
+          if (!game || !this.alive) return false;
+          const dmgBase = (cfg.pturDmg || 200) * SELF_DESTRUCT_DMG_MULT;
+          // Взрыв — урон всем в радиусе
+          for (const tank of game.tanks) {
+            if (tank === this) continue;
+            if (!tank.alive && !tank.isWreck) continue;
+            if (tank.isBaseObj && this.isAlly(tank)) continue; // своя база не страдает
+            const d = dist({ x: this.x, y: this.y }, { x: tank.x, y: tank.y });
+            let dmg = 0;
+            if (d <= SD_RADIUS_FULL) dmg = dmgBase;
+            else if (d <= SD_RADIUS_HALF) dmg = dmgBase * 0.5;
+            else if (d <= SD_RADIUS_EDGE) dmg = dmgBase * 0.15;
+            if (dmg > 0) tank.takeHPDamage(dmg, game, this);
+          }
+          // Серия мощных взрывов
+          for (let i = 0; i < 5; i++) {
+            const ox = (Math.random() - 0.5) * SD_RADIUS_FULL * 2;
+            const oy = (Math.random() - 0.5) * SD_RADIUS_FULL * 2;
+            game.explosions.push(
+              new Explosion((this.x + ox) * CELL, (this.y + oy) * CELL),
+            );
+          }
+          playExplosion(calcPanForPlayer(this.x, this.y, game));
+          playDetonation(calcPanForPlayer(this.x, this.y, game));
+          // Осколки
+          if (game.wallParticles) {
+            for (let i = 0; i < 20; i++) {
+              const a = Math.random() * Math.PI * 2;
+              const spd = 3 + Math.random() * 8;
+              game.wallParticles.push({
+                x: this.x,
+                y: this.y,
+                vx: Math.cos(a) * spd,
+                vy: Math.sin(a) * spd,
+                type: "debris",
+                life: 5 + Math.random() * 5,
+                maxLife: 10,
+                color: this.color || "#888",
+              });
+            }
+          }
+          // Уничтожаем себя
+          this.destroy(game, null);
+          return true;
         }
 
         shootPTUR(game) {
@@ -5730,7 +5790,9 @@
     <script src="bots/Specter.js"></script>
     <script src="bots/TeamHunter.js"></script>
     <script src="bots/Saboteur.js"></script>
+    <script src="bots/Scout.js"></script>
     <script src="bots/Guardian.js"></script>
+    <script src="bots/Scout.js"></script>
     <script src="bots/index.js"></script>
   </body>
 </html>

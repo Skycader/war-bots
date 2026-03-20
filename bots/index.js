@@ -15,6 +15,7 @@ const botClasses = [
   TeamHunter,
   Saboteur,
   Guardian,
+  Scout,
 ];
 
 // ═══════════════════ ПРЕСЕТЫ КОМАНД ═══════════════════
@@ -80,6 +81,14 @@ battleTeamsPresets = [
     desc: "Режим Штурм. 4 Saboteur против 4 Guardian",
     teams: {
       Saboteurs: { bot: Saboteur, count: 4 },
+      Guardians: { bot: Guardian, count: 4 },
+    },
+  },
+  {
+    name: "⚔ Штурм: Шахеды vs Защитники",
+    desc: "Режим Штурм. 4 Scout против 4 Guardian",
+    teams: {
+      Scouts: { bot: Scout, count: 4 },
       Guardians: { bot: Guardian, count: 4 },
     },
   },
