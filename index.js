@@ -2,7 +2,7 @@
 // Единственный <script> тег в HTML. Загружает ботов по очереди,
 // затем инициализирует пресеты и применяет сохранённый.
 
-const BOTS = ["bots/Scanner.js"];
+const BOTS = ["bots/Scanner.js", "bots/Patrol.js", "bots/Tracker.js"];
 
 // Загружаем скрипты по одному (порядок важен — все наследуют Tank)
 function loadScripts(paths, onDone) {
@@ -25,7 +25,7 @@ loadScripts(BOTS, () => {
   // Все классы ботов загружены — инициализируем пресеты
 
   // Все доступные боты для режима "Все боты" (без пресета)
-  botClasses = [Scanner];
+  botClasses = [Tracker];
 
   battleTeamsPresets = [
     {

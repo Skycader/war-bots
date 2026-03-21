@@ -745,9 +745,24 @@
           <div class="setting-row">
             <label>Лазер:</label>
             <select id="cfgSmartLaser">
-              <option value="0">Обычный</option>
-              <option value="1">Умный (скорость/угол)</option>
-              <option value="2">Умный + стоячие</option>
+              <option
+                value="0"
+                title="Видит только дистанцию. Не различает танк и стену. Наводка по звуку."
+              >
+                Поколение I (Ранний)
+              </option>
+              <option
+                value="1"
+                title="Эффект Доплера: видит движущиеся цели. Нотчинг ±15° от перпендикуляра — танк невидим. Стоячие не видит."
+              >
+                Поколение II (Поздний)
+              </option>
+              <option
+                value="2"
+                title="ЛИДАР: альбедо поверхностей. Видит всех — движущихся, стоячих. Нотчинг не помогает."
+              >
+                Поколение III (ЛИДАР)
+              </option>
             </select>
           </div>
           <div class="setting-row">
@@ -1169,7 +1184,7 @@
         cfgSmartPtur: true, // Умный ПТУР — взрыв в точке сближения, игнорирует стены (true/false)
         cfgWrecks: true, // Трупы — остовы остаются на карте и блокируют проезд (true/false)
         cfgBaseZone: true, // Рисовать зону хила/пополнения у базы (true/false)
-        cfgSmartLaser: "2", // Лазер — '0'=обычный, '1'=умный (скорость/угол), '2'=умный+стоячие
+        cfgSmartLaser: "2", // Лазер — '0'=Ранний, '1'=Доплер, '2'=ЛИДАР
         cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
         cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
         cfgRadioWaves: true, // Визуализация радиоволн — кольца при broadcast (true/false)
@@ -1251,11 +1266,14 @@
 
       // Время жизни дымового облака, сек.
       // Пример: SMOKE_DURATION=8 → дым рассеивается через 8 сек после разворачивания.
-      const SMOKE_DURATION = 8;
+      const SMOKE_DURATION = 12; // полное время жизни дыма (сек)
+      const SMOKE_GROW_TIME = 3.0; // секунд на разворачивание до max радиуса
+      const SMOKE_MAX_RADIUS = 2.0; // максимальный радиус облака (клетки)
+      const SMOKE_GRENADE_SPD = 5.0; // скорость гранаты (клетки/сек)
+      const SMOKE_GRENADE_DIST = 2.5; // дальность полёта (клетки)
+      const DOPPLER_NOTCH_DEG = 15; // ±° от перпендикуляра = невидимость для Доплера
 
       // Задержка между командой «бросить дым» и появлением облака, сек.
-      // Пример: SMOKE_DEPLOY_DELAY=2.0 → граната летит 2 сек, бросивший успевает отъехать.
-      const SMOKE_DEPLOY_DELAY = 0.5;
 
       // Радиус корпуса танка для коллизий со стенами и другими танками, в клетках.
       // Пример: TANK_RADIUS=0.32 → диаметр ~0.64 клетки, танк занимает чуть меньше одной клетки.
@@ -1363,9 +1381,18 @@
         constructor(x, y) {
           this.x = x;
           this.y = y;
-          this.radius = 1.5;
           this.life = SMOKE_DURATION;
           this.maxLife = SMOKE_DURATION;
+          this.growing = true;
+        }
+        get radius() {
+          const age = this.maxLife - this.life;
+          if (age < SMOKE_GROW_TIME)
+            return SMOKE_MAX_RADIUS * (age / SMOKE_GROW_TIME); // растёт
+          const fadeStart = SMOKE_DURATION - SMOKE_GROW_TIME;
+          if (this.life < SMOKE_GROW_TIME)
+            return SMOKE_MAX_RADIUS * (this.life / SMOKE_GROW_TIME); // тает
+          return SMOKE_MAX_RADIUS; // максимум
         }
         update(dt) {
           this.life -= dt;
@@ -1375,6 +1402,53 @@
         }
         contains(x, y) {
           return Math.hypot(x - this.x, y - this.y) < this.radius;
+        }
+      }
+
+      // Летящая дымовая граната
+      class SmokeGrenade {
+        constructor(x, y, angle, game) {
+          this.x = x;
+          this.y = y;
+          this.angle = angle;
+          this.dist = 0;
+          this.alive = true;
+          this.vx = Math.cos(angle) * SMOKE_GRENADE_SPD;
+          this.vy = Math.sin(angle) * SMOKE_GRENADE_SPD;
+        }
+        update(dt, game) {
+          if (!this.alive) return;
+          const step = SMOKE_GRENADE_SPD * dt;
+          const nx = this.x + this.vx * dt;
+          const ny = this.y + this.vy * dt;
+          this.dist += step;
+          // Блокируется стенами
+          if (game.isBlocked(nx, ny) || this.dist >= SMOKE_GRENADE_DIST) {
+            this.alive = false;
+            game.smokes.push(new SmokeCloud(this.x, this.y));
+            // Звук — глухой хлопок
+            playSmokeExplosion(calcPanForPlayer(this.x, this.y, game));
+            // Искры — короткие белые/оранжевые брызги
+            if (game.wallParticles) {
+              for (let i = 0; i < 8; i++) {
+                const a = Math.random() * Math.PI * 2,
+                  spd = rnd(1.5, 4);
+                game.wallParticles.push({
+                  x: this.x,
+                  y: this.y,
+                  vx: Math.cos(a) * spd,
+                  vy: Math.sin(a) * spd,
+                  type: "spark",
+                  life: 0.15 + Math.random() * 0.2,
+                  maxLife: 0.35,
+                  color: `hsl(${Math.random() < 0.5 ? 45 : 0},100%,80%)`,
+                });
+              }
+            }
+            return;
+          }
+          this.x = nx;
+          this.y = ny;
         }
       }
 
@@ -2023,9 +2097,8 @@
           this.hp = 100;
           this.pturCD = 0;
           this.smokeCD = 0;
-          this.smokeCount = 3;
-          this.smokePending = false;
-          this.smokePendingTimer = 0;
+          this.smokeCount = 6;
+          // дымовые гранаты теперь летящие объекты — smokePending не нужен
           this.laserContinuous = false;
           this.laserResult = null;
           this.renderLaser = null;
@@ -2113,7 +2186,7 @@
             beingLasered: this.irradiated,
             pturReady: this.pturCD <= 0,
             pturCooldown: Math.max(0, this.pturCD),
-            smokeReady: this.smokeCD <= 0 && this.smokeCount > 0,
+            smokeReady: this.smokeCD <= 0 && this.smokeCount >= 2,
             smokeCooldown: Math.max(0, this.smokeCD),
             smokeCount: this.smokeCount,
             pturAmmo:
@@ -2261,15 +2334,6 @@
             });
 
           // Задержанный дым
-          if (this.smokePending) {
-            this.smokePendingTimer -= dt;
-            if (this.smokePendingTimer <= 0) {
-              this.smokePending = false;
-              game.smokes.push(new SmokeCloud(this.x, this.y));
-              game.log(`${this.label}: дымовая граната!`, "warn");
-            }
-          }
-
           // Желаемая скорость (API)
           if (this._desiredSpeed !== undefined) {
             const diff = this._desiredSpeed - this.speed;
@@ -2780,17 +2844,13 @@
         }
 
         throwSmoke(game) {
-          if (
-            !game ||
-            this.smokeCD > 0 ||
-            this.smokeCount <= 0 ||
-            this.smokePending
-          )
-            return false;
+          if (!game || this.smokeCD > 0 || this.smokeCount < 2) return false;
           this.smokeCD = cfg.smokeCD;
-          this.smokeCount--;
-          this.smokePending = true;
-          this.smokePendingTimer = SMOKE_DEPLOY_DELAY;
+          this.smokeCount -= 2;
+          // 2 гранаты летят из башни с разбросом ±5°
+          const a = this.turretAngle;
+          game.grenades.push(new SmokeGrenade(this.x, this.y, a - 0.087, game));
+          game.grenades.push(new SmokeGrenade(this.x, this.y, a + 0.087, game));
           return true;
         }
 
@@ -3165,6 +3225,7 @@
           this.radioWaves = [];
           this.wallParticles = [];
           this.bases = [];
+          this.grenades = [];
           this.sounds = [];
           this.logs = [];
           this.running = true;
@@ -3597,13 +3658,14 @@
                 // Обычный лазер: стоячий живой танк воспринимается как препятствие (стена)
                 // Умный лазер с опознаванием стоячих — всегда видит танк как танк
                 const isStill = !isDead && Math.abs(tank.speed) < 0.15;
-                // irradiated выставляем ВСЕГДА — СПО цели должно сработать независимо от режима лазера
+                // irradiated выставляем ВСЕГДА — СПО цели срабатывает независимо от поколения
                 if (!isDead) {
                   tank.irradiated = true;
                   tank.irradiatedBy = fromTank;
                 }
-                if (isStill && !cfg.smartLaserStill) {
-                  // Обычный лазер + стоячий танк: стрелок видит стену, но цель всё равно облучена
+
+                // Поколение 0 (Ранний): вообще не различает танк и стену
+                if (cfg.laserGen === 0) {
                   return {
                     dist: d,
                     isEnemy: false,
@@ -3614,9 +3676,46 @@
                     isDead: false,
                   };
                 }
+
+                // Поколение 1 (Доплер): не видит стоячих и нотчингующих (перпендикулярное движение)
+                if (cfg.laserGen === 1) {
+                  if (isStill) {
+                    return {
+                      dist: d,
+                      isEnemy: false,
+                      hitX: rx,
+                      hitY: ry,
+                      inSmoke: inSmk,
+                      target: null,
+                      isDead: false,
+                    };
+                  }
+                  // Нотч: радиальная скорость = speed * cos(угол_между_курсом_и_лучом)
+                  const laserAngle = Math.atan2(
+                    tank.y - fromTank.y,
+                    tank.x - fromTank.x,
+                  );
+                  const relAngle = normAngle(tank.angle - laserAngle);
+                  // Проекция скорости на луч — если близко к 0 (перпендикулярно) — невидим
+                  const radialSpd = Math.abs(tank.speed * Math.cos(relAngle));
+                  if (radialSpd < 0.5) {
+                    // < ~0.5 кл/сек радиальной скорости = нотч
+                    return {
+                      dist: d,
+                      isEnemy: false,
+                      hitX: rx,
+                      hitY: ry,
+                      inSmoke: inSmk,
+                      target: null,
+                      isDead: false,
+                    };
+                  }
+                }
+
+                // Поколение 2 (ЛИДАР): видит всех
                 const hostile = !inSmk && !isDead && fromTank.isEnemy(tank);
                 const smartInfo =
-                  cfg.smartLaser && !isDead
+                  cfg.laserGen >= 1 && !isDead
                     ? {
                         targetSpeed: tank.speed,
                         targetAngle: normDeg(tank.angle),
@@ -3651,6 +3750,10 @@
           this.smokes = this.smokes.filter((s) => {
             s.update(dt);
             return s.alive();
+          });
+          this.grenades = this.grenades.filter((g) => {
+            g.update(dt, this);
+            return g.alive;
           });
           for (const d of this.debris) d.update(dt);
           for (const b of this.bases) if (b.alive) b.update(dt, this);
@@ -4038,6 +4141,62 @@
               ctx.lineWidth = 1;
               ctx.stroke();
             }
+          }
+
+          // Летящие дымовые гранаты
+          for (const gr of g.grenades || []) {
+            if (!gr.alive) continue;
+            const gx = gr.x * CELL,
+              gy = gr.y * CELL;
+            ctx.save();
+            ctx.translate(gx, gy);
+            ctx.rotate(gr.angle);
+
+            // ── Огненный трассер позади ──────────────────────────
+            for (let i = 4; i >= 1; i--) {
+              const dist = i * 3.5;
+              const r = 3 - i * 0.5;
+              ctx.globalAlpha = 0.9 - i * 0.15;
+              ctx.fillStyle = `hsl(${40 - i * 8},100%,${65 - i * 8}%)`;
+              ctx.shadowColor = "#ff8800";
+              ctx.shadowBlur = 6;
+              ctx.beginPath();
+              ctx.arc(-dist, 0, r, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            // ── Корпус: зелёный цилиндр ──────────────────────────
+            ctx.globalAlpha = 1;
+            // Основа — тёмно-зелёный
+            ctx.fillStyle = "#3d5c3d";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Блик сверху (объём)
+            const shine = ctx.createLinearGradient(0, -4, 0, 4);
+            shine.addColorStop(0, "rgba(130,180,110,0.7)");
+            shine.addColorStop(0.4, "rgba(70,110,60,0)");
+            ctx.fillStyle = shine;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Полоска маркировки — жёлтая (дымовой тип)
+            ctx.fillStyle = "rgba(255,220,50,0.9)";
+            ctx.fillRect(-1, -4, 3, 8);
+            // Носовой колпак
+            ctx.fillStyle = "#2a4a2a";
+            ctx.beginPath();
+            ctx.ellipse(7, 0, 3, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Контур
+            ctx.strokeStyle = "#1a3a1a";
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
           }
 
           // Дым
@@ -4497,8 +4656,12 @@
             ctx.beginPath();
             ctx.arc(0, 0, sz * 0.3, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = tank.isPlayer() ? "#009944" : "#aa3300";
-            ctx.fillRect(0, -sz * 0.08, sz * 0.5, sz * 0.16);
+            // Ствол: начинается у края башни, выходит за корпус
+            ctx.fillStyle = tank.isPlayer() ? "#009944" : "#773300";
+            ctx.fillRect(sz * 0.25, -sz * 0.065, sz * 0.65, sz * 0.13); // ствол выступает за корпус
+            // Бронировка у основания ствола
+            ctx.fillStyle = tank.isPlayer() ? "#00cc66" : tank.color;
+            ctx.fillRect(sz * 0.22, -sz * 0.085, sz * 0.12, sz * 0.17);
             ctx.restore();
             if (tank.irradiated) {
               ctx.save();
@@ -5139,6 +5302,41 @@
           2.0,
           0.12,
         );
+      }
+
+      function playSmokeExplosion(pan) {
+        ensureAudio();
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const panner = audioCtx.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, pan || 0));
+        panner.connect(audioCtx.destination);
+        // Глухой хлопок
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(120, t);
+        osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+        osc.connect(gain);
+        gain.connect(panner);
+        osc.start(t);
+        osc.stop(t + 0.2);
+        // Шипение дыма
+        const bufSize = Math.floor(audioCtx.sampleRate * 0.4);
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++)
+          data[i] = (Math.random() * 2 - 1) * 0.15;
+        const src = audioCtx.createBufferSource();
+        const ng = audioCtx.createGain();
+        src.buffer = buf;
+        ng.gain.setValueAtTime(0.2, t + 0.05);
+        ng.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        src.connect(ng);
+        ng.connect(panner);
+        src.start(t + 0.05);
       }
 
       function playWallHit(pan = 0) {
@@ -5841,6 +6039,7 @@
           smartPtur: document.getElementById("cfgSmartPtur").checked,
           wrecks: document.getElementById("cfgWrecks").checked,
           baseZone: document.getElementById("cfgBaseZone")?.checked !== false,
+          laserGen: parseInt(document.getElementById("cfgSmartLaser").value), // 0=early,1=doppler,2=lidar
           smartLaser:
             parseInt(document.getElementById("cfgSmartLaser").value) >= 1,
           smartLaserStill:
