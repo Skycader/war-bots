@@ -1941,6 +1941,15 @@
       function makeBotProxy(bot) {
         return new Proxy(bot, {
           get(target, prop) {
+            // Приватные методы бота (начинаются с _) — разрешаем всегда
+            // Это методы самого класса-бота, не движка
+            if (
+              typeof prop === "string" &&
+              prop.startsWith("_") &&
+              typeof target[prop] === "function"
+            ) {
+              return target[prop].bind(target);
+            }
             // Разрешаем только белый список
             if (BOT_API_WHITELIST.has(prop)) {
               const val = target[prop];
@@ -4146,56 +4155,23 @@
           // Летящие дымовые гранаты
           for (const gr of g.grenades || []) {
             if (!gr.alive) continue;
-            const gx = gr.x * CELL,
-              gy = gr.y * CELL;
             ctx.save();
-            ctx.translate(gx, gy);
+            ctx.translate(gr.x * CELL, gr.y * CELL);
             ctx.rotate(gr.angle);
-
-            // ── Огненный трассер позади ──────────────────────────
-            for (let i = 4; i >= 1; i--) {
-              const dist = i * 3.5;
-              const r = 3 - i * 0.5;
-              ctx.globalAlpha = 0.9 - i * 0.15;
-              ctx.fillStyle = `hsl(${40 - i * 8},100%,${65 - i * 8}%)`;
-              ctx.shadowColor = "#ff8800";
-              ctx.shadowBlur = 6;
-              ctx.beginPath();
-              ctx.arc(-dist, 0, r, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.shadowBlur = 0;
-
-            // ── Корпус: зелёный цилиндр ──────────────────────────
+            // Корпус — маленький цилиндр 3×1.5 px
             ctx.globalAlpha = 1;
-            // Основа — тёмно-зелёный
-            ctx.fillStyle = "#3d5c3d";
+            ctx.fillStyle = "#4a6a40";
             ctx.beginPath();
-            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 3, 1.5, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Блик сверху (объём)
-            const shine = ctx.createLinearGradient(0, -4, 0, 4);
-            shine.addColorStop(0, "rgba(130,180,110,0.7)");
-            shine.addColorStop(0.4, "rgba(70,110,60,0)");
-            ctx.fillStyle = shine;
+            // Жёлтая полоска — маркировка дымового боеприпаса
+            ctx.fillStyle = "rgba(255,210,30,0.95)";
+            ctx.fillRect(-0.3, -1.5, 1.2, 3);
+            // Носик
+            ctx.fillStyle = "#223322";
             ctx.beginPath();
-            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(3, 0, 1.2, 1.5, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Полоска маркировки — жёлтая (дымовой тип)
-            ctx.fillStyle = "rgba(255,220,50,0.9)";
-            ctx.fillRect(-1, -4, 3, 8);
-            // Носовой колпак
-            ctx.fillStyle = "#2a4a2a";
-            ctx.beginPath();
-            ctx.ellipse(7, 0, 3, 4, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Контур
-            ctx.strokeStyle = "#1a3a1a";
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, 7, 4, 0, 0, Math.PI * 2);
-            ctx.stroke();
-
             ctx.restore();
           }
 
@@ -4474,8 +4450,8 @@
             }
           }
 
-          // Частицы ударов о стену (осколки и искры)
-          if (g.wallParticles) {
+          // Частицы ударов о стену (осколки и искры) — только в режиме all
+          if (g.wallParticles && cfg.visMode === "all") {
             for (const p of g.wallParticles) {
               const fr = Math.max(0, p.life / p.maxLife);
               ctx.save();
