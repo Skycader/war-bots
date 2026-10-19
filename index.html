@@ -310,6 +310,18 @@
       </div>
     </div>
 
+    <div id="exitModal">
+      <div id="exitModalBox">
+        <h3>ВЫЙТИ В МЕНЮ?</h3>
+        <p>Текущий бой будет прекращён.</p>
+        <div class="exit-btns">
+          <button id="exitModalYes">ВЫЙТИ</button>
+          <button id="exitModalNo">ОТМЕНА</button>
+        </div>
+        <div class="exit-hint">Enter — выйти · Esc — отмена</div>
+      </div>
+    </div>
+
     <div id="gameContainer">
       <div id="canvasWrap">
         <canvas id="gameCanvas"></canvas>
@@ -507,6 +519,11 @@
                 title="Замедлить до выстрела"
               >
                 ⏵ до выстрела
+              </button>
+            </div>
+            <div style="display: flex; width: 100%">
+              <button id="btnExit" style="flex: 1" title="Esc">
+                ← В МЕНЮ [Esc]
               </button>
             </div>
           </div>

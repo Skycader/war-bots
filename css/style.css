@@ -651,3 +651,69 @@
   #soundModalClose:hover {
     background: #fff;
   }
+
+  #exitModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 600;
+    align-items: center;
+    justify-content: center;
+  }
+  #exitModal.open {
+    display: flex;
+  }
+  #exitModalBox {
+    background: #0d150d;
+    border: 1px solid var(--amber);
+    padding: 24px 32px;
+    min-width: 300px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+  }
+  #exitModalBox h3 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.95em;
+    color: var(--amber);
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+  #exitModalBox p {
+    color: #88bbaa;
+    font-size: 0.85em;
+    margin-bottom: 18px;
+  }
+  .exit-btns {
+    display: flex;
+    gap: 10px;
+  }
+  .exit-btns button {
+    flex: 1;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.8em;
+    letter-spacing: 2px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border: 1px solid var(--green);
+    background: transparent;
+    color: var(--green);
+  }
+  .exit-btns button:hover {
+    background: #1a3a1a;
+  }
+  #exitModalYes {
+    background: var(--red);
+    border-color: var(--red);
+    color: #000;
+  }
+  #exitModalYes:hover {
+    background: #ff5570;
+  }
+  .exit-hint {
+    margin-top: 12px;
+    font-size: 0.7em;
+    color: #446644;
+    letter-spacing: 1px;
+  }

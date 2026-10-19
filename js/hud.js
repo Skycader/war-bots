@@ -396,3 +396,46 @@ function onPTURFired() {
   if (ffShotActive) setTimeScale(0.1); // только замедляем, галочку не трогаем
 }
 
+// ═══════════════════ ВЫХОД В МЕНЮ ═══════════════════
+// Кнопка «В МЕНЮ» и Esc открывают подтверждение; пока оно открыто, бой на паузе.
+let _exitPrevPaused = false;
+function isExitModalOpen() {
+  return document.getElementById("exitModal").classList.contains("open");
+}
+function openExitModal() {
+  if (isExitModalOpen()) return;
+  _exitPrevPaused = paused;
+  paused = true;
+  document.getElementById("exitModal").classList.add("open");
+}
+function closeExitModal() {
+  if (!isExitModalOpen()) return;
+  document.getElementById("exitModal").classList.remove("open");
+  paused = _exitPrevPaused;
+}
+function confirmExit() {
+  document.getElementById("exitModal").classList.remove("open");
+  paused = false;
+  document.getElementById("btnPause").textContent = "⏸";
+  backToMenu();
+}
+document.getElementById("btnExit").onclick = openExitModal;
+document.getElementById("exitModalYes").onclick = confirmExit;
+document.getElementById("exitModalNo").onclick = closeExitModal;
+document.getElementById("exitModal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) closeExitModal();
+});
+window.addEventListener("keydown", (e) => {
+  // Только во время боя (контейнер игры виден)
+  if (document.getElementById("gameContainer").style.display === "none")
+    return;
+  if (document.getElementById("gameContainer").offsetParent === null) return;
+  if (e.code === "Escape") {
+    e.preventDefault();
+    if (isExitModalOpen()) closeExitModal();
+    else openExitModal();
+  } else if (e.code === "Enter" && isExitModalOpen()) {
+    e.preventDefault();
+    confirmExit();
+  }
+});
