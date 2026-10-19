@@ -532,11 +532,9 @@ class Game {
     return null;
   }
 
-  update(dt) {
-    if (!this.running) return;
-    this.sounds = [];
-    this.radioMessages = [];
-    this._radioMsgCount = 0; // счётчик broadcast за тик
+  // Визуальные эффекты живут и после конца матча (взрывы, дым, обломки, огонь),
+  // иначе кадр «замирает» на середине анимации
+  _updateEffects(dt) {
     this.radioWaves = this.radioWaves.filter((w) => {
       w.r += SOUND_RANGE * 1.5 * 0.1;
       w.life -= 0.1;
@@ -551,7 +549,6 @@ class Game {
       return g.alive;
     });
     for (const d of this.debris) d.update(dt);
-    for (const b of this.bases) if (b.alive) b.update(dt, this);
     this.wreckFires = this.wreckFires.filter((f) => {
       f.update(dt);
       return f.alive();
@@ -564,13 +561,39 @@ class Game {
       p.life -= dt;
       return p.life > 0;
     });
-    this.pturs = this.pturs.filter((p) => {
-      p.update(dt, this);
-      return p.alive;
-    });
     this.explosions = this.explosions.filter((e) => {
       e.update(dt);
       return e.alive();
+    });
+  }
+
+  // Матч закончился: танки замирают без звука двигателя/лазера/облучения
+  _onMatchEnd() {
+    this.pturs = [];
+    for (const t of this.tanks) {
+      t.speed = 0;
+      t.laserContinuous = false;
+      t.laserResult = null;
+      t.renderLaser = null;
+      t.irradiated = false;
+      t.irradiatedBy = null;
+      if (t.isPlayer()) t.gear = 0;
+    }
+  }
+
+  update(dt) {
+    if (!this.running) {
+      this._updateEffects(dt);
+      return;
+    }
+    this.sounds = [];
+    this.radioMessages = [];
+    this._radioMsgCount = 0; // счётчик broadcast за тик
+    this._updateEffects(dt);
+    for (const b of this.bases) if (b.alive) b.update(dt, this);
+    this.pturs = this.pturs.filter((p) => {
+      p.update(dt, this);
+      return p.alive;
     });
     // Сброс irradiated перед проходом
     for (const t of this.tanks) {
@@ -717,6 +740,7 @@ class Game {
           const allDead = eg.tanks.every((t) => !t.alive);
           if (baseDestroyed || allDead) {
             this.running = false;
+            this._onMatchEnd();
             this._assaultWinner = team;
             this._assaultLoser = et;
             this._assaultReason = baseDestroyed ? "база" : "все танки";
@@ -745,6 +769,7 @@ class Game {
     if (!gameOver) return;
 
     this.running = false;
+    this._onMatchEnd();
     this.winner = alive.length === 1 ? alive[0] : null;
 
     setTimeout(() => {

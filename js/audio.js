@@ -105,6 +105,12 @@ function calcPanForPlayer(x, y, game) {
 // Вызывается каждый кадр — обновляет позиционные звуки двигателей
 function updateEngineSoundsForPlayer() {
   if (!gameInstance || !audioCtx) return;
+  // Матч окончен или пауза: мир стоит, звуки двигателей замолкают
+  // (иначе последний тон зацикливается)
+  if (!gameInstance.running || paused) {
+    stopAllEngineSounds();
+    return;
+  }
   const player = gameInstance.player;
   // Собственный двигатель игрока — всегда центр, громкость по скорости
   if (player && player.alive) {
@@ -121,7 +127,12 @@ function updateEngineSoundsForPlayer() {
   // Двигатели других танков — позиционируем относительно игрока
   if (!player) return;
   for (const tank of gameInstance.tanks) {
-    if (tank === player || !tank.alive) continue;
+    if (tank === player) continue;
+    if (!tank.alive) {
+      // Уничтоженный танк: иначе его двигатель звучит вечно
+      stopEngineSound("bot_" + tank.id);
+      continue;
+    }
     if (Math.abs(tank.speed) < 0.3) {
       stopEngineSound("bot_" + tank.id);
       continue;
@@ -221,6 +232,14 @@ function playDetonation(pan = 0) {
   const vol = sndVol.master * sndVol.explosion;
   const pv = Math.max(-1, Math.min(1, pan));
 
+  // Буферы одинаковы для всех взрывов — генерируем один раз на частоту
+  // (синтез ~5 секунд звука на каждую детонацию подвешивал кадр,
+  // особенно когда в конце боя гибнут сразу несколько танков)
+  const cache = (playDetonation._cache = playDetonation._cache || {});
+  if (cache._sr !== sr) {
+    for (const k of Object.keys(cache)) delete cache[k];
+    cache._sr = sr;
+  }
   function layer(
     dur,
     fillFn,
@@ -231,8 +250,13 @@ function playDetonation(pan = 0) {
     startDelay = 0,
   ) {
     const n = Math.floor(sr * dur);
-    const buf = audioCtx.createBuffer(1, n, sr);
-    fillFn(buf.getChannelData(0), n);
+    const key = "layer_" + dur + "_" + filterType + "_" + freq;
+    let buf = cache[key];
+    if (!buf) {
+      buf = audioCtx.createBuffer(1, n, sr);
+      fillFn(buf.getChannelData(0), n);
+      cache[key] = buf;
+    }
     const src = audioCtx.createBufferSource();
     const flt = audioCtx.createBiquadFilter();
     flt.type = filterType;
@@ -259,15 +283,19 @@ function playDetonation(pan = 0) {
   // Бас-удар: синусоида 60Гц с быстрым спадом — ощущается как сотрясение
   {
     const n = Math.floor(sr * 1.2);
-    const buf = audioCtx.createBuffer(1, n, sr);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) {
-      const t = i / sr;
-      // Синус + субгармоника — имитация давления взрывной волны
-      const env = Math.exp(-t * 4) * (1 - Math.exp(-t * 80)); // быстрый attack, медленный release
-      d[i] =
-        Math.sin(2 * Math.PI * 55 * t) * env * 0.8 +
-        Math.sin(2 * Math.PI * 28 * t) * env * 0.5;
+    let buf = cache.bass;
+    if (!buf) {
+      buf = audioCtx.createBuffer(1, n, sr);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) {
+        const t = i / sr;
+        // Синус + субгармоника — имитация давления взрывной волны
+        const env = Math.exp(-t * 4) * (1 - Math.exp(-t * 80)); // быстрый attack, медленный release
+        d[i] =
+          Math.sin(2 * Math.PI * 55 * t) * env * 0.8 +
+          Math.sin(2 * Math.PI * 28 * t) * env * 0.5;
+      }
+      cache.bass = buf;
     }
     const src = audioCtx.createBufferSource();
     const lp = audioCtx.createBiquadFilter();
@@ -399,13 +427,22 @@ function playWallHit(pan = 0) {
   src.start();
 }
 
+// Писк СПО уместен только пока идёт бой и игрок жив
+function spoBeepAllowed() {
+  const g = typeof gameInstance !== "undefined" ? gameInstance : null;
+  return !!(g && g.running && !paused && g.player && g.player.alive);
+}
 function startSpoBeep() {
-  if (!audioCtx || spoBeepNode) return;
+  if (!audioCtx || spoBeepNode || !spoBeepAllowed()) return;
   spoBeepNode = { active: true };
   scheduleSpoBeep();
 }
 function scheduleSpoBeep() {
   if (!spoBeepNode || !spoBeepNode.active || !audioCtx) return;
+  if (!spoBeepAllowed()) {
+    stopSpoBeep();
+    return;
+  }
   const osc = audioCtx.createOscillator(),
     g = audioCtx.createGain();
   osc.type = "sine";
