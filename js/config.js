@@ -18,6 +18,7 @@ const DEFAULT_CFG = {
   cfgWrecks: true, // Трупы — остовы остаются на карте и блокируют проезд (true/false)
   cfgBaseZone: true, // Рисовать зону хила/пополнения у базы (true/false)
   cfgSmartLaser: "2", // Лазер — '0'=Ранний, '1'=Доплер, '2'=ЛИДАР
+  cfgPlayerArrow: true, // Стрелка направления корпуса танка игрока (true/false)
   cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
   cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
   cfgRadioWaves: true, // Визуализация радиоволн — кольца при broadcast (true/false)

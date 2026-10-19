@@ -695,6 +695,34 @@ class Renderer {
       ctx.arc(-sz * 0.5, 0, sz * 0.12, 0, Math.PI * 2);
       ctx.fill();
 
+      ctx.restore();
+      // Стрелка направления корпуса игрока (вперёд по курсу движения)
+      if (cfg.playerArrow && tank.isPlayer()) {
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(tank.angle);
+        const r0 = sz * 0.95,
+          r1 = sz * 1.65,
+          hw = sz * 0.28;
+        ctx.strokeStyle = "#00ff88";
+        ctx.fillStyle = "#00ff88";
+        ctx.globalAlpha = 0.9;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(r0, 0);
+        ctx.lineTo(r1 - hw, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(r1, 0);
+        ctx.lineTo(r1 - hw, -hw * 0.8);
+        ctx.lineTo(r1 - hw, hw * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(tank.angle);
       ctx.rotate(-tank.angle);
       ctx.rotate(tank.turretAngle);
       ctx.fillStyle = tank.isPlayer() ? "#00cc66" : tank.color;

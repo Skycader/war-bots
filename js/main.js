@@ -50,6 +50,7 @@ function saveSettings() {
     "cfgBaseZone",
     "cfgSmartLaser",
     "cfgNoiseRadius",
+    "cfgPlayerArrow",
     "cfgRadioEnabled",
     "cfgRadioWaves",
     "cfgSymmetric",
@@ -135,6 +136,7 @@ loadSettings();
     "cfgBaseZone",
     "cfgSmartLaser",
     "cfgNoiseRadius",
+    "cfgPlayerArrow",
     "cfgRadioEnabled",
     "cfgRadioWaves",
     "cfgSymmetric",
@@ -416,6 +418,7 @@ function startGame() {
     smartLaserStill:
       parseInt(document.getElementById("cfgSmartLaser").value) >= 2,
     noiseRadius: document.getElementById("cfgNoiseRadius").checked,
+    playerArrow: document.getElementById("cfgPlayerArrow").checked,
     radioEnabled: document.getElementById("cfgRadioEnabled").checked,
     radioWaves: document.getElementById("cfgRadioWaves").checked,
     visMode,
