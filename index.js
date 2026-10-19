@@ -74,11 +74,11 @@ loadScripts(BOTS, () => {
       },
     },
     {
-      name: "Дезматч: вы vs Terminator",
-      desc: "Вы + 5 Tracker против 6 Terminator (по умолчанию)",
+      name: "Дезматч: вы vs Охотники",
+      desc: "Вы + 5 TeamHunter против 6 TeamHunter, с радиосвязью (по умолчанию)",
       teams: {
-        Trackers: { bot: Tracker, count: 5 },
-        Terminators: { bot: Terminator, count: 6 },
+        Hunters: { bot: TeamHunter, count: 5 },
+        Raiders: { bot: TeamHunter, count: 6 },
       },
     },
   ];
