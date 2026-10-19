@@ -50,13 +50,13 @@ class Specter extends Tank {
   _pickNewPatrol() {
     this.patrolDir = this.getRandomDegree();
     this.patrolDist = this._castDist(this.patrolDir);
-    this.setDirection(this.patrolDir);
+    this.setTankDirection(this.patrolDir);
   }
 
   // Дистанция по лучу (приближение через impulseScan по башне)
   // Ставим башню в нужный угол и читаем дистанцию до стены/цели
   _castDist(deg) {
-    this.setGunDegree(deg);
+    this.setGunDirection(deg);
     const info = this.impulseScan();
     // Если луч ничего не нашёл — едем 10 клеток, потом выбираем снова
     if (!info) return 10;
@@ -87,12 +87,12 @@ class Specter extends Tank {
 
   // ── ПАТРУЛЬ ────────────────────────────────────────────
   _doPatrol() {
-    this.disableContinuousLaser();
+    this.disableLaser();
 
     // Движение
     if (this.patrolDist > 0) {
       this.setSpeed(1);
-      this.setDirection(this.patrolDir);
+      this.setTankDirection(this.patrolDir);
       this.patrolDist -= 1 * 0.1; // ~скорость × dt тика
     } else {
       this.stop();
@@ -102,20 +102,20 @@ class Specter extends Tank {
 
     // Вращение башни — полный оборот за ~360/7 ≈ 51 тик = ~5 сек
     this.scanAngle = (this.scanAngle + 7) % 360;
-    this.setGunDegree(this.scanAngle);
+    this.setGunDirection(this.scanAngle);
     this.impulseScan(); // onLaserScan переключит в lock
   }
 
   // ── ЗАХВАТ (идентично Tracker) ─────────────────────────
   _doLock() {
     this.stop();
-    this.enableContinuousLaser();
+    this.enableLaser();
 
     if (!this._hasTarget) this._extrapolate(0.1);
-    this.setGunDegree(this.lockAngle);
+    this.setGunDirection(this.lockAngle);
 
     const gunDiff = Math.abs(
-      ((this.getGunDegree() - this.lockAngle + 540) % 360) - 180,
+      ((this.getGunDirection() - this.lockAngle + 540) % 360) - 180,
     );
     if (!this._hasTarget) {
       if (gunDiff < 4) this.lockLost++;
@@ -139,7 +139,7 @@ class Specter extends Tank {
 
     if (this.lockLost > 25) {
       this.say("Цель потеряна. Патрулирую.");
-      this.disableContinuousLaser();
+      this.disableLaser();
       this.mode = "patrol";
       this.scanAngle = this.lockAngle;
       this.lockSpeed = 0;
@@ -149,11 +149,11 @@ class Specter extends Tank {
 
   // ── УКЛОНЕНИЕ ──────────────────────────────────────────
   _doEvade() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     this._evadeTimer--;
 
     // Задний ход на максимуме
-    this.setDirection(this._evadeDir);
+    this.setTankDirection(this._evadeDir);
     this.setSpeed(-2); // назад
 
     if (this._evadeTimer <= 0) {
@@ -169,7 +169,7 @@ class Specter extends Tank {
     if (!info.isHostile || info.isDead) return;
 
     this._hasTarget = true;
-    this.lockAngle = this.getGunDegree();
+    this.lockAngle = this.getGunDirection();
     this.lockDist = info.distance;
 
     if (info.targetSpeed !== null && info.targetAngle !== null) {
@@ -193,8 +193,8 @@ class Specter extends Tank {
     this.say("Лазер! Противоракета!");
 
     // Пустить ПТУР в сторону источника лазера
-    this.setGunDegree(src.degree);
-    this.setGunDegreeAndFire(src.degree);
+    this.setGunDirection(src.degree);
+    this.setGunDirectionAndFire(src.degree);
 
     // Бросить дым
     this.fireSmoke();
@@ -203,7 +203,7 @@ class Specter extends Tank {
     // Направление "назад" — противоположное источнику лазера
     this._evadeDir = (src.degree + 180) % 360;
     this._evadeTimer = 20; // ~2 сек на максимальной скорости назад
-    this.disableContinuousLaser();
+    this.disableLaser();
     this.mode = "evade";
   }
 

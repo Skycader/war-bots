@@ -15,20 +15,20 @@ class Shy extends Tank {
     if (this._reactTimer > 0) {
       this._reactTimer -= 0.1;
       if (this._reactDeg !== null) {
-        this.setGunDegree(this._reactDeg);
+        this.setGunDirection(this._reactDeg);
         const diff = Math.abs(
-          ((this.getGunDegree() - this._reactDeg + 540) % 360) - 180,
+          ((this.getGunDirection() - this._reactDeg + 540) % 360) - 180,
         );
         if (diff < 5) {
-          this.enableContinuousLaser();
+          this.enableLaser();
           this.impulseScan();
           this.fire();
         } else {
-          this.disableContinuousLaser();
+          this.disableLaser();
         }
       }
     } else {
-      this.disableContinuousLaser();
+      this.disableLaser();
       this._reactDeg = null;
     }
   }

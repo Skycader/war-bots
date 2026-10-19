@@ -66,7 +66,7 @@ class Terminator extends Tank {
     if (this._homeVx === null) return;
     const dt = 0.1;
     const moved = this.getCurrentInfo().speed * dt;
-    const myRad = degToRad(this.getDirection());
+    const myRad = degToRad(this.getTankDirection());
     this._homeVx -= Math.cos(myRad) * moved;
     this._homeVy -= Math.sin(myRad) * moved;
   }
@@ -94,7 +94,7 @@ class Terminator extends Tank {
   }
 
   _doGuard() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     const hd = this._homeDist();
 
     // Слишком далеко — возвращаемся
@@ -106,7 +106,7 @@ class Terminator extends Tank {
 
     // Патруль + скан
     this.scanAngle = (this.scanAngle + 8) % 360;
-    this.setGunDegree(this.scanAngle);
+    this.setGunDirection(this.scanAngle);
     this.impulseScan();
     const circleDir = (this.scanAngle + 90) % 360;
     this._moveNav(circleDir, 1);
@@ -116,7 +116,7 @@ class Terminator extends Tank {
   }
 
   _doAssault() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     const info = this.getCurrentInfo();
 
     if (info.pturAmmo === 0) {
@@ -126,10 +126,10 @@ class Terminator extends Tank {
 
     if (this._enemyBaseAngle !== null && this._enemyBaseDist < 6) {
       this.stop();
-      this.enableContinuousLaser();
-      this.setGunDegree(this._enemyBaseAngle);
+      this.enableLaser();
+      this.setGunDirection(this._enemyBaseAngle);
       const diff = Math.abs(
-        ((this.getGunDegree() - this._enemyBaseAngle + 540) % 360) - 180,
+        ((this.getGunDirection() - this._enemyBaseAngle + 540) % 360) - 180,
       );
       if (diff < 5 && info.pturReady && this._shotCD === 0) {
         this.fire();
@@ -139,17 +139,17 @@ class Terminator extends Tank {
       return;
     }
 
-    const dir = this._enemyBaseAngle ?? this.getDirection();
+    const dir = this._enemyBaseAngle ?? this.getTankDirection();
     this._moveNav(dir, 3);
     this._updateHomeVector();
 
     const scanOff = Math.sin(Date.now() / 800) * 30;
-    this.setGunDegree((((dir + scanOff) % 360) + 360) % 360);
+    this.setGunDirection((((dir + scanOff) % 360) + 360) % 360);
     this.impulseScan();
   }
 
   _doRetreat() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     const hd = this._homeDist();
 
     if (this._homeKnown && hd < 3) {
@@ -176,10 +176,10 @@ class Terminator extends Tank {
 
   _doLockFire() {
     this.stop();
-    this.enableContinuousLaser();
-    this.setGunDegree(this.lockAngle);
+    this.enableLaser();
+    this.setGunDirection(this.lockAngle);
     const diff = Math.abs(
-      ((this.getGunDegree() - this.lockAngle + 540) % 360) - 180,
+      ((this.getGunDirection() - this.lockAngle + 540) % 360) - 180,
     );
     if (
       diff < 5 &&
@@ -192,7 +192,7 @@ class Terminator extends Tank {
     }
     this._hasTarget = false;
     if (++this.lockLost > 20) {
-      this.disableContinuousLaser();
+      this.disableLaser();
       this.lockLost = 0;
     }
   }
@@ -201,7 +201,7 @@ class Terminator extends Tank {
     if (this._navTimer > 0) this._navTimer--;
     else this._navEvade = null;
     const work = this._navEvade ?? targetAngle;
-    this.setGunDegree(work);
+    this.setGunDirection(work);
     const scan = this.impulseScan();
     const blocked = scan && scan.target === "non-tank" && scan.distance < 2;
     const tankFwd =
@@ -211,7 +211,7 @@ class Terminator extends Tank {
       for (let d = 20; d <= 150 && !found; d += 20)
         for (const s of [-1, 1]) {
           const a = (((targetAngle + s * d) % 360) + 360) % 360;
-          this.setGunDegree(a);
+          this.setGunDirection(a);
           const sc = this.impulseScan();
           if (!sc || sc.distance >= 2) {
             found = a;
@@ -221,20 +221,20 @@ class Terminator extends Tank {
       this._navEvade = found ?? (targetAngle + 180) % 360;
       this._navTimer = 15;
     }
-    this.setDirection(this._navEvade ?? work);
+    this.setTankDirection(this._navEvade ?? work);
     this.setSpeed(speed);
   }
 
   onLaserScan(info) {
     if (info.isHostile && !info.isDead && info.target === "non-tank") {
-      this._enemyBaseAngle = this.getGunDegree();
+      this._enemyBaseAngle = this.getGunDirection();
       this._enemyBaseDist = info.distance;
       this.say("База врага! Д=" + Math.round(info.distance));
       return;
     }
     if (info.isHostile && !info.isDead) {
       this._hasTarget = true;
-      this.lockAngle = this.getGunDegree();
+      this.lockAngle = this.getGunDirection();
       this.lockDist = info.distance;
       this.lockLost = 0;
       if (info.targetSpeed !== null && info.targetAngle !== null) {

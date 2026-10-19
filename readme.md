@@ -46,20 +46,36 @@ R — стоп
 Размер карты, плотность препятствий (0–90%)
 Параметры ПТУР: скорость, урон, КД, умный/обычный взрыватель
 Скорость башни (103–516°/сек)
-Режим лазера: обычный / умный / умный+стоячие
+Поколение лазера: I (ранний, только дистанция) / II (доплер, видит только движущихся, нотчинг ±15°) / III (ЛИДАР, видит всех)
 Бессмертие, урон от стен, огонь по своим, командный спавн
 Трупы не исчезают, ПРО, дымовой КД
 Настройки звука с отдельными слайдерами
 
 Bot API (для программистов)
-Боты пишутся как JS-классы наследующие Tank. Доступно:
-Движение: setSpeed(), setDirection(), setGunDegree(), setGunDegreeAndFire()
-Сенсоры: impulseScan(), enableContinuousLaser(), getCurrentInfo()
-Оружие: fire(), fireSmoke()
-Информация: getDirection(), getGunDegree(), isIrradiated(), getIrradiatedAngle()
-Команда: broadcast(message), getTeam(), isAlly(), isEnemy()
-Колбэки: onLaserScan(info), onLaserDetection(info), onSound(info), onRadio(messages), onDamage(), main()
-Умный лазер в onLaserScan: info.targetSpeed, info.targetAngle, info.isDead
-Радио в onRadio: msg.angle, msg.dist (союзникам), msg.message (союзникам), msg.fromTeam
+Боты пишутся как JS-классы, наследующие Tank (см. bots/Sample.js — шаблон со всеми методами и аргументами колбэков). Файл бота нужно добавить в BOTS и в botClasses в index.js. Боту доступен только белый список методов (BOT_API_WHITELIST в js/units.js), поля и методы движка недоступны. Собственное состояние бота можно хранить в своих полях (this.mode, this._timer) или через setMemory/getMemory. Сеттеры возвращают this, поэтому можно писать цепочки: this.setGunDirection(180).fire().
+
+Метаданные класса: static get botName(), static get botTeam() (необязательно, имя команды).
+
+Движение: setSpeed(-2..5), stop(), setTankDirection(deg), getTankDirection()
+Башня: setGunDirection(deg), getGunDirection(), getRandomDegree(), setGunDirectionAndFire(deg)
+Лазер: impulseScan(), enableLaser(), disableLaser()
+Оружие: fire() (ПТУР), fireSmoke(), selfDestruct()
+Телеметрия: getCurrentInfo(), isIrradiated(), getIrradiatedAngle(), wasDamaged(), getLaserData()
+Команда и радио: getTeam(), isAlly(), isEnemy(), broadcast(message)
+Речь и лог: say(text), log(text), logMsg(text)
+Память: setMemory(key, value), getMemory(key, default)
+Задачи: runTasks(fn, this.await(ms), fn, ...) — последовательное выполнение, пока очередь занята, новый вызов игнорируется
+Константы направлений: DIR_NORTH=270, DIR_SOUTH=90, DIR_EAST=0, DIR_WEST=180 (углы в градусах, 0 = вправо, 90 = вниз)
+
+getCurrentInfo(): energy, hp (и health), speed, angle, gunAngle, beingLasered, pturReady, pturCooldown, pturAmmo, smokeReady, smokeCooldown, smokeCount, teamIndex
+Колбэки: main() (каждые ~100 мс игрового времени), onLaserScan(hit), onLaserDetection(sources), onSound(sounds), onRadio(messages), onDamage()
+onLaserScan / результат impulseScan: target ('tank'|'non-tank'), distance, isHostile, isBase, isDead, inSmoke, targetSpeed, targetAngle (скорость и угол цели — только для танков, иначе null)
+onLaserDetection: массив { degree, hostile } — откуда облучают и враг ли
+onSound: массив { type: 'engine'|'explosion'|'ptur', angle, dist }
+onRadio: массив { angle, dist, message, fromTeam } — dist и message заполнены только у союзников (у врагов null), angle есть всегда
+
 Готовые боты
-Dummy, Attacker, Crazy, Shy, Coward, Curious, Scanner, Terminator, Tracker, Specter, TeamHunter
+Dummy, Attacker, Crazy, Shy, Coward, Curious, Scanner, Patrol, Tracker, Specter, Terminator, TeamHunter, Guardian, Saboteur. Sample — демонстрационный шаблон API, в бой не берётся.
+
+Структура проекта
+index.html — разметка меню и HUD; css/style.css — стили; js/ — движок (config, effects, ptur, units, game, renderer, hud, audio, main); index.js — загрузка ботов и пресеты команд; bots/ — боты.

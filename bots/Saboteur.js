@@ -63,16 +63,16 @@ class Saboteur extends Tank {
 
   // ── ДВИЖЕНИЕ К БАЗЕ ВРАГА ─────────────────────────────────────────────
   _doAdvance(info) {
-    this.disableContinuousLaser();
+    this.disableLaser();
 
     // Каждые 5 тиков переоцениваем курс через веер сканирования
     if (this._headTimer <= 0) {
       this._headTimer = 5;
-      this._heading = this._findBestAngle(this._heading ?? this.getDirection());
+      this._heading = this._findBestAngle(this._heading ?? this.getTankDirection());
     }
     this._headTimer--;
 
-    this.setDirection(this._heading);
+    this.setTankDirection(this._heading);
     this.setSpeed(2);
   }
 
@@ -84,7 +84,7 @@ class Saboteur extends Tank {
     // Проверяем 9 направлений в секторе ±80°
     for (let d = -80; d <= 80; d += 20) {
       const a = (((preferred + d) % 360) + 360) % 360;
-      this.setGunDegree(a);
+      this.setGunDirection(a);
       const sc = this.impulseScan();
       const dist = sc ? sc.distance : 30;
       if (dist > bestDist) {
@@ -109,9 +109,9 @@ class Saboteur extends Tank {
       return;
     }
 
-    this.setGunDegree(this._targetAngle);
+    this.setGunDirection(this._targetAngle);
     const diff = Math.abs(
-      ((this.getGunDegree() - this._targetAngle + 540) % 360) - 180,
+      ((this.getGunDirection() - this._targetAngle + 540) % 360) - 180,
     );
 
     if (info.pturReady && this._shotsFired < 5 && diff < 10) {
@@ -134,21 +134,21 @@ class Saboteur extends Tank {
 
   // ── ОТСТУПЛЕНИЕ ───────────────────────────────────────────────────────
   _doRetreat(info) {
-    this.disableContinuousLaser();
+    this.disableLaser();
 
     if (this._homeAngle !== null) {
-      this.setDirection(this._homeAngle);
+      this.setTankDirection(this._homeAngle);
       this.setSpeed(3);
     } else {
       // Не знаем где база — едем обратно по курсу
       if (this._headTimer <= 0) {
         this._headTimer = 8;
         this._heading = this._findBestAngle(
-          this._heading ?? this.getDirection(),
+          this._heading ?? this.getTankDirection(),
         );
       }
       this._headTimer--;
-      this.setDirection(this._heading);
+      this.setTankDirection(this._heading);
       this.setSpeed(3);
     }
 
@@ -172,7 +172,7 @@ class Saboteur extends Tank {
       this.stop();
       return;
     }
-    this.setDirection(this._homeAngle);
+    this.setTankDirection(this._homeAngle);
     this.setSpeed(3);
 
     if (info.pturAmmo >= 5) {
@@ -191,7 +191,7 @@ class Saboteur extends Tank {
   onLaserScan(info) {
     // Нашли базу врага
     if (info.isHostile && !info.isDead && info.target === "non-tank") {
-      this._targetAngle = this.getGunDegree();
+      this._targetAngle = this.getGunDirection();
       if (this.mode === "advance") {
         this._shotsFired = 0;
         this.mode = "attack";
@@ -202,7 +202,7 @@ class Saboteur extends Tank {
     if (info.isHostile && info.target === "tank" && this.mode === "advance") {
       this.fireSmoke();
       this._heading =
-        ((this._heading ?? this.getDirection()) + 90 + Math.random() * 90) %
+        ((this._heading ?? this.getTankDirection()) + 90 + Math.random() * 90) %
         360;
       this._headTimer = 20;
     }
@@ -221,7 +221,7 @@ class Saboteur extends Tank {
     if (info.find((s) => s.hostile) && this.mode === "advance") {
       this.fireSmoke();
       this._heading =
-        ((this._heading ?? this.getDirection()) + 120 + Math.random() * 120) %
+        ((this._heading ?? this.getTankDirection()) + 120 + Math.random() * 120) %
         360;
       this._headTimer = 25;
       this.say("Уклонение!");
@@ -232,7 +232,7 @@ class Saboteur extends Tank {
     this.fireSmoke();
     if (this.mode === "advance") {
       this._heading =
-        ((this._heading ?? this.getDirection()) + 150 + Math.random() * 60) %
+        ((this._heading ?? this.getTankDirection()) + 150 + Math.random() * 60) %
         360;
       this._headTimer = 20;
     }

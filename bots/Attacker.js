@@ -14,17 +14,17 @@ class Attacker extends Tank {
 
   main() {
     if (this._scanMode) {
-      this.setGunDegree(this.getGunDegree() + 1);
+      this.setGunDirection(this.getGunDirection() + 1);
       this.impulseScan();
     } else {
       this._lockTimer -= 0.1;
       const data = this.getLaserData();
       if (data && data.isHostile && !data.inSmoke) {
-        this.enableContinuousLaser();
+        this.enableLaser();
         this.fire();
         this._lockTimer = 0.5;
       } else if (this._lockTimer <= 0) {
-        this.disableContinuousLaser();
+        this.disableLaser();
         this._scanMode = true;
       }
     }
@@ -33,7 +33,7 @@ class Attacker extends Tank {
     if (info.isHostile && !info.inSmoke) {
       this._scanMode = false;
       this._lockTimer = 2.0;
-      this.enableContinuousLaser();
+      this.enableLaser();
     }
   }
 }

@@ -2,7 +2,23 @@
 // Единственный <script> тег в HTML. Загружает ботов по очереди,
 // затем инициализирует пресеты и применяет сохранённый.
 
-const BOTS = ["bots/Scanner.js", "bots/Patrol.js", "bots/Tracker.js"];
+const BOTS = [
+  "bots/Dummy.js",
+  "bots/Attacker.js",
+  "bots/Crazy.js",
+  "bots/Shy.js",
+  "bots/Coward.js",
+  "bots/Curious.js",
+  "bots/Scanner.js",
+  "bots/Patrol.js",
+  "bots/Tracker.js",
+  "bots/Specter.js",
+  "bots/Terminator.js",
+  "bots/TeamHunter.js",
+  "bots/Guardian.js",
+  "bots/Saboteur.js",
+  "bots/Sample.js", // демо-шаблон API, в «Все боты» не входит
+];
 
 // Загружаем скрипты по одному (порядок важен — все наследуют Tank)
 function loadScripts(paths, onDone) {
@@ -25,7 +41,23 @@ loadScripts(BOTS, () => {
   // Все классы ботов загружены — инициализируем пресеты
 
   // Все доступные боты для режима "Все боты" (без пресета)
-  botClasses = [Tracker];
+  // Sample — шаблон для написания ботов, в бой не берём
+  botClasses = [
+    Dummy,
+    Attacker,
+    Crazy,
+    Shy,
+    Coward,
+    Curious,
+    Scanner,
+    Patrol,
+    Tracker,
+    Specter,
+    Terminator,
+    TeamHunter,
+    Guardian,
+    Saboteur,
+  ];
 
   battleTeamsPresets = [
     {
@@ -34,7 +66,7 @@ loadScripts(BOTS, () => {
       teams: null,
     },
     {
-      name: "Сканеры vs Охотники",
+      name: "Сканеры vs Сканеры",
       desc: "6 Scanner против 6 Scanner",
       teams: {
         Scanners: { bot: Scanner, count: 6 },

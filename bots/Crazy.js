@@ -16,7 +16,7 @@ class Crazy extends Tank {
       this._spdCmd = rnd(1, 5);
     }
     if (this.getCurrentInfo().energy > 10) {
-      this.setDirection(this.getDirection() + this._turnCmd * 12);
+      this.setTankDirection(this.getTankDirection() + this._turnCmd * 12);
       this.setSpeed(this._spdCmd);
     }
   }

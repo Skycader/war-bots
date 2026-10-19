@@ -41,7 +41,7 @@ class Guardian extends Tank {
   _updateHomeVec() {
     if (this._homeVx === null) return;
     const moved = this.getCurrentInfo().speed * 0.1;
-    const r = degToRad(this.getDirection());
+    const r = degToRad(this.getTankDirection());
     this._homeVx -= Math.cos(r) * moved;
     this._homeVy -= Math.sin(r) * moved;
   }
@@ -74,7 +74,7 @@ class Guardian extends Tank {
   }
 
   _doPatrol() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     // Держимся вплотную к воротам — не дальше 2 клеток
     const ha = this._homeAngle();
     if (ha !== null && this._homeDist() > 2) {
@@ -85,24 +85,24 @@ class Guardian extends Tank {
       // Не знаем где база — просто стоим и ждём ответа
       this.stop();
       this.scanAngle = (this.scanAngle + 10) % 360;
-      this.setGunDegree(this.scanAngle);
+      this.setGunDirection(this.scanAngle);
       this.impulseScan();
       return;
     }
     // У ворот: стоим и вращаем башней в сторону поля
     this.stop();
     this.scanAngle = (this.scanAngle + 10) % 360;
-    this.setGunDegree(this.scanAngle);
+    this.setGunDirection(this.scanAngle);
     this.impulseScan();
   }
 
   _doLock() {
     this.stop();
-    this.enableContinuousLaser();
-    this.setGunDegree(this.lockAngle);
+    this.enableLaser();
+    this.setGunDirection(this.lockAngle);
     const info = this.getCurrentInfo();
     const diff = Math.abs(
-      ((this.getGunDegree() - this.lockAngle + 540) % 360) - 180,
+      ((this.getGunDirection() - this.lockAngle + 540) % 360) - 180,
     );
 
     if (this._hasTarget) {
@@ -115,7 +115,7 @@ class Guardian extends Tank {
     } else {
       if (diff < 5) this.lockLost++;
       if (this.lockLost > 30) {
-        this.disableContinuousLaser();
+        this.disableLaser();
         this.mode = "patrol";
         this.lockLost = 0;
       }
@@ -141,7 +141,7 @@ class Guardian extends Tank {
     // Сканируем башней в направлении угрозы пока едем
     if (this._threatAngle !== null) {
       const sweep = this._threatAngle + Math.sin(Date.now() / 300) * 20;
-      this.setGunDegree(sweep);
+      this.setGunDirection(sweep);
       const hit = this.impulseScan();
       if (hit && hit.isHostile && !hit.isDead) {
         this._startLock(sweep, hit.distance, hit);
@@ -152,7 +152,7 @@ class Guardian extends Tank {
   _doHunt() {
     // Стоим у ворот, активно сканируем сектор угрозы
     this.stop();
-    this.disableContinuousLaser();
+    this.disableLaser();
 
     // Таймаут — возврат в патруль
     if (this._modeTimer <= 0) {
@@ -165,7 +165,7 @@ class Guardian extends Tank {
     // Сканируем сектор
     const baseAngle = this._threatAngle ?? this.scanAngle;
     const sweep = baseAngle + Math.sin(Date.now() / 400) * 50;
-    this.setGunDegree(sweep);
+    this.setGunDirection(sweep);
     const hit = this.impulseScan();
     if (hit && hit.isHostile && !hit.isDead) {
       this._startLock(sweep, hit.distance, hit);
@@ -190,14 +190,14 @@ class Guardian extends Tank {
     if (this._navTimer > 0) this._navTimer--;
     else this._navEvade = null;
     const work = this._navEvade ?? targetAngle;
-    this.setGunDegree(work);
+    this.setGunDirection(work);
     const sc = this.impulseScan();
     if (sc && sc.target === "non-tank" && sc.distance < 2) {
       let found = null;
       for (let d = 25; d <= 135 && !found; d += 25)
         for (const s of [-1, 1]) {
           const a = (((targetAngle + s * d) % 360) + 360) % 360;
-          this.setGunDegree(a);
+          this.setGunDirection(a);
           const s2 = this.impulseScan();
           if (!s2 || s2.target !== "non-tank" || s2.distance >= 2) {
             found = a;
@@ -207,13 +207,13 @@ class Guardian extends Tank {
       this._navEvade = found ?? (targetAngle + 175) % 360;
       this._navTimer = 12;
     }
-    this.setDirection(this._navEvade ?? work);
+    this.setTankDirection(this._navEvade ?? work);
     this.setSpeed(speed);
   }
 
   onLaserScan(info) {
     if (!info.isHostile || info.isDead) return;
-    this._startLock(this.getGunDegree(), info.distance, info);
+    this._startLock(this.getGunDirection(), info.distance, info);
   }
 
   onLaserDetection(info) {
@@ -226,9 +226,9 @@ class Guardian extends Tank {
     this._hasTarget = false;
     this.mode = "lock";
     this._modeTimer = 150;
-    this.disableContinuousLaser();
+    this.disableLaser();
     setTimeout(() => {
-      if (this.mode === "lock") this.enableContinuousLaser();
+      if (this.mode === "lock") this.enableLaser();
     }, 50);
     this.say("СПО! " + Math.round(src.degree) + "°");
   }
@@ -265,7 +265,7 @@ class Guardian extends Tank {
         if (this.mode !== "lock") {
           this.mode = "rush";
           this._modeTimer = 100;
-          this.disableContinuousLaser();
+          this.disableLaser();
           this.say("Тревога! К воротам!");
         } else {
           // В бою — просто запоминаем угол угрозы

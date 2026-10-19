@@ -55,6 +55,70 @@ const BOT_API_WHITELIST = new Set([
   "onDamage",
 ]);
 
+// Служебные поля движка — боту недоступны (к ним добавляются все поля и методы
+// самого Tank, см. isBotField). Всё остальное (this.mode, this._shotCD…) —
+// собственное состояние бота, его можно свободно читать и писать.
+const ENGINE_PRIVATE = new Set([
+  // публичные поля, которые движок создаёт не в конструкторе
+  "renderLaserEndX",
+  "renderLaserEndY",
+  "pturAmmo",
+  "isWreck",
+  "maxHp",
+  "isBaseObj",
+  "_againstWall",
+  "_ammoReloadTimer",
+  "_api_damaged",
+  "_api_irradiatedAngle",
+  "_api_laser",
+  "_api_sounds",
+  "_assaultLoser",
+  "_assaultReason",
+  "_assaultWinner",
+  "_beamClose",
+  "_botProxy",
+  "_broken",
+  "_contScanTimer",
+  "_continuousLaserCmd",
+  "_desiredAngle",
+  "_desiredSpeed",
+  "_dirAndGoSpeed",
+  "_dirAndGoTarget",
+  "_engineSoundTimer",
+  "_errCount",
+  "_game",
+  "_gateStart",
+  "_gunAndFirePending",
+  "_gunAndFireTarget",
+  "_healTimer",
+  "_hereTimer",
+  "_lastAttackAngle",
+  "_mainTimer",
+  "_memory",
+  "_radioMsgCount",
+  "_sayBubbles",
+  "_smokeReloadTimer",
+  "_sparkTick",
+  "_taskQueue",
+  "_warnTimer",
+]);
+
+let _engineNames = null;
+function isBotField(prop) {
+  if (typeof prop !== "string") return false;
+  if (!_engineNames) {
+    _engineNames = new Set(ENGINE_PRIVATE);
+    const probe = new Tank(-1, 0, 0, 0, "#000", "probe");
+    for (
+      let o = probe;
+      o && o !== Object.prototype;
+      o = Object.getPrototypeOf(o)
+    )
+      for (const k of Object.getOwnPropertyNames(o)) _engineNames.add(k);
+  }
+  return !_engineNames.has(prop);
+}
+
 // Создать защищённый Proxy для бота
 // Скрывает координаты, внутренние поля, весь прямой доступ к Tank
 function makeBotProxy(bot) {
@@ -68,6 +132,10 @@ function makeBotProxy(bot) {
         typeof target[prop] === "function"
       ) {
         return target[prop].bind(target);
+      }
+      // Собственные поля бота — читаем напрямую
+      if (isBotField(prop)) {
+        return target[prop];
       }
       // Разрешаем только белый список
       if (BOT_API_WHITELIST.has(prop)) {
@@ -91,7 +159,11 @@ function makeBotProxy(bot) {
       return undefined;
     },
     set(target, prop, value) {
-      // Запрещаем прямую запись в любые поля
+      // Свои поля бота писать можно, поля и методы движка — нет
+      if (isBotField(prop)) {
+        target[prop] = value;
+        return true;
+      }
       console.warn(
         `[Bot ${target.label}] Попытка записи в ${prop} — запрещено`,
       );
@@ -196,7 +268,7 @@ class Unit {
         };
       });
     if (radioMsgs.length > 0) {
-      if (!this._botProxy) this._botProxy = createBotProxy(this);
+      if (!this._botProxy) this._botProxy = makeBotProxy(this);
       try {
         this.onRadio.call(this._botProxy, radioMsgs);
       } catch (e) {
@@ -466,8 +538,7 @@ class Tank extends Unit {
     if (this._desiredSpeed !== undefined) {
       const diff = this._desiredSpeed - this.speed;
       if (Math.abs(diff) > 0.01)
-        this.speed +=
-          Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
+        this.speed += Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
       else this.speed = this._desiredSpeed;
     }
 
@@ -607,8 +678,7 @@ class Tank extends Unit {
         this.energy - Math.abs(this.speed) * ENERGY_SPEED_COST * dt,
       );
     }
-    if (this.speed > 0)
-      this.speed = Math.max(0, this.speed - FRICTION * dt);
+    if (this.speed > 0) this.speed = Math.max(0, this.speed - FRICTION * dt);
     else if (this.speed < 0)
       this.speed = Math.min(0, this.speed + FRICTION * dt);
     if (this.energy <= 0 && Math.abs(this.speed) > 0.01)
@@ -660,12 +730,9 @@ class Tank extends Unit {
     {
       const diff = normAngle(this.turretTargetAngle - this.turretAngle),
         step = BOT_TURRET_SPEED * (cfg.turretSpeed || 1) * dt;
-      if (Math.abs(diff) <= step)
-        this.turretAngle = this.turretTargetAngle;
+      if (Math.abs(diff) <= step) this.turretAngle = this.turretTargetAngle;
       else
-        this.turretAngle = normAngle(
-          this.turretAngle + Math.sign(diff) * step,
-        );
+        this.turretAngle = normAngle(this.turretAngle + Math.sign(diff) * step);
     }
     // setGunDirectionAndFire: навести и выстрелить
     if (this._gunAndFirePending) {
@@ -700,11 +767,9 @@ class Tank extends Unit {
       // Наводим ПТУР по лучу лазера
       if (this.activePTUR && this.activePTUR.alive) {
         const lx =
-          this.renderLaserEndX ??
-          this.x + Math.cos(this.turretAngle) * 50;
+          this.renderLaserEndX ?? this.x + Math.cos(this.turretAngle) * 50;
         const ly =
-          this.renderLaserEndY ??
-          this.y + Math.sin(this.turretAngle) * 50;
+          this.renderLaserEndY ?? this.y + Math.sin(this.turretAngle) * 50;
         this.activePTUR.guide(this.turretAngle, lx, ly);
       }
       // onLaserScan при непрерывном лазере — не чаще раза в 0.2с
@@ -848,9 +913,7 @@ class Tank extends Unit {
       entry.started = true;
       // Если изменился целевой угол башни — ждём
       entry.targetGun =
-        this.turretTargetAngle !== gunBefore
-          ? this.turretTargetAngle
-          : null;
+        this.turretTargetAngle !== gunBefore ? this.turretTargetAngle : null;
       entry.targetDir =
         this._desiredAngle !== dirBefore ? this._desiredAngle : null;
     }
@@ -938,18 +1001,13 @@ class Tank extends Unit {
   }
 
   shootPTUR(game) {
-    if (
-      !game ||
-      this.pturCD > 0 ||
-      (this.activePTUR && this.activePTUR.alive)
-    )
+    if (!game || this.pturCD > 0 || (this.activePTUR && this.activePTUR.alive))
       return false;
     // Боезапас в режиме Штурм
     if (cfg.assault && !this.isBaseObj) {
       if (this.pturAmmo === undefined) this.pturAmmo = cfg.pturAmmo;
       if (this.pturAmmo <= 0) {
-        if (this.isPlayer && this.isPlayer())
-          this.say("Нет боеприпасов!");
+        if (this.isPlayer && this.isPlayer()) this.say("Нет боеприпасов!");
         return false;
       }
       this.pturAmmo--;
@@ -1260,11 +1318,9 @@ class Player extends Tank {
     if (k["KeyA"] || k["ArrowLeft"]) this.angle -= TANK_TURN_SPEED * dt;
     if (k["KeyD"] || k["ArrowRight"]) this.angle += TANK_TURN_SPEED * dt;
     if (k["KeyQ"])
-      this.turretTargetAngle -=
-        TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
+      this.turretTargetAngle -= TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
     if (k["KeyE"])
-      this.turretTargetAngle +=
-        TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
+      this.turretTargetAngle += TURRET_TURN_SPEED * (cfg.turretSpeed || 1) * dt;
     if (k["KeyR"]) this.gear = 0;
     if (k["KeyF"]) {
       this.throwSmoke(game);
@@ -1281,8 +1337,7 @@ class Player extends Tank {
     if (this.energy > 0) {
       const diff = targetSpd - this.speed;
       if (Math.abs(diff) > 0.05)
-        this.speed +=
-          Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
+        this.speed += Math.sign(diff) * Math.min(ACCEL * dt, Math.abs(diff));
     }
 
     // Лазер игрока в первом проходе
@@ -1307,11 +1362,9 @@ class Player extends Tank {
         );
       if (this.activePTUR && this.activePTUR.alive) {
         const lx =
-          this.renderLaserEndX ??
-          this.x + Math.cos(this.turretAngle) * 50;
+          this.renderLaserEndX ?? this.x + Math.cos(this.turretAngle) * 50;
         const ly =
-          this.renderLaserEndY ??
-          this.y + Math.sin(this.turretAngle) * 50;
+          this.renderLaserEndY ?? this.y + Math.sin(this.turretAngle) * 50;
         this.activePTUR.guide(this.turretAngle, lx, ly);
       }
     }
@@ -1331,9 +1384,6 @@ class Player extends Tank {
     cfg.visMode = "all";
     document
       .querySelectorAll(".vis-btn-hud")
-      .forEach((b) =>
-        b.classList.toggle("active", b.dataset.mode === "all"),
-      );
+      .forEach((b) => b.classList.toggle("active", b.dataset.mode === "all"));
   }
 }
-

@@ -97,7 +97,7 @@ class TeamHunter extends Tank {
       this._evadeAngle !== null ? this._evadeAngle : targetAngle;
 
     // Зондируем лазером по рабочему углу
-    this.setGunDegree(workAngle);
+    this.setGunDirection(workAngle);
     const scan = this.impulseScan();
     const blocked = scan && scan.target === "non-tank" && scan.distance < LOOK;
 
@@ -107,7 +107,7 @@ class TeamHunter extends Tank {
       for (let delta = 20; delta <= 120 && found === null; delta += 20) {
         for (const sign of [-1, 1]) {
           const testAngle = (((targetAngle + sign * delta) % 360) + 360) % 360;
-          this.setGunDegree(testAngle);
+          this.setGunDirection(testAngle);
           const s = this.impulseScan();
           if (!s || s.target !== "non-tank" || s.distance >= LOOK) {
             found = testAngle;
@@ -118,9 +118,9 @@ class TeamHunter extends Tank {
       if (found === null) found = (targetAngle + 180) % 360;
       this._evadeAngle = found;
       this._evadeTimer = 10;
-      this.setDirection(found);
+      this.setTankDirection(found);
     } else {
-      this.setDirection(workAngle);
+      this.setTankDirection(workAngle);
     }
     this.setSpeed(speed);
   }
@@ -137,7 +137,7 @@ class TeamHunter extends Tank {
 
   // ── ПАТРУЛЬ ─────────────────────────────────────────────
   _doPatrol() {
-    this.disableContinuousLaser();
+    this.disableLaser();
     if (this.patrolDist > 0) {
       this.patrolDist -= 0.1;
       // Чётные тики: _moveWithNav зондирует путь башней
@@ -146,10 +146,10 @@ class TeamHunter extends Tank {
       if (this._navTick === 0) {
         this._moveWithNav(this.patrolDir, 1);
       } else {
-        this.setDirection(this.patrolDir);
+        this.setTankDirection(this.patrolDir);
         this.setSpeed(1);
         this.scanAngle = (this.scanAngle + 14) % 360;
-        this.setGunDegree(this.scanAngle);
+        this.setGunDirection(this.scanAngle);
         this.impulseScan();
       }
     } else {
@@ -161,12 +161,12 @@ class TeamHunter extends Tank {
   // ── ЗАХВАТ ──────────────────────────────────────────────
   _doLock() {
     this.stop();
-    this.enableContinuousLaser();
+    this.enableLaser();
     if (!this._hasTarget) this._extrapolate(0.1);
-    this.setGunDegree(this.lockAngle);
+    this.setGunDirection(this.lockAngle);
 
     const gunDiff = Math.abs(
-      ((this.getGunDegree() - this.lockAngle + 540) % 360) - 180,
+      ((this.getGunDirection() - this.lockAngle + 540) % 360) - 180,
     );
     if (!this._hasTarget) {
       if (gunDiff < 4) this.lockLost++;
@@ -194,7 +194,7 @@ class TeamHunter extends Tank {
 
     if (this.lockLost > 25) {
       this.say("Цель потеряна. Патруль.");
-      this.disableContinuousLaser();
+      this.disableLaser();
       this.mode = "patrol";
       this._pickPatrol();
       this.lockSpeed = 0;
@@ -206,7 +206,7 @@ class TeamHunter extends Tank {
     this.huntTimer--;
     if (this.huntTimer <= 0) {
       this.say("Не нашёл. Патруль.");
-      this.disableContinuousLaser();
+      this.disableLaser();
       this.mode = "patrol";
       this._pickPatrol();
       return;
@@ -223,14 +223,14 @@ class TeamHunter extends Tank {
 
       // Обновляем вектор — вычитаем пройденное
       const moved = this.getCurrentInfo().speed * 0.1;
-      const myRad = degToRad(this.getDirection());
+      const myRad = degToRad(this.getTankDirection());
       this._huntVx -= Math.cos(myRad) * moved;
       this._huntVy -= Math.sin(myRad) * moved;
     } else {
       // На месте — ищем башней
       this.stop();
       const sweep = huntAngle + Math.sin(this.huntTimer * 0.25) * 40;
-      this.setGunDegree(sweep);
+      this.setGunDirection(sweep);
       this.impulseScan();
     }
   }
@@ -239,7 +239,7 @@ class TeamHunter extends Tank {
   onLaserScan(info) {
     if (!info.isHostile || info.isDead) return;
     this._hasTarget = true;
-    this.lockAngle = this.getGunDegree();
+    this.lockAngle = this.getGunDirection();
     this.lockDist = info.distance;
     if (info.targetSpeed !== null && info.targetAngle !== null) {
       this.lockSpeed = info.targetSpeed;
@@ -297,7 +297,7 @@ class TeamHunter extends Tank {
   onDamage() {
     this.fireSmoke();
     if (this._lastBroadcast > 3)
-      this.broadcast(`LASER:${Math.round(this.getGunDegree())}`);
+      this.broadcast(`LASER:${Math.round(this.getGunDirection())}`);
     this.say(this.mode === "lock" ? "Урон! Держу цель." : "Урон!");
   }
 }

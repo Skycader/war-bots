@@ -10,7 +10,7 @@ class Coward extends Tank {
   onLaserDetection(info) {
     this.fireSmoke();
     if (!this._fleeing) {
-      this.setDirection(this.getRandomDegree());
+      this.setTankDirection(this.getRandomDegree());
       this._fleeing = true;
       this._fleeTimer = rnd(2.5, 4.5);
       this.log("ПАНИКА!");
