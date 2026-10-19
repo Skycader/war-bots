@@ -195,6 +195,7 @@ class Game {
 
     // Командный спавн: собираем уникальные команды, делим карту
     const teamZones = {};
+    this.teamZones = teamZones; // нужны для возрождения игрока
     if (config.teamSpawn || config.assault) {
       const allTeams = new Set();
       activeBots.forEach((BC, i) => {
@@ -621,7 +622,70 @@ class Game {
     if (box.children.length > 15) box.removeChild(box.lastChild);
   }
 
+  // Возрождение игрока (клавиша R при cfg.playerRespawn). Старый танк остаётся
+  // остовом, игрок появляется заново в зоне своей команды.
+  respawnPlayer() {
+    const p = this.player;
+    if (!p || p.alive) return false;
+    // Остов — отдельный объект, чтобы корпус остался на карте
+    const wreck = new Tank(
+      Math.max(...this.tanks.map((t) => t.id)) + 1,
+      p.x,
+      p.y,
+      p.angle,
+      p.color,
+      p.label,
+    );
+    wreck.alive = false;
+    wreck.isWreck = true;
+    wreck.turretAngle = p.turretAngle;
+    wreck.team = p.team;
+    this.tanks.push(wreck);
+
+    const zone = p.team && this.teamZones && this.teamZones[p.team];
+    const pos = zone
+      ? this.freeCellZone(zone.yMin, zone.yMax)
+      : this.freeCell();
+    p.x = pos.x;
+    p.y = pos.y;
+    p.angle = rnd(0, Math.PI * 2);
+    p.turretAngle = p.turretTargetAngle = p.angle;
+    p.alive = true;
+    p.isWreck = false;
+    p.hp = 100;
+    p.energy = 100;
+    p.speed = 0;
+    p.gear = 0;
+    p.pturCD = 0;
+    p.smokeCD = 0;
+    p.smokeCount = 6;
+    if (p.pturAmmo !== undefined) p.pturAmmo = cfg.pturAmmo || 5;
+    p.laserContinuous = false;
+    p.laserResult = null;
+    p.renderLaser = null;
+    p.irradiated = false;
+    p.irradiatedBy = null;
+    p.activePTUR = null;
+    p.dots = [];
+    p._taskQueue = [];
+    p._sayBubbles = [];
+    // Вернуть режим видимости, который был до гибели
+    if (p._visBeforeDeath) {
+      cfg.visMode = p._visBeforeDeath;
+      document
+        .querySelectorAll(".vis-btn-hud")
+        .forEach((b) =>
+          b.classList.toggle("active", b.dataset.mode === cfg.visMode),
+        );
+    }
+    this.log("PLAYER возрождён", "");
+    this.checkWin();
+    return true;
+  }
+
   checkWin() {
+    // Пока игрок может возродиться — бой не заканчивается
+    if (cfg.playerRespawn && this.player && !this.player.alive) return;
     const alive = this.tanks.filter((t) => t.alive && !t.isBaseObj);
 
     // Режим Штурм: победа если база врага уничтожена ИЛИ все танки врага мертвы

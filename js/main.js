@@ -23,6 +23,11 @@ function gameLoop(ts) {
   const curPtur = gameInstance.pturs.length;
   if (curPtur > _prevPturCount) onPTURFired();
   _prevPturCount = curPtur;
+  const pl = gameInstance.player;
+  document.getElementById("respawnHint").style.display =
+    cfg.playerRespawn && pl && !pl.alive && gameInstance.running
+      ? "block"
+      : "none";
   renderer.updateCamera();
   if (renderer.cam.active) updateMouseWorld();
   renderer.draw();
@@ -39,6 +44,7 @@ function saveSettings() {
   const ids = [
     "cfgPlayer",
     "cfgImmortal",
+    "cfgPlayerRespawn",
     "cfgPlayerTeam",
     "cfgWallDmg",
     "cfgTeamKill",
@@ -142,6 +148,7 @@ syncCamMenu();
   const ids = [
     "cfgPlayer",
     "cfgImmortal",
+    "cfgPlayerRespawn",
     "cfgPlayerTeam",
     "cfgWallDmg",
     "cfgTeamKill",
@@ -481,6 +488,9 @@ function startGame() {
     playerTeam:
       document.getElementById("cfgPlayerTeam").value.trim() || null,
     immortal: document.getElementById("cfgImmortal").checked,
+    playerRespawn:
+      document.getElementById("cfgPlayerRespawn").checked &&
+      document.getElementById("cfgPlayer").checked,
     wallDmg: document.getElementById("cfgWallDmg").checked,
     teamKill: document.getElementById("cfgTeamKill").checked,
     selfDmg: document.getElementById("cfgSelfDmg").checked,
@@ -605,7 +615,18 @@ function startGame() {
           if (p.gear > 0) p.gear = Math.max(0, p.gear - 1);
           else p.gear = -1;
         }
-        if (e.code === "KeyR") p.gear = 0;
+        if (e.code === "KeyR") {
+          p.gear = 0;
+          // Возрождение: только по нажатию, не по удержанию
+          if (
+            cfg.playerRespawn &&
+            !p.alive &&
+            !e.repeat &&
+            !paused &&
+            gameInstance.running
+          )
+            gameInstance.respawnPlayer();
+        }
         p.keys[e.code] = true;
         if (e.code === "KeyF") e.preventDefault();
       },

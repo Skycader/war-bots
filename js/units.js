@@ -1377,6 +1377,9 @@ class Player extends Tank {
       this.energy = Math.max(10, this.energy);
       return;
     }
+    // Запоминаем режим видимости, чтобы вернуть его при возрождении
+    if (cfg.visMode !== "all" || !this._visBeforeDeath)
+      this._visBeforeDeath = cfg.visMode;
     super.destroy(game, killer);
     // После смерти: если возрождение — показываем подсказку
     // Если нет — переключаем в режим наблюдения

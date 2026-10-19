@@ -20,6 +20,10 @@
             <label>Игрок:</label><input type="checkbox" id="cfgPlayer" />
           </div>
           <div class="setting-row">
+            <label>Возрождение игрока по R:</label
+            ><input type="checkbox" id="cfgPlayerRespawn" />
+          </div>
+          <div class="setting-row">
             <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
           </div>
           <div class="setting-row">
@@ -350,6 +354,7 @@
     <div id="gameContainer">
       <div id="canvasWrap">
         <canvas id="gameCanvas"></canvas>
+        <div id="respawnHint">R — ВОЗРОДИТЬСЯ</div>
         <div id="killNotify">ВЫ УНИЧТОЖИЛИ: <span id="killName"></span></div>
         <div id="scoreboard">
           <div class="sb-team" id="sbTeam0"></div>

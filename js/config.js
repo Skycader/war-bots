@@ -6,6 +6,7 @@
 const DEFAULT_CFG = {
   cfgPlayer: true, // Игрок — участвует ли человек в бою (true/false)
   cfgPlayerTeam: "", // Команда игрока — строка или '' (нет команды)
+  cfgPlayerRespawn: false, // Возрождение игрока по R — после гибели R возрождает танк (true/false)
   cfgImmortal: false, // Бессмертие игрока — HP не падает ниже 100 (true/false)
   cfgWallDmg: true, // Урон от стен при столкновении на высокой скорости (true/false)
   cfgTeamKill: true, // Огонь по своим — ПТУР бьёт союзников (true/false)
