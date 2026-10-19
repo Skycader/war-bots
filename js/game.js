@@ -180,12 +180,15 @@ class Game {
       typeof battleTeamsPresets !== "undefined"
         ? battleTeamsPresets[activePresetIdx]
         : null;
-    const presetTeamMap = {}; // className → teamName
-    if (preset && preset.teams) {
+    // Команда каждого слота (порядок как в getActiveBotClasses). Считаем по слотам,
+    // а не по имени класса — иначе команды из одинаковых ботов сливаются в одну.
+    const slotTeams = [];
+    if (preset && preset.teams && !preset.customClasses) {
       for (const [teamName, t] of Object.entries(preset.teams)) {
-        presetTeamMap[t.bot.name] = teamName;
+        for (let i = 0; i < t.count; i++) slotTeams.push(teamName);
       }
     }
+    const teamOf = (BC, i) => slotTeams[i] || BC.botTeam || null;
 
     let id = 0;
     const usedColors = new Set();
@@ -194,10 +197,10 @@ class Game {
     const teamZones = {};
     if (config.teamSpawn || config.assault) {
       const allTeams = new Set();
-      for (const BC of activeBots) {
-        const team = presetTeamMap[BC.name] || BC.botTeam;
+      activeBots.forEach((BC, i) => {
+        const team = teamOf(BC, i);
         if (team) allTeams.add(team);
-      }
+      });
       if (config.playerTeam) allTeams.add(config.playerTeam);
       const teams = [...allTeams];
       if (teams.length >= 2) {
@@ -241,8 +244,8 @@ class Game {
     };
 
     let _rbIdx = 0; // royal battle unique team index
-    for (const BC of activeBots) {
-      let team = presetTeamMap[BC.name] || BC.botTeam || null;
+    for (const [slot, BC] of activeBots.entries()) {
+      let team = teamOf(BC, slot);
       // Королевская битва: каждый бот — отдельная команда
       if (isRoyalBattle()) team = null; // каждый сам за себя
       const pos = isRoyalBattle() ? this._freeCellEdge() : getPos(team);

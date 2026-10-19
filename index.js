@@ -88,7 +88,7 @@ loadScripts(BOTS, () => {
     try {
       // Без сохранённого выбора — командный дезматч (последний пресет)
       const last = battleTeamsPresets.length - 1;
-      const saved = parseInt(localStorage.getItem("ltw_preset") ?? last);
+      const saved = parseInt(localStorage.getItem("ltw_preset2") ?? last);
       applyPreset(Math.min(saved, last));
     } catch (e) {
       applyPreset(battleTeamsPresets.length - 1);

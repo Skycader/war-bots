@@ -214,7 +214,7 @@ function applyPreset(idx) {
   const text = presetLineText(preset);
   document.getElementById("presetLineText").textContent = text;
   try {
-    localStorage.setItem("ltw_preset", idx);
+    localStorage.setItem("ltw_preset2", idx);
   } catch (e) {}
   // Обновляем список команд игрока
   if (typeof updatePlayerTeamSelect === "function")
