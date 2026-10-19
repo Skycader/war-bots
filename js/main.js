@@ -53,6 +53,7 @@ function saveSettings() {
     "cfgSmartLaser",
     "cfgNoiseRadius",
     "cfgFollowCam",
+    "cfgDynCam",
     "cfgCamView",
     "cfgPlayerArrow",
     "cfgRadioEnabled",
@@ -122,10 +123,13 @@ function loadSettings() {
 }
 loadSettings();
 
-// Привязанная камера: ползунок обзора виден только когда опция включена
+// Привязанная камера: ползунок обзора и «динамический диапазон» доступны
+// только когда опция включена (иначе видны, но disabled)
 function syncCamMenu() {
   const on = document.getElementById("cfgFollowCam").checked;
-  document.getElementById("camViewRow").style.display = on ? "flex" : "none";
+  document.getElementById("cfgCamView").disabled = !on;
+  document.getElementById("cfgDynCam").disabled = !on;
+  document.getElementById("camViewRow").style.opacity = on ? "" : "0.4";
   document.getElementById("cfgCamViewVal").textContent =
     document.getElementById("cfgCamView").value;
 }
@@ -152,6 +156,7 @@ syncCamMenu();
     "cfgSmartLaser",
     "cfgNoiseRadius",
     "cfgFollowCam",
+    "cfgDynCam",
     "cfgCamView",
     "cfgPlayerArrow",
     "cfgRadioEnabled",
@@ -409,6 +414,54 @@ function updateMouseWorld() {
   p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
 }
 
+// Режим зрителя (игрока нет): колёсико — зум, перетаскивание — сдвиг карты
+function setupSpectatorControls(canvas, sig) {
+  canvas.style.cursor = "grab";
+  const toCanvas = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      renderer.spectatorZoom(e.deltaY < 0 ? 1.2 : 1 / 1.2, toCanvas(e));
+    },
+    { signal: sig.signal, passive: false },
+  );
+  let drag = null;
+  canvas.addEventListener(
+    "mousedown",
+    (e) => {
+      drag = toCanvas(e);
+      canvas.style.cursor = "grabbing";
+      e.preventDefault();
+    },
+    sig,
+  );
+  window.addEventListener(
+    "mousemove",
+    (e) => {
+      if (!drag) return;
+      const m = toCanvas(e);
+      renderer.spectatorPan(m.x - drag.x, m.y - drag.y);
+      drag = m;
+    },
+    sig,
+  );
+  window.addEventListener(
+    "mouseup",
+    () => {
+      drag = null;
+      canvas.style.cursor = "grab";
+    },
+    sig,
+  );
+}
+
 function startGame() {
   saveSettings();
   // Если игрок не участвует — режим наблюдения (всё видно)
@@ -451,6 +504,9 @@ function startGame() {
       document.getElementById("cfgFollowCam").checked &&
       document.getElementById("cfgPlayer").checked,
     camView: parseInt(document.getElementById("cfgCamView").value) || 16,
+    dynCam:
+      document.getElementById("cfgDynCam").checked &&
+      document.getElementById("cfgFollowCam").checked,
     playerArrow: document.getElementById("cfgPlayerArrow").checked,
     radioEnabled: document.getElementById("cfgRadioEnabled").checked,
     radioWaves: document.getElementById("cfgRadioWaves").checked,
@@ -619,6 +675,25 @@ function startGame() {
       (e) => e.preventDefault(),
       sig,
     );
+    // Динамический диапазон: колёсико меняет обзор привязанной камеры
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        if (!cfg.followCam || !cfg.dynCam) return;
+        e.preventDefault();
+        const v = Math.max(
+          8,
+          Math.min(40, (cfg.camView || 16) + (e.deltaY > 0 ? 2 : -2)),
+        );
+        cfg.camView = v;
+        document.getElementById("cfgCamView").value = v;
+        syncCamMenu();
+        saveSettings();
+      },
+      { signal: sig.signal, passive: false },
+    );
+  } else {
+    setupSpectatorControls(canvas, sig);
   }
 
   if (animId) cancelAnimationFrame(animId);

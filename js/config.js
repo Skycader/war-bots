@@ -21,6 +21,7 @@ const DEFAULT_CFG = {
   cfgPlayerArrow: true, // Стрелка направления корпуса танка игрока (true/false)
   cfgFollowCam: false, // Привязанная камера — камера следует за танком игрока (true/false)
   cfgCamView: "16", // Обзор камеры — сколько клеток помещается в кадр по ширине, 8..40
+  cfgDynCam: false, // Динамический диапазон — колёсико мыши меняет обзор камеры (true/false)
   cfgNoiseRadius: true, // Радиус шума — круги вокруг движущихся танков (true/false)
   cfgRadioEnabled: true, // Радиосвязь — боты могут делать broadcast() (true/false)
   cfgRadioWaves: true, // Визуализация радиоволн — кольца при broadcast (true/false)

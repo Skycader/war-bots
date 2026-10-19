@@ -29,6 +29,8 @@ class Renderer {
     this.ctx = canvas.getContext("2d");
     this.game = game;
     this.cam = { active: false, z: 1, x: null, y: null };
+    // Камера зрителя (когда игрока нет): зум и сдвиг карты мышью
+    this.spec = { z: 1, x: null, y: null };
     this.resize();
   }
   resize() {
@@ -41,7 +43,11 @@ class Renderer {
   updateCamera() {
     const g = this.game,
       cam = this.cam;
-    cam.active = !!(cfg.followCam && g.player);
+    if (!g.player) {
+      this._updateSpectatorCamera();
+      return;
+    }
+    cam.active = !!cfg.followCam;
     if (!cam.active) return;
     cam.z = g.mapW / Math.max(4, cfg.camView || 16);
     // Погиб — камера остаётся на месте гибели
@@ -52,6 +58,49 @@ class Renderer {
       cam.x = g.player.x * CELL;
       cam.y = g.player.y * CELL;
     }
+  }
+
+  // Зритель: z>=1 (вся карта = 1), центр не выходит за карту
+  _updateSpectatorCamera() {
+    const cam = this.cam,
+      sp = this.spec,
+      W = this.canvas.width,
+      H = this.canvas.height;
+    if (sp.x === null) {
+      sp.x = W / 2;
+      sp.y = H / 2;
+    }
+    sp.z = Math.max(1, Math.min(8, sp.z));
+    const hx = W / (2 * sp.z),
+      hy = H / (2 * sp.z);
+    sp.x = Math.max(hx, Math.min(W - hx, sp.x));
+    sp.y = Math.max(hy, Math.min(H - hy, sp.y));
+    cam.active = sp.z > 1;
+    cam.z = sp.z;
+    cam.x = sp.x;
+    cam.y = sp.y;
+  }
+
+  // Колёсико: масштаб относительно точки под курсором (sx, sy — пиксели канваса)
+  spectatorZoom(factor, m) {
+    this._updateSpectatorCamera();
+    const sp = this.spec,
+      W = this.canvas.width,
+      H = this.canvas.height;
+    const wx = (m.x - W / 2) / sp.z + sp.x,
+      wy = (m.y - H / 2) / sp.z + sp.y;
+    sp.z = Math.max(1, Math.min(8, sp.z * factor));
+    sp.x = wx - (m.x - W / 2) / sp.z;
+    sp.y = wy - (m.y - H / 2) / sp.z;
+    this._updateSpectatorCamera();
+  }
+
+  // Перетаскивание: dx, dy — сдвиг курсора в пикселях канваса
+  spectatorPan(dx, dy) {
+    const sp = this.spec;
+    sp.x -= dx / sp.z;
+    sp.y -= dy / sp.z;
+    this._updateSpectatorCamera();
   }
 
   // Пиксели канваса → мировые пиксели (до деления на CELL)
