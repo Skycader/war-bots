@@ -73,15 +73,25 @@ loadScripts(BOTS, () => {
         Scanners2: { bot: Scanner, count: 6 },
       },
     },
+    {
+      name: "Дезматч: вы vs Terminator",
+      desc: "Вы + 5 Tracker против 6 Terminator (по умолчанию)",
+      teams: {
+        Trackers: { bot: Tracker, count: 5 },
+        Terminators: { bot: Terminator, count: 6 },
+      },
+    },
   ];
 
   // Применяем сохранённый пресет
   if (typeof applyPreset === "function") {
     try {
-      const saved = parseInt(localStorage.getItem("ltw_preset") || "1");
-      applyPreset(Math.min(saved, battleTeamsPresets.length - 1));
+      // Без сохранённого выбора — командный дезматч (последний пресет)
+      const last = battleTeamsPresets.length - 1;
+      const saved = parseInt(localStorage.getItem("ltw_preset") ?? last);
+      applyPreset(Math.min(saved, last));
     } catch (e) {
-      applyPreset(1);
+      applyPreset(battleTeamsPresets.length - 1);
     }
   }
 });

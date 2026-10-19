@@ -4,7 +4,7 @@
 // Единое место для всех дефолтных значений меню.
 // Изменяй здесь — не ищи по всему HTML.
 const DEFAULT_CFG = {
-  cfgPlayer: false, // Игрок — участвует ли человек в бою (true/false)
+  cfgPlayer: true, // Игрок — участвует ли человек в бою (true/false)
   cfgPlayerTeam: "", // Команда игрока — строка или '' (нет команды)
   cfgImmortal: false, // Бессмертие игрока — HP не падает ниже 100 (true/false)
   cfgWallDmg: true, // Урон от стен при столкновении на высокой скорости (true/false)
