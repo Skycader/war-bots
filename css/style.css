@@ -1,0 +1,653 @@
+  @font-face {
+    font-family: "Orbitron";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(fonts/yMJRMIlzdpvBhQQL_Qq7dy0.woff2) format("woff2");
+    unicode-range:
+      U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+      U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+      U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  :root {
+    --green: #00ff88;
+    --red: #ff2244;
+    --amber: #ffaa00;
+    --blue: #00aaff;
+    --bg: #0a0e0a;
+    --panel: #0d150d;
+    --border: #1a2e1a;
+  }
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: "Share Tech Mono", monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  #menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 18px;
+    background: radial-gradient(ellipse at center, #0a1f0a 0%, #000 100%);
+    padding: 20px 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  #menu h1 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 3em;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: 0 0 30px var(--green);
+    letter-spacing: 8px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      text-shadow: 0 0 30px var(--green);
+    }
+    50% {
+      text-shadow:
+        0 0 50px var(--green),
+        0 0 100px rgba(0, 255, 136, 0.5);
+    }
+  }
+  #menu h2 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1em;
+    color: var(--amber);
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+  #presetLine {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.9em;
+    color: var(--green);
+    border: 1px solid #1a4a2a;
+    padding: 6px 14px;
+    transition: all 0.2s;
+  }
+  #presetLine:hover {
+    border-color: var(--green);
+    background: rgba(0, 255, 136, 0.05);
+  }
+  #presetLine .pencil {
+    font-size: 0.85em;
+    opacity: 0.7;
+  }
+  #presetModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  #presetModal.open {
+    display: flex;
+  }
+  #presetModalBox {
+    background: #0d150d;
+    border: 1px solid var(--green);
+    padding: 24px 32px;
+    min-width: 360px;
+    max-width: 500px;
+    width: 90%;
+  }
+  #presetModalBox h3 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.9em;
+    color: var(--green);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .preset-item {
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border: 1px solid #1a3a1a;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .preset-item:hover {
+    border-color: var(--green);
+    background: rgba(0, 255, 136, 0.05);
+  }
+  .preset-item.active {
+    border-color: var(--green);
+    background: rgba(0, 255, 136, 0.08);
+  }
+  .preset-item .preset-name {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.8em;
+    color: var(--green);
+    letter-spacing: 2px;
+  }
+  .preset-item .preset-desc {
+    font-size: 0.78em;
+    color: #556655;
+    margin-top: 3px;
+  }
+  #presetModalClose {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.8em;
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 8px 24px;
+    cursor: pointer;
+    margin-top: 12px;
+    letter-spacing: 2px;
+    width: 100%;
+  }
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px 20px;
+    background: rgba(0, 255, 136, 0.03);
+    border: 1px solid var(--border);
+    padding: 16px 22px;
+    max-width: 700px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.83em;
+  }
+  .setting-row label {
+    color: #88bbaa;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .setting-row .dots {
+    flex: 1;
+    border-bottom: 1px dotted #1a4a2a;
+    min-width: 8px;
+    align-self: center;
+    margin-bottom: 2px;
+  }
+  .setting-row select,
+  .setting-row input[type="checkbox"] {
+    background: #0a1a0a;
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 2px 6px;
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.9em;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .setting-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--green);
+  }
+  .setting-row input[type="range"] {
+    flex-shrink: 0;
+  }
+  .setting-row input[type="text"] {
+    flex-shrink: 0;
+  }
+  #startBtn {
+    font-family: "Orbitron", sans-serif;
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--bg);
+    background: var(--green);
+    border: none;
+    padding: 14px 50px;
+    cursor: pointer;
+    letter-spacing: 4px;
+    transition: all 0.2s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  #startBtn:hover {
+    background: #fff;
+    box-shadow: 0 0 30px var(--green);
+  }
+  .vis-btn {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.8em;
+    background: #0a1a0a;
+    border: 1px solid var(--green);
+    color: #446644;
+    padding: 3px 10px;
+    cursor: pointer;
+    margin: 0;
+    border-right-width: 0;
+  }
+  .vis-btn:last-child {
+    border-right-width: 1px;
+  }
+  .vis-btn.active {
+    background: var(--green);
+    color: #000;
+    font-weight: bold;
+  }
+  .vis-btn:hover:not(.active) {
+    color: var(--green);
+  }
+  .vis-btn-hud {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.7em;
+    background: #0a1a0a;
+    border: 1px solid #1a3a1a;
+    color: #335533;
+    padding: 2px 7px;
+    cursor: pointer;
+    margin: 0;
+    border-right-width: 0;
+  }
+  .vis-btn-hud:last-child {
+    border-right-width: 1px;
+  }
+  .vis-btn-hud.active {
+    background: #00ff88;
+    color: #000;
+    font-weight: bold;
+  }
+  .vis-btn-hud:hover:not(.active) {
+    color: var(--green);
+    border-color: var(--green);
+  }
+  #spoCanvas {
+    border-radius: 50%;
+    border: 1px solid #1a3a1a;
+    background: #050e05;
+    display: block;
+  }
+  #gameContainer {
+    display: none;
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #canvasWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #050805;
+    position: relative;
+  }
+  #gameCanvas {
+    image-rendering: pixelated;
+    cursor: crosshair;
+  }
+  #killNotify {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 34, 68, 0.92);
+    color: #fff;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.85em;
+    letter-spacing: 2px;
+    padding: 8px 22px;
+    border: 1px solid #ff2244;
+    display: none;
+    z-index: 200;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #scoreboard {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 300;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 60px;
+    gap: 40px;
+    font-family: "Share Tech Mono", monospace;
+    pointer-events: none;
+  }
+  #scoreboard.open {
+    display: flex;
+  }
+  .sb-team {
+    flex: 1;
+    max-width: 280px;
+  }
+  .sb-team-name {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 3px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid;
+  }
+  .sb-bar-wrap {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .sb-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .sb-tank {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.82em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .sb-tank.dead {
+    opacity: 0.35;
+  }
+  .sb-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sb-label {
+    flex: 1;
+  }
+  .sb-status {
+    font-size: 0.75em;
+    color: #888;
+  }
+  .sb-hint {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.75em;
+    color: #446644;
+    letter-spacing: 2px;
+  }
+
+  #timeScale {
+    font-size: 0.85em;
+    color: var(--amber);
+    min-width: 50px;
+    text-align: center;
+  }
+  #timeBar button:not(.spd-btn) {
+    background: #0a1a0a;
+    border: 1px solid #1a4a1a;
+    color: var(--green);
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.85em;
+    padding: 2px 8px;
+    cursor: pointer;
+  }
+  #timeBar button:not(.spd-btn):hover {
+    background: #1a3a1a;
+  }
+  .spd-btn {
+    font-family: "Share Tech Mono", monospace;
+    font-size: 0.78em;
+    background: #0a1a0a;
+    border: 1px solid #1a4a1a;
+    color: #446644;
+    padding: 2px 6px;
+    cursor: pointer;
+    margin: 0;
+    border-right-width: 0;
+  }
+  .spd-btn:last-child {
+    border-right-width: 1px;
+  }
+  .spd-btn.active {
+    background: var(--green);
+    color: #000;
+    font-weight: bold;
+  }
+  .spd-btn:hover:not(.active) {
+    color: var(--green);
+    border-color: var(--green);
+  }
+  #hud {
+    width: 222px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+    font-size: 0.8em;
+  }
+  .hud-section {
+    border: 1px solid var(--border);
+    padding: 7px;
+    flex-shrink: 0;
+  }
+  .hud-section.scrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 1;
+    min-height: 50px;
+    max-height: 130px;
+  }
+  .hud-title {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.7em;
+    color: var(--amber);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 3px;
+  }
+  .bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .bar-label {
+    color: #88aa88;
+    font-size: 0.83em;
+    display: flex;
+    justify-content: space-between;
+  }
+  .bar {
+    height: 6px;
+    background: #0d1f0d;
+    border: 1px solid #1a2e1a;
+  }
+  .bar-fill {
+    height: 100%;
+    transition: width 0.1s;
+  }
+  .bar-fill.health {
+    background: #ff4444;
+  }
+  .bar-fill.energy {
+    background: var(--amber);
+  }
+  .bar-fill.ptur {
+    background: var(--blue);
+  }
+  .bar-fill.smoke {
+    background: #aaa;
+  }
+  .status-item {
+    color: #88aa88;
+    margin-bottom: 2px;
+  }
+  .status-item span {
+    color: var(--green);
+  }
+  .gear-display {
+    display: inline-block;
+    background: #00ff88;
+    color: #000;
+    font-weight: bold;
+    padding: 0 5px;
+    font-size: 0.9em;
+    margin-left: 4px;
+    border-radius: 2px;
+  }
+  .alert {
+    color: var(--red);
+    font-weight: bold;
+    animation: blink 0.5s infinite;
+  }
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+  .log-entry {
+    color: #668866;
+    font-size: 0.8em;
+    border-bottom: 1px solid #0d1a0d;
+    padding: 2px 0;
+  }
+  .log-entry.kill {
+    color: var(--red);
+  }
+  .log-entry.warn {
+    color: var(--amber);
+  }
+  #deathScreen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    font-family: "Orbitron", sans-serif;
+    z-index: 100;
+  }
+  #deathScreen h2 {
+    font-size: 3em;
+    color: var(--red);
+    text-shadow: 0 0 40px var(--red);
+  }
+  #deathScreen p {
+    color: #888;
+  }
+  #deathScreen button {
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: "Orbitron", sans-serif;
+    padding: 10px 30px;
+    cursor: pointer;
+    font-size: 0.9em;
+    letter-spacing: 2px;
+  }
+  #deathScreen button:hover {
+    background: var(--green);
+    color: #000;
+  }
+  #controls {
+    font-size: 0.72em;
+    color: #446644;
+    line-height: 1.65;
+  }
+  #soundModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  #soundModal.open {
+    display: flex;
+  }
+  #soundModalBox {
+    background: #0d150d;
+    border: 1px solid var(--green);
+    padding: 24px 32px;
+    min-width: 320px;
+    max-width: 440px;
+    width: 90%;
+  }
+  #soundModalBox h3 {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.95em;
+    color: var(--green);
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .snd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+  .snd-row label {
+    font-size: 0.85em;
+    color: #88bbaa;
+    flex: 1;
+  }
+  .snd-row input[type="range"] {
+    flex: 2;
+    accent-color: var(--green);
+  }
+  .snd-row .snd-val {
+    font-size: 0.8em;
+    color: var(--amber);
+    width: 36px;
+    text-align: right;
+  }
+  .snd-row input[type="checkbox"] {
+    accent-color: var(--green);
+    width: 16px;
+    height: 16px;
+  }
+  #soundModalClose {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.8em;
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 8px 24px;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 2px;
+    width: 100%;
+  }
+  #soundModalClose:hover {
+    background: #fff;
+  }
