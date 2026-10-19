@@ -669,6 +669,14 @@ class Game {
     p.dots = [];
     p._taskQueue = [];
     p._sayBubbles = [];
+    // Команды в стиле бота: destroy() обнуляет _desiredSpeed, а для игрока
+    // это поле должно оставаться undefined, иначе оно перебивает передачи (W/S)
+    p._desiredSpeed = undefined;
+    p._desiredAngle = undefined;
+    p._continuousLaserCmd = undefined;
+    p._dirAndGoTarget = undefined;
+    p._dirAndGoSpeed = undefined;
+    p._gunAndFirePending = false;
     // Вернуть режим видимости, который был до гибели
     if (p._visBeforeDeath) {
       cfg.visMode = p._visBeforeDeath;
