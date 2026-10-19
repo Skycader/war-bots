@@ -23,6 +23,8 @@ function gameLoop(ts) {
   const curPtur = gameInstance.pturs.length;
   if (curPtur > _prevPturCount) onPTURFired();
   _prevPturCount = curPtur;
+  renderer.updateCamera();
+  if (renderer.cam.active) updateMouseWorld();
   renderer.draw();
   updateHUD();
   tickKillNotify(realDt);
@@ -50,6 +52,8 @@ function saveSettings() {
     "cfgBaseZone",
     "cfgSmartLaser",
     "cfgNoiseRadius",
+    "cfgFollowCam",
+    "cfgCamView",
     "cfgPlayerArrow",
     "cfgRadioEnabled",
     "cfgRadioWaves",
@@ -118,6 +122,17 @@ function loadSettings() {
 }
 loadSettings();
 
+// Привязанная камера: ползунок обзора виден только когда опция включена
+function syncCamMenu() {
+  const on = document.getElementById("cfgFollowCam").checked;
+  document.getElementById("camViewRow").style.display = on ? "flex" : "none";
+  document.getElementById("cfgCamViewVal").textContent =
+    document.getElementById("cfgCamView").value;
+}
+document.getElementById("cfgFollowCam").addEventListener("change", syncCamMenu);
+document.getElementById("cfgCamView").addEventListener("input", syncCamMenu);
+syncCamMenu();
+
 // Автосохранение при любом изменении настроек
 (function () {
   const ids = [
@@ -136,6 +151,8 @@ loadSettings();
     "cfgBaseZone",
     "cfgSmartLaser",
     "cfgNoiseRadius",
+    "cfgFollowCam",
+    "cfgCamView",
     "cfgPlayerArrow",
     "cfgRadioEnabled",
     "cfgRadioWaves",
@@ -380,6 +397,18 @@ document.getElementById("soundModal").onclick = (e) => {
   });
 })();
 
+// Курсор → мировые координаты (клетки) → цель башни игрока.
+// Вызывается и каждый кадр: при привязанной камере мир под курсором двигается.
+function updateMouseWorld() {
+  const p = gameInstance && gameInstance.player;
+  const m = window._mouseCanvas;
+  if (!p || !m || !renderer) return;
+  const w = renderer.screenToWorld(m.x, m.y);
+  p.mouseX = w.x / CELL;
+  p.mouseY = w.y / CELL;
+  p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
+}
+
 function startGame() {
   saveSettings();
   // Если игрок не участвует — режим наблюдения (всё видно)
@@ -418,6 +447,10 @@ function startGame() {
     smartLaserStill:
       parseInt(document.getElementById("cfgSmartLaser").value) >= 2,
     noiseRadius: document.getElementById("cfgNoiseRadius").checked,
+    followCam:
+      document.getElementById("cfgFollowCam").checked &&
+      document.getElementById("cfgPlayer").checked,
+    camView: parseInt(document.getElementById("cfgCamView").value) || 16,
     playerArrow: document.getElementById("cfgPlayerArrow").checked,
     radioEnabled: document.getElementById("cfgRadioEnabled").checked,
     radioWaves: document.getElementById("cfgRadioWaves").checked,
@@ -474,6 +507,7 @@ function startGame() {
   _teamColorIdx = 0;
   gameInstance = new Game(cfg);
   const canvas = document.getElementById("gameCanvas");
+  window._mouseCanvas = null;
   renderer = new Renderer(canvas, gameInstance);
   const wrap = document.getElementById("canvasWrap");
   const scale = Math.min(
@@ -532,11 +566,12 @@ function startGame() {
       "mousemove",
       (e) => {
         const rect = canvas.getBoundingClientRect();
-        p.mouseX =
-          ((e.clientX - rect.left) * (canvas.width / rect.width)) / CELL;
-        p.mouseY =
-          ((e.clientY - rect.top) * (canvas.height / rect.height)) / CELL;
-        p.turretTargetAngle = Math.atan2(p.mouseY - p.y, p.mouseX - p.x);
+        // Позиция курсора в пикселях канваса; в мир переводим с учётом камеры
+        window._mouseCanvas = {
+          x: (e.clientX - rect.left) * (canvas.width / rect.width),
+          y: (e.clientY - rect.top) * (canvas.height / rect.height),
+        };
+        updateMouseWorld();
       },
       sig,
     );

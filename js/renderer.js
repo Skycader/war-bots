@@ -28,6 +28,7 @@ class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.game = game;
+    this.cam = { active: false, z: 1, x: null, y: null };
     this.resize();
   }
   resize() {
@@ -35,7 +36,57 @@ class Renderer {
     this.canvas.height = this.game.mapH * CELL;
   }
 
+  // Камера: при cfg.followCam кадр центрируется на танке игрока,
+  // в кадр помещается cfg.camView клеток по ширине. Иначе видна вся карта.
+  updateCamera() {
+    const g = this.game,
+      cam = this.cam;
+    cam.active = !!(cfg.followCam && g.player);
+    if (!cam.active) return;
+    cam.z = g.mapW / Math.max(4, cfg.camView || 16);
+    // Погиб — камера остаётся на месте гибели
+    if (g.player.alive) {
+      cam.x = g.player.x * CELL;
+      cam.y = g.player.y * CELL;
+    } else if (cam.x === null) {
+      cam.x = g.player.x * CELL;
+      cam.y = g.player.y * CELL;
+    }
+  }
+
+  // Пиксели канваса → мировые пиксели (до деления на CELL)
+  screenToWorld(sx, sy) {
+    const cam = this.cam;
+    if (!cam.active) return { x: sx, y: sy };
+    return {
+      x: (sx - this.canvas.width / 2) / cam.z + cam.x,
+      y: (sy - this.canvas.height / 2) / cam.z + cam.y,
+    };
+  }
+
   draw() {
+    const ctx = this.ctx;
+    this.updateCamera();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#050805";
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.save();
+    if (this.cam.active) {
+      const z = this.cam.z;
+      ctx.setTransform(
+        z,
+        0,
+        0,
+        z,
+        this.canvas.width / 2 - this.cam.x * z,
+        this.canvas.height / 2 - this.cam.y * z,
+      );
+    }
+    this._drawWorld();
+    ctx.restore();
+  }
+
+  _drawWorld() {
     const ctx = this.ctx,
       g = this.game,
       C = CELL;

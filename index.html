@@ -67,6 +67,27 @@
             ><input type="checkbox" id="cfgPlayerArrow" />
           </div>
           <div class="setting-row">
+            <label>Привязанная камера:</label
+            ><input type="checkbox" id="cfgFollowCam" />
+          </div>
+          <div class="setting-row" id="camViewRow" style="display: none">
+            <label>Обзор камеры (клеток):</label>
+            <input
+              type="range"
+              id="cfgCamView"
+              min="8"
+              max="40"
+              step="1"
+              value="16"
+              style="width: 110px; accent-color: var(--green)"
+            />
+            <span
+              id="cfgCamViewVal"
+              style="color: var(--green); font-size: 0.85em"
+              >16</span
+            >
+          </div>
+          <div class="setting-row">
             <label>Радиосвязь (broadcast):</label
             ><input type="checkbox" id="cfgRadioEnabled" />
           </div>
