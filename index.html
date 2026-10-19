@@ -16,65 +16,65 @@
       <div class="settings-grid">
         <!-- ══ ЛЕВАЯ КОЛОНКА: галочки ══ -->
         <div style="display: flex; flex-direction: column; gap: 6px">
-          <div class="setting-row">
+          <div class="setting-row" title="Участвует ли человек в бою. Выключено — режим наблюдения: видна вся карта, можно зумить колёсиком и двигать карту мышью.">
             <label>Игрок:</label><input type="checkbox" id="cfgPlayer" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="После гибели клавиша R возрождает танк в зоне своей команды, сколько угодно раз. Пока игрок может возродиться, бой не заканчивается.">
             <label>Возрождение игрока по R:</label
             ><input type="checkbox" id="cfgPlayerRespawn" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Бессмертие игрока: здоровье не падает ниже 100, танк не уничтожается.">
             <label>Бессмертие:</label><input type="checkbox" id="cfgImmortal" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Танк получает урон при столкновении со стеной на высокой скорости.">
             <label>Урон от стен:</label
             ><input type="checkbox" id="cfgWallDmg" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Огонь по своим: ПТУР и взрывы поражают союзников.">
             <label>Огонь по своим:</label
             ><input type="checkbox" id="cfgTeamKill" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Урон себе: танк получает урон от взрыва собственного ПТУР.">
             <label>Урон себе от ПТУР:</label
             ><input type="checkbox" id="cfgSelfDmg" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Команды появляются в противоположных зонах карты (полосы у верхней и нижней стены). Выключено — все спавнятся случайно.">
             <label>Командный спавн:</label
             ><input type="checkbox" id="cfgTeamSpawn" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Симметричная карта: нижняя половина зеркально повторяет верхнюю — равные условия для команд.">
             <label>Симметричная карта:</label
             ><input type="checkbox" id="cfgSymmetric" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="ПРО: ПТУР может сбить вражеский ПТУР, если пролетит рядом с ним (около 0.5 клетки). Оба взрываются.">
             <label>ПРО (ПТУР сбивает ПТУР):</label
             ><input type="checkbox" id="cfgPturVsPtur" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Умный радиовзрыватель. Любой ПТУР подрывается рядом с танком (радиус срабатывания 0.8 клетки), даже без прямого попадания. Обычный взрыватель срабатывает сразу при входе в этот радиус и ещё реагирует на стены. Умный ждёт точки наибольшего сближения (расстояние перестало уменьшаться) и стены игнорирует, поэтому взрыв происходит ближе к цели.">
             <label>Умный ПТУР:</label
             ><input type="checkbox" id="cfgSmartPtur" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Остовы уничтоженных танков остаются на карте, блокируют проезд и лазер. Выключено — после гибели танк не мешает.">
             <label>Трупы не исчезают:</label
             ><input type="checkbox" id="cfgWrecks" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Рисовать зону лечения и пополнения боезапаса у базы (режим Штурм).">
             <label>Зона базы (радиус хила):</label
             ><input type="checkbox" id="cfgBaseZone" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Круги вокруг движущихся танков показывают, как далеко слышен двигатель (чем быстрее, тем дальше).">
             <label>Радиус шума танков:</label
             ><input type="checkbox" id="cfgNoiseRadius" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Стрелка перед корпусом танка игрока показывает направление движения (курс корпуса, не башни).">
             <label>Стрелка направления танка игрока:</label
             ><input type="checkbox" id="cfgPlayerArrow" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Камера следует за танком игрока: видна только часть карты вокруг него. Выключено — видна вся карта целиком.">
             <label>Привязанная камера:</label
             ><input type="checkbox" id="cfgFollowCam" />
           </div>
-          <div class="setting-row" id="camViewRow">
+          <div class="setting-row" title="Сколько клеток карты помещается в кадр по ширине. Меньше значение — крупнее план. Доступно при включённой привязанной камере." id="camViewRow">
             <label>Обзор камеры (клеток):</label>
             <input
               type="range"
@@ -91,22 +91,22 @@
               >16</span
             >
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Колёсико мыши меняет обзор камеры прямо в бою (8–40 клеток). Доступно при включённой привязанной камере.">
             <label>Динамический диапазон (колёсико):</label
             ><input type="checkbox" id="cfgDynCam" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Боты могут вызывать broadcast() и передавать союзникам координаты угроз и сообщения.">
             <label>Радиосвязь (broadcast):</label
             ><input type="checkbox" id="cfgRadioEnabled" />
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Показывать радиоволны кольцами, когда кто-то передаёт сообщение.">
             <label>Визуализация радиоволн:</label
             ><input type="checkbox" id="cfgRadioWaves" />
           </div>
         </div>
         <!-- ══ ПРАВАЯ КОЛОНКА: селекты и ползунки ══ -->
         <div style="display: flex; flex-direction: column; gap: 6px">
-          <div class="setting-row">
+          <div class="setting-row" title="Команда игрока. Список зависит от выбранного пресета.">
             <label>Команда игрока:</label
             ><select
               id="cfgPlayerTeam"
@@ -121,7 +121,7 @@
               <option value="">— нет —</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Поколение лазера: I — только дистанция, II — эффект Доплера (видит движущиеся цели), III — ЛИДАР (видит всех, в том числе стоящих).">
             <label>Лазер:</label>
             <select id="cfgSmartLaser">
               <option
@@ -154,7 +154,7 @@
               <button class="vis-btn" data-mode="all">Всё</button>
             </div>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Размер карты в клетках.">
             <label>Размер карты:</label>
             <select id="cfgMapSize">
               <option value="30">30×30</option>
@@ -162,7 +162,7 @@
               <option value="50">50×50</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Плотность препятствий на карте.">
             <label>Препятствия:</label>
             <input
               type="range"
@@ -179,7 +179,7 @@
               >15%</span
             >
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Битва команд — бой до уничтожения; Штурм — нужно уничтожить базу врага; Королевская битва — каждый сам за себя.">
             <label>Режим боя:</label>
             <select id="cfgAssault">
               <option value="0">Битва команд</option>
@@ -187,7 +187,7 @@
               <option value="2">👑 Королевская битва</option>
             </select>
           </div>
-          <div class="setting-row" id="baseHpRow" style="display: none">
+          <div class="setting-row" title="Здоровье базы в режиме Штурм." id="baseHpRow" style="display: none">
             <label>HP базы:</label>
             <select id="cfgBaseHp">
               <option value="500">500 HP</option>
@@ -197,7 +197,7 @@
               <option value="10000">10000 HP</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Урон при таране другого танка: HP за каждый 1 клетка/с скорости.">
             <label>Урон при таране (×скорость):</label>
             <select id="cfgCollisionDmg">
               <option value="0">0 HP (нет урона)</option>
@@ -209,7 +209,7 @@
               <option value="100">100 HP</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Кулдаун ПТУР, секунд.">
             <label>Кд ПТУР:</label>
             <select id="cfgPturCD">
               <option value="5">5 сек</option>
@@ -217,7 +217,7 @@
               <option value="15">15 сек</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Скорость полёта ПТУР, клеток в секунду.">
             <label>Скорость ПТУР:</label>
             <select id="cfgPturSpeed">
               <option value="3">3 м/с</option>
@@ -227,7 +227,7 @@
               <option value="20">20 м/с</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Урон ПТУР при прямом попадании. Рядом со взрывом урон меньше (50% и 15%).">
             <label>Урон ПТУР:</label>
             <select id="cfgPturDmg">
               <option value="25">25 HP</option>
@@ -237,7 +237,7 @@
               <option value="200">200 HP</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Кулдаун дымовой гранаты, секунд. Дым блокирует лазер и защищает от ПТУР.">
             <label>Кд дыма:</label>
             <select id="cfgSmokeCD">
               <option value="5">5 сек</option>
@@ -245,7 +245,7 @@
               <option value="15">15 сек</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Скорость поворота башни игрока.">
             <label>Скорость башни:</label>
             <select id="cfgTurretSpeed">
               <option value="1">103°/сек (×1, текущая)</option>
@@ -255,7 +255,7 @@
               <option value="5">516°/сек (×5)</option>
             </select>
           </div>
-          <div class="setting-row">
+          <div class="setting-row" title="Сколько секунд подсвечиваются стены, обнаруженные лазером.">
             <label>Подсветка стен:</label>
             <select id="cfgWallDotLife">
               <option value="1">1 сек</option>
